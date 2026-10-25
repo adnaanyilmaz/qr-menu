@@ -189,6 +189,15 @@ h1, h2, h3, h4, .font-heading {
   color: var(--charcoal-soft);
   cursor: pointer;
   transition: all 0.15s ease;
+  max-width: 140px;
+}
+
+#table-badge-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  max-width: 85px;
 }
 
 .table-badge-btn:hover, .table-badge-btn:active {
@@ -200,6 +209,7 @@ h1, h2, h3, h4, .font-heading {
 .table-badge-btn .material-symbols-outlined {
   font-size: 15px;
   color: var(--primary);
+  flex-shrink: 0;
 }
 
 .lang-badge {
@@ -210,6 +220,7 @@ h1, h2, h3, h4, .font-heading {
   color: var(--charcoal-soft);
   border-radius: var(--radius-full);
   border: 1px solid var(--border-mid);
+  flex-shrink: 0;
 }
 
 /* Quick Waiter Call Bar */

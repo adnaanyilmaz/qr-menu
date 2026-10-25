@@ -1,19 +1,20 @@
 {
   "settings": {
     "restaurantName": "Ali Baba Döner Kafe",
-    "slogan": "Dönerden kahveye, her molaya lezzet.",
+    "slogan": "",
     "logoInitials": "AB",
-    "heroBadge": "Zengin Restoran & Kafe Menüsü",
-    "heroTitle": "Canın ne çekiyor?",
-    "heroSubtitle": "İster doyurucu bir lezzet, ister keyifli bir kahve molası.",
-    "heroImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuBePhexMPVnyKWUyULjS45OYTHfSAC1FsyeNzssegLDQY6vF2GlhO7UwEdiJqL0GYtyCVhqgh20iQFMBwTIjv9TGqptOZuZOEe0nmGS6vYogAeapHGUAAta47LVr5Md675L7GMIFHW7GiCF1JpHLSdKtu8JPZXpyRxg3JSPU0vO1uPTe-I2090Zw9v_K-pSXv2L8B5IGAvuJPK8C4WtpM0x53BZAMZ5xKmR8LEztXmo74bpCdy20SNmOg",
-    "wifiSSID": "AliBaba_Misafir",
-    "wifiPassword": "alibaba2025",
-    "contactInfo": "Restoran içi siparişler ve özel talepleriniz için lütfen salon görevlimiz ile iletişime geçiniz.",
-    "locationInfo": "Ali Baba Döner Kafe ana cadde şubemizde açık ve kapalı teras alanlarımızla hizmetinizdeyiz.",
-    "instagramHandle": "@alibabadonerkafe",
+    "heroBadge": "",
+    "heroTitle": "",
+    "heroSubtitle": "",
+    "heroImage": "",
+    "wifiSSID": "",
+    "wifiPassword": "",
+    "contactInfo": "",
+    "locationInfo": "",
+    "instagramHandle": "",
     "currency": "₺",
-    "tableCount": 20
+    "tableCount": 20,
+    "baseUrl": ""
   },
   "admin": {
     "pin": "1234",

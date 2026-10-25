@@ -31,7 +31,7 @@
           <span>Giriş Yap</span>
         </button>
       </form>
-      <p style="font-size:11px; color:#94a3b8; margin-top:16px;">Varsayılan PIN: <strong>1234</strong> (veya Şifre: <strong>admin</strong>)</p>
+      <p style="font-size:11px; color:#94a3b8; margin-top:16px;">Güvenlik: Yalnızca yetkili restoran personeli ve yöneticiler erişebilir.</p>
     </div>
   </div>
 
@@ -320,7 +320,16 @@
                   </div>
                 </div>
 
-                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px; margin-top:20px;">
+                <div class="form-group" style="margin-top:14px;">
+                  <label class="form-label">Yayın Adresi (Canlı Menü Base URL)</label>
+                  <div style="display:flex; gap:6px;">
+                    <input type="url" id="qr-base-url-input" class="form-control" placeholder="Örn: https://alibabadoner.com (Boşsa yerel sunucu)"/>
+                    <button type="button" id="qr-base-url-save-btn" class="btn-secondary" onclick="saveQuickBaseUrl()" style="white-space:nowrap;">Kaydet</button>
+                  </div>
+                  <span style="font-size:11px; color:#64748b; margin-top:4px; display:block;">Gerçek işletmede QR kodun açılacağı internet adresinizi buraya yazabilirsiniz.</span>
+                </div>
+
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px; margin-top:16px;">
                   <span style="font-size:11px; text-transform:uppercase; font-weight:800; color:#64748b; display:block; margin-bottom:4px;">QR Hedef Adresi:</span>
                   <code id="qr-direct-url" style="font-size:11px; color:#b91c1c; word-break:break-all;">http://localhost:3000/?masa=04</code>
                 </div>
@@ -374,6 +383,11 @@
                   <div class="form-group">
                     <label class="form-label">Masa Sayısı</label>
                     <input type="number" id="set-table-count" class="form-control" min="1" max="100"/>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Canlı Yayın Adresi (Base URL)</label>
+                    <input type="url" id="set-base-url" class="form-control" placeholder="Örn: https://alibabadoner.com"/>
+                    <span style="font-size:11px; color:#64748b;">Boş bırakılırsa geçerli sunucu adresi kullanılır.</span>
                   </div>
                 </div>
               </div>
@@ -439,9 +453,12 @@
                 </div>
                 <div class="widget-body">
                   <div class="form-group">
-                    <label class="form-label">Yeni Admin Giriş PIN Kodu</label>
-                    <input type="text" id="set-admin-pin" class="form-control" placeholder="Değiştirmek istemiyorsanız boş bırakın"/>
-                    <span style="font-size:11px; color:#64748b;">Mevcut varsayılan PIN: 1234</span>
+                    <label class="form-label">Yeni Yönetici PIN Kodu</label>
+                    <input type="password" id="set-admin-pin" class="form-control" placeholder="Değiştirmek istemiyorsanız boş bırakın"/>
+                  </div>
+                  <div class="form-group" style="margin-top:10px;">
+                    <label class="form-label">Yeni Yönetici Şifresi</label>
+                    <input type="password" id="set-admin-password" class="form-control" placeholder="Değiştirmek istemiyorsanız boş bırakın"/>
                   </div>
                   <hr style="margin:20px 0; border:none; border-top:1px solid #e2e8f0;"/>
                   <div>

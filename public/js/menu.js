@@ -13,6 +13,10 @@ let menuState = {
   searchQuery: ''
 };
 
+// Waiter Call Cooldown State
+let waiterCooldownRemaining = 0;
+let waiterCooldownInterval = null;
+
 // DOM Element References
 const dom = {
   // Brand Header
@@ -74,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initTableNumber();
   loadMenuData();
   setupEventListeners();
+  restoreCooldownState();
 });
 
 // Table Number from URL or Storage
@@ -81,12 +86,16 @@ function initTableNumber() {
   const urlParams = new URLSearchParams(window.location.search);
   const tableParam = urlParams.get('masa') || urlParams.get('table');
   
-  if (tableParam) {
+  if (tableParam && tableParam.trim()) {
     menuState.currentTable = tableParam.trim();
     sessionStorage.setItem('alibaba_table', menuState.currentTable);
   } else {
     const saved = sessionStorage.getItem('alibaba_table');
-    if (saved) menuState.currentTable = saved;
+    if (saved && saved.trim()) {
+      menuState.currentTable = saved.trim();
+    } else {
+      menuState.currentTable = '04';
+    }
   }
   
   updateTableDisplay();
@@ -94,8 +103,12 @@ function initTableNumber() {
 
 function updateTableDisplay() {
   if (dom.tableBadgeText) {
-    const val = menuState.currentTable;
-    dom.tableBadgeText.textContent = isNaN(val) ? val : `Masa ${String(val).padStart(2, '0')}`;
+    const val = menuState.currentTable || '04';
+    if (!isNaN(val) && val.trim() !== '') {
+      dom.tableBadgeText.textContent = `Masa ${String(val).padStart(2, '0')}`;
+    } else {
+      dom.tableBadgeText.textContent = val.startsWith('Masa') ? val : `Masa ${val}`;
+    }
   }
 }
 
@@ -121,7 +134,7 @@ async function loadMenuData() {
     }
   } catch (err) {
     console.warn('API fetch failed, trying local cache:', err);
-    // Try localStorage
+    // Try localStorage fallback
     const cached = localStorage.getItem('alibaba_menu_cache');
     if (cached) {
       try {
@@ -168,12 +181,13 @@ function renderCategoryPills() {
   if (!dom.categoryPillTrack) return;
   
   let html = `
-    <button class="category-pill active" data-cat="all" type="button">Tümü</button>
+    <button class="category-pill ${menuState.currentCategory === 'all' ? 'active' : ''}" data-cat="all" type="button">Tümü</button>
   `;
   
   menuState.categories.forEach(cat => {
+    const isActive = menuState.currentCategory === cat.id;
     html += `
-      <button class="category-pill" data-cat="${cat.id}" type="button">${escapeHtml(cat.name)}</button>
+      <button class="category-pill ${isActive ? 'active' : ''}" data-cat="${escapeHtml(cat.id)}" type="button">${escapeHtml(cat.name)}</button>
     `;
   });
   
@@ -213,10 +227,10 @@ function renderFeaturedSection() {
     const badgeText = p.badge || 'Favori';
     let badgeClass = 'badge-amber';
     if (badgeText.includes('Barista') || badgeText.includes('Kahve')) badgeClass = 'badge-dark';
-    if (badgeText.includes('Ferah')) badgeClass = 'badge-rose';
+    if (badgeText.includes('Ferah') || badgeText.includes('Özel')) badgeClass = 'badge-rose';
 
     html += `
-      <div class="featured-card" onclick="openProductModalById('${p.id}')">
+      <div class="featured-card" onclick="openProductModalById('${escapeHtml(p.id)}')">
         <div class="featured-img-wrap">
           ${p.img ? `<img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" class="featured-img" loading="lazy">` : 
             `<div class="product-thumb-fallback"><span class="material-symbols-outlined">${p.type === 'drink' ? 'local_cafe' : 'restaurant'}</span></div>`}
@@ -248,7 +262,7 @@ function renderCategorySections() {
     if (catProducts.length === 0) return; // Skip empty category
     
     html += `
-      <section class="menu-category-section" data-cat-id="${cat.id}" id="sec-${cat.id}">
+      <section class="menu-category-section" data-cat-id="${escapeHtml(cat.id)}" id="sec-${escapeHtml(cat.id)}">
         <div class="cat-section-header">
           <h3 class="cat-title">
             <span class="cat-dot"></span>
@@ -272,11 +286,11 @@ function renderProductCard(p) {
 
   return `
     <div class="product-card ${isSoldOut ? 'out-of-stock' : ''}" 
-         data-id="${p.id}" 
-         data-cat="${p.category}" 
+         data-id="${escapeHtml(p.id)}" 
+         data-cat="${escapeHtml(p.category)}" 
          data-name="${escapeHtml(p.name.toLowerCase())}" 
          data-desc="${escapeHtml((p.desc || '').toLowerCase())}"
-         onclick="openProductModalById('${p.id}')">
+         onclick="openProductModalById('${escapeHtml(p.id)}')">
       <div class="product-details">
         <div class="product-head">
           <h4 class="product-title">${escapeHtml(p.name)}</h4>
@@ -373,7 +387,7 @@ function openProductModalById(prodId) {
   currentSelectedProduct = product;
   
   dom.modalProductName.textContent = product.name;
-  dom.modalProductPrice.textContent = `${product.price} ${product.currency || '₺'}`;
+  dom.modalProductPrice.textContent = `${product.price} ${product.currency || menuState.settings.currency || '₺'}`;
   dom.modalProductDesc.textContent = product.desc || 'Bu ürün hakkında detaylı açıklama eklenmedi.';
   dom.modalProductPortion.textContent = product.portion || 'Standart Servis';
   
@@ -448,10 +462,74 @@ function closeProductModal() {
   document.body.style.overflow = '';
 }
 
-// 7. Waiter Calling / Service Notifications
+// 7. Waiter Calling / Service Notifications with Cooldown & Debounce
+function restoreCooldownState() {
+  const savedExpiry = sessionStorage.getItem('alibaba_waiter_cooldown_expiry');
+  if (savedExpiry) {
+    const diff = Math.ceil((parseInt(savedExpiry, 10) - Date.now()) / 1000);
+    if (diff > 0) {
+      startCooldownTimer(diff);
+    } else {
+      sessionStorage.removeItem('alibaba_waiter_cooldown_expiry');
+    }
+  }
+}
+
+function startCooldownTimer(seconds) {
+  waiterCooldownRemaining = seconds;
+  sessionStorage.setItem('alibaba_waiter_cooldown_expiry', String(Date.now() + seconds * 1000));
+  updateServiceButtonsState();
+
+  clearInterval(waiterCooldownInterval);
+  waiterCooldownInterval = setInterval(() => {
+    waiterCooldownRemaining--;
+    if (waiterCooldownRemaining <= 0) {
+      clearInterval(waiterCooldownInterval);
+      waiterCooldownRemaining = 0;
+      sessionStorage.removeItem('alibaba_waiter_cooldown_expiry');
+    }
+    updateServiceButtonsState();
+  }, 1000);
+}
+
+function updateServiceButtonsState() {
+  const waiterBtn = document.getElementById('quick-call-waiter-btn');
+  const billBtn = document.getElementById('quick-ask-bill-btn');
+  const inCooldown = waiterCooldownRemaining > 0;
+
+  if (waiterBtn) {
+    waiterBtn.disabled = inCooldown;
+    waiterBtn.style.opacity = inCooldown ? '0.7' : '1';
+    const spanText = waiterBtn.querySelector('span:not(.material-symbols-outlined)');
+    if (spanText) {
+      spanText.textContent = inCooldown ? `İletildi (${waiterCooldownRemaining}s)` : 'Garson Çağır';
+    }
+  }
+
+  if (billBtn) {
+    billBtn.disabled = inCooldown;
+    billBtn.style.opacity = inCooldown ? '0.7' : '1';
+    const spanText = billBtn.querySelector('span:not(.material-symbols-outlined)');
+    if (spanText) {
+      spanText.textContent = inCooldown ? `İletildi (${waiterCooldownRemaining}s)` : 'Hesap İste';
+    }
+  }
+}
+
 async function callWaiterService(serviceType, note = '') {
+  if (waiterCooldownRemaining > 0) {
+    showToast(`Lütfen yeni bir çağrı göndermeden önce ${waiterCooldownRemaining} saniye bekleyin.`);
+    return;
+  }
+
   const table = menuState.currentTable || '04';
-  
+  const waiterBtn = document.getElementById('quick-call-waiter-btn');
+  const billBtn = document.getElementById('quick-ask-bill-btn');
+
+  // Temporary UI disable
+  if (waiterBtn) waiterBtn.disabled = true;
+  if (billBtn) billBtn.disabled = true;
+
   try {
     const res = await fetch('/api/call-waiter', {
       method: 'POST',
@@ -464,13 +542,24 @@ async function callWaiterService(serviceType, note = '') {
     });
     
     const result = await res.json();
+
+    if (res.status === 429) {
+      const waitSec = result.remainingSeconds || 25;
+      startCooldownTimer(waitSec);
+      showToast(result.message || `Lütfen ${waitSec} saniye bekleyin.`);
+      return;
+    }
+
     if (result.success) {
-      showToast(`Masa ${table} için ${serviceType.toLowerCase()} talebiniz iletildi!`);
+      startCooldownTimer(25);
+      showToast(`Masa ${table} için "${serviceType}" talebiniz personele iletildi!`);
     } else {
-      showToast('Talep iletilemedi, lütfen personele sesleniniz.');
+      updateServiceButtonsState();
+      showToast(result.message || 'Talep iletilemedi, lütfen personele sesleniniz.');
     }
   } catch (err) {
-    showToast(`Masa ${table} için ${serviceType.toLowerCase()} talebiniz kaydedildi.`);
+    updateServiceButtonsState();
+    showToast('Bağlantı hatası: Talep iletilemedi.');
   }
 }
 
@@ -506,7 +595,7 @@ function openWifiModal() {
         </button>
       </div>
     </div>
-    <p style="font-size:12px; color:#64748b;">Masalarımızda sınırsız internet keyfi sizleri bekliyor.</p>
+    <p style="font-size:12px; color:#64748b;">Masalarımızda sınırsız ve hızlı misafir internetimiz hizmetinizdedir.</p>
   `;
   
   openCenterModal('Ücretsiz Misafir Wi-Fi', 'wifi', content);
@@ -531,25 +620,29 @@ function openTableModal() {
     <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; max-height:140px; overflow-y:auto; padding:4px;">
       ${Array.from({ length: 20 }, (_, i) => {
         const num = String(i + 1).padStart(2, '0');
-        return `<button type="button" onclick="selectQuickTable('${num}')" style="padding:6px 2px; border:1px solid #e2e8f0; border-radius:8px; background:${current === num ? '#b91c1c' : '#fff'}; color:${current === num ? '#fff' : '#0f172a'}; font-weight:700; font-size:12px; cursor:pointer;">M${num}</button>`;
+        const isCurrent = current === num || current === `Masa ${num}`;
+        return `<button type="button" onclick="selectQuickTable('${num}')" style="padding:6px 2px; border:1px solid #e2e8f0; border-radius:8px; background:${isCurrent ? '#b91c1c' : '#fff'}; color:${isCurrent ? '#fff' : '#0f172a'}; font-weight:700; font-size:12px; cursor:pointer;">M${num}</button>`;
       }).join('')}
     </div>
   `;
-  openCenterModal('Masa Değiştir', 'table_restaurant', content);
+  openCenterModal('Masa Numarası', 'table_restaurant', content);
 }
 
 function selectQuickTable(num) {
-  menuState.currentTable = num;
-  sessionStorage.setItem('alibaba_table', num);
+  const clean = String(num).trim();
+  menuState.currentTable = clean;
+  sessionStorage.setItem('alibaba_table', clean);
   updateTableDisplay();
   closeCenterModal();
-  showToast(`Masa ${num} olarak güncellendi.`);
+  showToast(`Masa ${clean} olarak güncellendi.`);
 }
 
 function saveNewTableNumber() {
   const input = document.getElementById('manual-table-input');
   if (input && input.value.trim()) {
     selectQuickTable(input.value.trim());
+  } else {
+    showToast('Lütfen geçerli bir masa numarası giriniz.');
   }
 }
 
@@ -662,7 +755,7 @@ function setupEventListeners() {
 
 // Utility: Escape HTML to prevent XSS
 function escapeHtml(str) {
-  if (typeof str !== 'string') return str;
+  if (typeof str !== 'string') return str === undefined || str === null ? '' : String(str);
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

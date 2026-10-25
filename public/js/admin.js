@@ -21,16 +21,53 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
 });
 
+// Helper for Authenticated Requests
+async function fetchWithAuth(url, options = {}) {
+  const token = sessionStorage.getItem('alibaba_admin_token');
+  const headers = options.headers ? { ...options.headers } : {};
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, { ...options, headers });
+
+  if (response.status === 401) {
+    // Session expired or invalid
+    sessionStorage.removeItem('alibaba_admin_token');
+    clearInterval(adminData.pollTimer);
+    document.getElementById('login-screen').style.display = 'flex';
+    showAdminToast('Oturum süresi doldu. Lütfen tekrar giriş yapın.');
+    throw new Error('Yetkisiz erişim');
+  }
+
+  return response;
+}
+
 // Authentication Handling
-function checkAuth() {
+async function checkAuth() {
   const token = sessionStorage.getItem('alibaba_admin_token');
   const loginScreen = document.getElementById('login-screen');
-  
-  if (token) {
-    if (loginScreen) loginScreen.style.display = 'none';
-    loadAllAdminData();
-    startNotificationPolling();
-  } else {
+
+  if (!token) {
+    if (loginScreen) loginScreen.style.display = 'flex';
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/auth-check', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const result = await res.json();
+    if (result.success) {
+      if (loginScreen) loginScreen.style.display = 'none';
+      loadAllAdminData();
+      startNotificationPolling();
+    } else {
+      sessionStorage.removeItem('alibaba_admin_token');
+      if (loginScreen) loginScreen.style.display = 'flex';
+    }
+  } catch (err) {
     if (loginScreen) loginScreen.style.display = 'flex';
   }
 }
@@ -42,7 +79,7 @@ async function handleLogin(e) {
   const pin = pinInput ? pinInput.value.trim() : '';
 
   if (!pin) {
-    if (errorMsg) errorMsg.textContent = 'Lütfen PIN veya şifre girin.';
+    if (errorMsg) errorMsg.textContent = 'Lütfen PIN veya şifrenizi girin.';
     return;
   }
 
@@ -54,10 +91,11 @@ async function handleLogin(e) {
     });
 
     const data = await res.json();
-    if (data.success && data.token) {
+    if (res.ok && data.success && data.token) {
       sessionStorage.setItem('alibaba_admin_token', data.token);
       document.getElementById('login-screen').style.display = 'none';
       if (errorMsg) errorMsg.textContent = '';
+      if (pinInput) pinInput.value = '';
       loadAllAdminData();
       startNotificationPolling();
       showAdminToast('Giriş başarılı!');
@@ -65,11 +103,14 @@ async function handleLogin(e) {
       if (errorMsg) errorMsg.textContent = data.message || 'Geçersiz PIN veya şifre!';
     }
   } catch (err) {
-    if (errorMsg) errorMsg.textContent = 'Sunucuya bağlanılamadı.';
+    if (errorMsg) errorMsg.textContent = 'Sunucuya bağlanılamadı. Lütfen sunucunun çalıştığından emin olun.';
   }
 }
 
-function handleLogout() {
+async function handleLogout() {
+  try {
+    await fetchWithAuth('/api/logout', { method: 'POST' });
+  } catch (e) {}
   sessionStorage.removeItem('alibaba_admin_token');
   clearInterval(adminData.pollTimer);
   window.location.reload();
@@ -84,14 +125,14 @@ async function loadAllAdminData() {
       adminData.settings = result.data.settings || {};
       adminData.categories = result.data.categories || [];
       adminData.products = result.data.products || [];
-      
+
       updateBrandUI();
       renderDashboard();
       renderProductsTable();
       renderCategoriesList();
       populateCategoryDropdowns();
       populateSettingsForm();
-      updateTableQRPreview('04');
+      updateTableQRPreview(document.getElementById('qr-table-select')?.value || '04');
     }
   } catch (err) {
     console.error('Error loading admin data:', err);
@@ -136,7 +177,7 @@ function switchTab(tabId) {
 
   // Update page title
   const titles = {
-    'dashboard': 'Genel Bakış & Sipariş Masaları',
+    'dashboard': 'Genel Bakış & Masalar',
     'products': 'Ürün ve Fiyat Yönetimi',
     'categories': 'Kategori Yönetimi',
     'qr-studio': 'Masa QR Kod Stüdyosu',
@@ -152,7 +193,8 @@ function switchTab(tabId) {
   if (tabId === 'dashboard') renderDashboard();
   if (tabId === 'products') renderProductsTable();
   if (tabId === 'categories') renderCategoriesList();
-  if (tabId === 'qr-studio') updateTableQRPreview(document.getElementById('qr-table-select').value || '04');
+  if (tabId === 'qr-studio') updateTableQRPreview(document.getElementById('qr-table-select')?.value || '04');
+  if (tabId === 'settings') populateSettingsForm();
 }
 
 // Update Topbar and Branding
@@ -173,10 +215,15 @@ function renderDashboard() {
   const outOfStock = totalProducts - inStock;
   const totalCats = adminData.categories.length;
 
-  document.getElementById('stat-total-products').textContent = totalProducts;
-  document.getElementById('stat-in-stock').textContent = inStock;
-  document.getElementById('stat-out-stock').textContent = outOfStock;
-  document.getElementById('stat-total-categories').textContent = totalCats;
+  const statTotal = document.getElementById('stat-total-products');
+  const statIn = document.getElementById('stat-in-stock');
+  const statOut = document.getElementById('stat-out-stock');
+  const statCats = document.getElementById('stat-total-categories');
+
+  if (statTotal) statTotal.textContent = totalProducts;
+  if (statIn) statIn.textContent = inStock;
+  if (statOut) statOut.textContent = outOfStock;
+  if (statCats) statCats.textContent = totalCats;
 
   fetchNotifications();
 }
@@ -189,7 +236,7 @@ function startNotificationPolling() {
 
 async function fetchNotifications() {
   try {
-    const res = await fetch('/api/notifications');
+    const res = await fetchWithAuth('/api/notifications');
     const result = await res.json();
     if (result.success && result.data) {
       adminData.notifications = result.data;
@@ -236,7 +283,7 @@ function renderNotificationList() {
           ${n.note ? `<div class="notif-desc">${escapeHtml(n.note)}</div>` : ''}
           <div class="notif-time">İletilme: ${escapeHtml(n.time)}</div>
         </div>
-        <button class="notif-btn-clear" onclick="dismissNotification('${n.id}')" title="Tamamlandı olarak işaretle">
+        <button class="notif-btn-clear" onclick="dismissNotification('${escapeHtml(n.id)}')" title="Tamamlandı olarak işaretle">
           <span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">check</span> İlgilendim
         </button>
       </div>
@@ -248,14 +295,16 @@ function renderNotificationList() {
 
 async function dismissNotification(id) {
   try {
-    const res = await fetch(`/api/notifications/${id}`, { method: 'DELETE' });
+    const res = await fetchWithAuth(`/api/notifications/${id}`, { method: 'DELETE' });
     const result = await res.json();
     if (result.success) {
       adminData.notifications = adminData.notifications.filter(n => n.id !== id);
       renderNotificationList();
       showAdminToast('Masa bildirimi kapatıldı.');
     }
-  } catch (e) {}
+  } catch (e) {
+    showAdminToast('Bildirim kapatılamadı.');
+  }
 }
 
 // ==========================================================================
@@ -281,7 +330,8 @@ function renderProductsTable() {
     return matchesSearch && matchesCategory && matchesStock;
   });
 
-  document.getElementById('filtered-product-count').textContent = `${filtered.length} ürün listeleniyor`;
+  const countEl = document.getElementById('filtered-product-count');
+  if (countEl) countEl.textContent = `${filtered.length} ürün listeleniyor`;
 
   if (filtered.length === 0) {
     tableBody.innerHTML = `
@@ -304,13 +354,13 @@ function renderProductsTable() {
     html += `
       <tr>
         <td style="width:60px;">
-          ${p.img ? `<img src="${escapeHtml(p.img)}" class="prod-thumb" alt="${escapeHtml(p.name)}">` : 
+          ${p.img ? `<img src="${escapeHtml(p.img)}" class="prod-thumb" alt="${escapeHtml(p.name)}" loading="lazy">` : 
             `<div class="prod-thumb" style="display:flex; align-items:center; justify-content:center; color:#94a3b8;"><span class="material-symbols-outlined">restaurant</span></div>`}
         </td>
         <td>
           <div class="prod-name-cell">
             <span class="prod-table-title">${escapeHtml(p.name)}</span>
-            <span class="prod-table-desc">${escapeHtml(p.portion || '')} • ${escapeHtml(p.desc || '')}</span>
+            <span class="prod-table-desc">${escapeHtml(p.portion || '')} ${p.desc ? '• ' + escapeHtml(p.desc) : ''}</span>
           </div>
         </td>
         <td>
@@ -319,28 +369,28 @@ function renderProductsTable() {
         <td>
           <div style="display:flex; align-items:center; gap:4px;">
             <input type="text" class="quick-price-input" value="${escapeHtml(p.price)}" 
-                   onchange="quickUpdatePrice('${p.id}', this.value)"
-                   style="width:65px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-weight:700; text-align:right;">
-            <span style="font-weight:700; color:#b91c1c;">${escapeHtml(p.currency || '₺')}</span>
+                   onchange="quickUpdatePrice('${escapeHtml(p.id)}', this.value)"
+                   style="width:70px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-weight:700; text-align:right;">
+            <span style="font-weight:700; color:#b91c1c;">${escapeHtml(p.currency || adminData.settings.currency || '₺')}</span>
           </div>
         </td>
         <td>
-          <button class="stock-toggle-btn ${isStock ? 'stock-in' : 'stock-out'}" onclick="toggleStock('${p.id}')">
+          <button class="stock-toggle-btn ${isStock ? 'stock-in' : 'stock-out'}" onclick="toggleStock('${escapeHtml(p.id)}')">
             <span class="material-symbols-outlined" style="font-size:14px;">${isStock ? 'check_circle' : 'cancel'}</span>
             <span>${isStock ? 'Stokta' : 'Tükendi'}</span>
           </button>
         </td>
         <td>
-          <button class="star-featured-btn ${isFeatured ? 'active' : ''}" onclick="toggleFeatured('${p.id}')" title="Favorilere ekle/çıkar">
+          <button class="star-featured-btn ${isFeatured ? 'active' : ''}" onclick="toggleFeatured('${escapeHtml(p.id)}')" title="Favorilere ekle/çıkar">
             <span class="material-symbols-outlined" style="font-size:22px;">${isFeatured ? 'star' : 'star_border'}</span>
           </button>
         </td>
         <td>
           <div class="action-btns">
-            <button class="icon-action-btn" onclick="openEditProductModal('${p.id}')" title="Düzenle">
+            <button class="icon-action-btn" onclick="openEditProductModal('${escapeHtml(p.id)}')" title="Düzenle">
               <span class="material-symbols-outlined" style="font-size:17px;">edit</span>
             </button>
-            <button class="icon-action-btn btn-delete" onclick="confirmDeleteProduct('${p.id}')" title="Sil">
+            <button class="icon-action-btn btn-delete" onclick="confirmDeleteProduct('${escapeHtml(p.id)}')" title="Sil">
               <span class="material-symbols-outlined" style="font-size:17px;">delete</span>
             </button>
           </div>
@@ -354,11 +404,18 @@ function renderProductsTable() {
 
 // Quick Inline Updates
 async function quickUpdatePrice(id, newPrice) {
+  const clean = String(newPrice || '0').replace('₺', '').replace(/,/g, '.').trim();
+  if (isNaN(parseFloat(clean))) {
+    showAdminToast('Lütfen geçerli bir sayısal fiyat girin.');
+    renderProductsTable();
+    return;
+  }
+
   try {
-    const res = await fetch(`/api/products/${id}/quick-price`, {
+    const res = await fetchWithAuth(`/api/products/${id}/quick-price`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ price: newPrice })
+      body: JSON.stringify({ price: clean })
     });
     const result = await res.json();
     if (result.success) {
@@ -373,7 +430,7 @@ async function quickUpdatePrice(id, newPrice) {
 
 async function toggleStock(id) {
   try {
-    const res = await fetch(`/api/products/${id}/toggle-stock`, { method: 'PATCH' });
+    const res = await fetchWithAuth(`/api/products/${id}/toggle-stock`, { method: 'PATCH' });
     const result = await res.json();
     if (result.success) {
       const p = adminData.products.find(x => x.id === id);
@@ -389,7 +446,7 @@ async function toggleStock(id) {
 
 async function toggleFeatured(id) {
   try {
-    const res = await fetch(`/api/products/${id}/toggle-featured`, { method: 'PATCH' });
+    const res = await fetchWithAuth(`/api/products/${id}/toggle-featured`, { method: 'PATCH' });
     const result = await res.json();
     if (result.success) {
       const p = adminData.products.find(x => x.id === id);
@@ -409,7 +466,8 @@ function openAddProductModal() {
   document.getElementById('product-form').reset();
   document.getElementById('form-prod-instock').checked = true;
   document.getElementById('form-prod-featured').checked = false;
-  document.getElementById('img-upload-preview').style.display = 'none';
+  const preview = document.getElementById('img-upload-preview');
+  if (preview) preview.style.display = 'none';
 
   populateCategoryDropdowns();
   openAdminModal('product-modal');
@@ -421,7 +479,7 @@ function openEditProductModal(id) {
 
   adminData.editingProductId = id;
   document.getElementById('modal-product-form-title').textContent = 'Ürünü Düzenle: ' + p.name;
-  
+
   populateCategoryDropdowns();
 
   document.getElementById('form-prod-name').value = p.name || '';
@@ -437,11 +495,13 @@ function openEditProductModal(id) {
   document.getElementById('form-prod-featured').checked = Boolean(p.featured);
 
   const preview = document.getElementById('img-upload-preview');
-  if (p.img) {
-    preview.src = p.img;
-    preview.style.display = 'block';
-  } else {
-    preview.style.display = 'none';
+  if (preview) {
+    if (p.img) {
+      preview.src = p.img;
+      preview.style.display = 'block';
+    } else {
+      preview.style.display = 'none';
+    }
   }
 
   openAdminModal('product-modal');
@@ -451,13 +511,20 @@ function openEditProductModal(id) {
 async function handleImageUpload(input) {
   if (!input.files || !input.files[0]) return;
   const file = input.files[0];
+
+  // Size limit client check (5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    showAdminToast('Hata: Fotoğraf boyutu en fazla 5 MB olabilir.');
+    return;
+  }
+
   const formData = new FormData();
   formData.append('image', file);
 
-  showAdminToast('Resim yükleniyor...');
+  showAdminToast('Fotoğraf yükleniyor...');
 
   try {
-    const res = await fetch('/api/upload', {
+    const res = await fetchWithAuth('/api/upload', {
       method: 'POST',
       body: formData
     });
@@ -465,14 +532,16 @@ async function handleImageUpload(input) {
     if (result.success && result.url) {
       document.getElementById('form-prod-img-url').value = result.url;
       const preview = document.getElementById('img-upload-preview');
-      preview.src = result.url;
-      preview.style.display = 'block';
-      showAdminToast('Resim başarıyla yüklendi!');
+      if (preview) {
+        preview.src = result.url;
+        preview.style.display = 'block';
+      }
+      showAdminToast('Fotoğraf başarıyla yüklendi!');
     } else {
-      showAdminToast(result.message || 'Resim yüklenemedi.');
+      showAdminToast(result.message || 'Fotoğraf yüklenemedi.');
     }
   } catch (err) {
-    showAdminToast('Resim sunucuya yüklenirken hata oluştu.');
+    showAdminToast('Fotoğraf sunucuya yüklenirken hata oluştu.');
   }
 }
 
@@ -497,8 +566,14 @@ async function saveProductForm(e) {
     return;
   }
 
+  const cleanPrice = price.replace('₺', '').replace(/,/g, '.').trim();
+  if (isNaN(parseFloat(cleanPrice))) {
+    alert('Lütfen geçerli bir sayısal fiyat giriniz.');
+    return;
+  }
+
   const payload = {
-    name, category, price, portion, type, badge,
+    name, category, price: cleanPrice, portion, type, badge,
     allergens, desc, img, inStock, featured,
     currency: adminData.settings.currency || '₺'
   };
@@ -507,7 +582,7 @@ async function saveProductForm(e) {
     let res, result;
     if (adminData.editingProductId) {
       // Update
-      res = await fetch(`/api/products/${adminData.editingProductId}`, {
+      res = await fetchWithAuth(`/api/products/${adminData.editingProductId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -517,10 +592,13 @@ async function saveProductForm(e) {
         const idx = adminData.products.findIndex(p => p.id === adminData.editingProductId);
         if (idx !== -1) adminData.products[idx] = result.data;
         showAdminToast('Ürün başarıyla güncellendi.');
+      } else {
+        showAdminToast(result.message || 'Güncelleme başarısız.');
+        return;
       }
     } else {
       // Create
-      res = await fetch('/api/products', {
+      res = await fetchWithAuth('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -529,6 +607,9 @@ async function saveProductForm(e) {
       if (result.success) {
         adminData.products.unshift(result.data);
         showAdminToast('Yeni ürün eklendi.');
+      } else {
+        showAdminToast(result.message || 'Ürün eklenemedi.');
+        return;
       }
     }
 
@@ -546,13 +627,13 @@ async function confirmDeleteProduct(id) {
 
   if (confirm(`"${p.name}" adlı ürünü silmek istediğinize emin misiniz?`)) {
     try {
-      const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      const res = await fetchWithAuth(`/api/products/${id}`, { method: 'DELETE' });
       const result = await res.json();
       if (result.success) {
         adminData.products = adminData.products.filter(x => x.id !== id);
         renderProductsTable();
         renderDashboard();
-        showAdminToast('Ürün silindi.');
+        showAdminToast('Ürün başarıyla silindi.');
       }
     } catch (e) {
       showAdminToast('Ürün silinemedi.');
@@ -573,7 +654,7 @@ function populateCategoryDropdowns() {
     let html = isFilter ? '<option value="all">Tüm Kategoriler</option>' : '';
 
     adminData.categories.forEach(cat => {
-      html += `<option value="${cat.id}">${escapeHtml(cat.name)}</option>`;
+      html += `<option value="${escapeHtml(cat.id)}">${escapeHtml(cat.name)}</option>`;
     });
 
     select.innerHTML = html;
@@ -603,10 +684,10 @@ function renderCategoriesList() {
           </div>
         </div>
         <div class="action-btns">
-          <button class="icon-action-btn" onclick="openEditCategoryModal('${cat.id}')" title="Düzenle">
+          <button class="icon-action-btn" onclick="openEditCategoryModal('${escapeHtml(cat.id)}')" title="Düzenle">
             <span class="material-symbols-outlined" style="font-size:17px;">edit</span>
           </button>
-          <button class="icon-action-btn btn-delete" onclick="confirmDeleteCategory('${cat.id}')" title="Sil">
+          <button class="icon-action-btn btn-delete" onclick="confirmDeleteCategory('${escapeHtml(cat.id)}')" title="Sil">
             <span class="material-symbols-outlined" style="font-size:17px;">delete</span>
           </button>
         </div>
@@ -645,7 +726,7 @@ async function saveCategoryForm(e) {
   try {
     let res, result;
     if (adminData.editingCategoryId) {
-      res = await fetch(`/api/categories/${adminData.editingCategoryId}`, {
+      res = await fetchWithAuth(`/api/categories/${adminData.editingCategoryId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name })
@@ -657,7 +738,7 @@ async function saveCategoryForm(e) {
         showAdminToast('Kategori güncellendi.');
       }
     } else {
-      res = await fetch('/api/categories', {
+      res = await fetchWithAuth('/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name })
@@ -682,9 +763,9 @@ async function confirmDeleteCategory(id) {
   const cat = adminData.categories.find(c => c.id === id);
   if (!cat) return;
 
-  if (confirm(`"${cat.name}" kategorisini silmek istediğinize emin misiniz? Bu kategorideki ürünler "diger" kategorisine aktarılacaktır.`)) {
+  if (confirm(`"${cat.name}" kategorisini silmek istediğinize emin misiniz? Bu kategorideki ürünler diğer kategoriye aktarılacaktır.`)) {
     try {
-      const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+      const res = await fetchWithAuth(`/api/categories/${id}`, { method: 'DELETE' });
       const result = await res.json();
       if (result.success) {
         adminData.categories = adminData.categories.filter(c => c.id !== id);
@@ -707,9 +788,13 @@ async function updateTableQRPreview(tableNum) {
   const padded = isNaN(tableNum) ? tableNum : String(tableNum).padStart(2, '0');
 
   // Update card elements
-  document.getElementById('qr-card-logo').textContent = adminData.settings.logoInitials || 'AB';
-  document.getElementById('qr-card-title').textContent = adminData.settings.restaurantName || 'Ali Baba Döner Kafe';
-  document.getElementById('qr-card-table-badge').textContent = `Masa ${padded}`;
+  const logoEl = document.getElementById('qr-card-logo');
+  const titleEl = document.getElementById('qr-card-title');
+  const badgeEl = document.getElementById('qr-card-table-badge');
+
+  if (logoEl) logoEl.textContent = adminData.settings.logoInitials || 'AB';
+  if (titleEl) titleEl.textContent = adminData.settings.restaurantName || 'Ali Baba Döner Kafe';
+  if (badgeEl) badgeEl.textContent = `Masa ${padded}`;
 
   const qrImg = document.getElementById('qr-card-img');
   const qrUrlDisplay = document.getElementById('qr-direct-url');
@@ -718,7 +803,7 @@ async function updateTableQRPreview(tableNum) {
     const res = await fetch(`/api/qr?table=${encodeURIComponent(padded)}`);
     const data = await res.json();
     if (data.success && data.qrDataUrl) {
-      qrImg.src = data.qrDataUrl;
+      if (qrImg) qrImg.src = data.qrDataUrl;
       if (qrUrlDisplay) qrUrlDisplay.textContent = data.url;
     }
   } catch (e) {
@@ -726,11 +811,35 @@ async function updateTableQRPreview(tableNum) {
   }
 }
 
+// Quick Base URL Save from QR Studio
+async function saveQuickBaseUrl() {
+  const urlInput = document.getElementById('qr-base-url-input');
+  if (!urlInput) return;
+  const baseUrl = urlInput.value.trim().replace(/\/+$/, '');
+
+  try {
+    const res = await fetchWithAuth('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ baseUrl: baseUrl })
+    });
+    const result = await res.json();
+    if (result.success) {
+      adminData.settings = result.data;
+      showAdminToast('Yayın adresi kaydedildi. QR kodlar güncellendi.');
+      const currentTable = document.getElementById('qr-table-select')?.value || '04';
+      updateTableQRPreview(currentTable);
+    }
+  } catch (e) {
+    showAdminToast('Yayın adresi kaydedilemedi.');
+  }
+}
+
 function printSingleTableCard() {
   window.print();
 }
 
-// Generate batch printable sheet for tables 1-20
+// Generate batch printable sheet for tables 1 to N
 function printBatchQRCards() {
   const printWindow = window.open('', '_blank');
   const count = adminData.settings.tableCount || 20;
@@ -742,7 +851,7 @@ function printBatchQRCards() {
       <div class="print-card">
         <div class="card-logo">${escapeHtml(adminData.settings.logoInitials || 'AB')}</div>
         <h3>${escapeHtml(adminData.settings.restaurantName || 'Ali Baba Döner Kafe')}</h3>
-        <p class="sub">Temassız Dijital Menü</p>
+        <p class="sub">Temassız Dijital QR Menü</p>
         <img src="/api/qr?table=${tableNum}" class="qr-img" alt="Masa ${tableNum}">
         <div class="table-badge">Masa ${tableNum}</div>
         <p class="inst">Kameranızı açıp okutunuz</p>
@@ -752,25 +861,26 @@ function printBatchQRCards() {
 
   printWindow.document.write(`
     <!DOCTYPE html>
-    <html>
+    <html lang="tr">
     <head>
+      <meta charset="utf-8"/>
       <title>Toplu Masa QR Kartları - Ali Baba Döner Kafe</title>
       <style>
         body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: #fff; margin: 0; padding: 20px; }
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        .print-card { border: 2px dashed #000; border-radius: 12px; padding: 18px 12px; text-align: center; page-break-inside: avoid; }
-        .card-logo { width: 36px; height: 36px; background: #93000b; color: #fff; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; margin-bottom: 6px; }
-        h3 { margin: 0 0 2px 0; font-size: 15px; }
-        .sub { margin: 0 0 10px 0; font-size: 11px; color: #666; }
-        .qr-img { width: 140px; height: 140px; }
+        .print-card { border: 2px dashed #b91c1c; border-radius: 12px; padding: 18px 12px; text-align: center; page-break-inside: avoid; }
+        .card-logo { width: 36px; height: 36px; background: #93000b; color: #fff; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; margin: 0 auto 6px auto; }
+        h3 { margin: 0 0 2px 0; font-size: 15px; color: #0f172a; }
+        .sub { margin: 0 0 10px 0; font-size: 11px; color: #64748b; }
+        .qr-img { width: 140px; height: 140px; display: block; margin: 0 auto; }
         .table-badge { background: #93000b; color: #fff; display: inline-block; padding: 4px 14px; border-radius: 9999px; font-weight: 800; font-size: 13px; margin: 8px 0 4px 0; }
-        .inst { margin: 0; font-size: 10px; color: #777; }
+        .inst { margin: 0; font-size: 10px; color: #64748b; }
         @media print {
           body { padding: 0; }
         }
       </style>
     </head>
-    <body onload="setTimeout(() => { window.print(); }, 800);">
+    <body onload="setTimeout(() => { window.print(); }, 900);">
       <div class="grid">${cardsHtml}</div>
     </body>
     </html>
@@ -785,47 +895,63 @@ function populateSettingsForm() {
   const s = adminData.settings;
   if (!s) return;
 
-  document.getElementById('set-restaurant-name').value = s.restaurantName || '';
-  document.getElementById('set-slogan').value = s.slogan || '';
-  document.getElementById('set-logo-initials').value = s.logoInitials || '';
-  document.getElementById('set-hero-title').value = s.heroTitle || '';
-  document.getElementById('set-hero-subtitle').value = s.heroSubtitle || '';
-  document.getElementById('set-hero-badge').value = s.heroBadge || '';
-  document.getElementById('set-hero-img').value = s.heroImage || '';
-  document.getElementById('set-wifi-ssid').value = s.wifiSSID || '';
-  document.getElementById('set-wifi-pass').value = s.wifiPassword || '';
-  document.getElementById('set-contact-info').value = s.contactInfo || '';
-  document.getElementById('set-location-info').value = s.locationInfo || '';
-  document.getElementById('set-instagram').value = s.instagramHandle || '';
-  document.getElementById('set-currency').value = s.currency || '₺';
-  document.getElementById('set-table-count').value = s.tableCount || 20;
+  const getSet = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val || '';
+  };
+
+  getSet('set-restaurant-name', s.restaurantName);
+  getSet('set-slogan', s.slogan);
+  getSet('set-logo-initials', s.logoInitials);
+  getSet('set-hero-title', s.heroTitle);
+  getSet('set-hero-subtitle', s.heroSubtitle);
+  getSet('set-hero-badge', s.heroBadge);
+  getSet('set-hero-img', s.heroImage);
+  getSet('set-wifi-ssid', s.wifiSSID);
+  getSet('set-wifi-pass', s.wifiPassword);
+  getSet('set-contact-info', s.contactInfo);
+  getSet('set-location-info', s.locationInfo);
+  getSet('set-instagram', s.instagramHandle);
+  getSet('set-currency', s.currency || '₺');
+  getSet('set-table-count', s.tableCount || 20);
+  getSet('set-base-url', s.baseUrl || '');
+  getSet('qr-base-url-input', s.baseUrl || '');
+
+  const pinEl = document.getElementById('set-admin-pin');
+  if (pinEl) pinEl.value = '';
+  const passEl = document.getElementById('set-admin-password');
+  if (passEl) passEl.value = '';
 }
 
 async function saveSettings(e) {
   if (e) e.preventDefault();
 
   const payload = {
-    restaurantName: document.getElementById('set-restaurant-name').value.trim(),
-    slogan: document.getElementById('set-slogan').value.trim(),
-    logoInitials: document.getElementById('set-logo-initials').value.trim(),
-    heroTitle: document.getElementById('set-hero-title').value.trim(),
-    heroSubtitle: document.getElementById('set-hero-subtitle').value.trim(),
-    heroBadge: document.getElementById('set-hero-badge').value.trim(),
-    heroImage: document.getElementById('set-hero-img').value.trim(),
-    wifiSSID: document.getElementById('set-wifi-ssid').value.trim(),
-    wifiPassword: document.getElementById('set-wifi-pass').value.trim(),
-    contactInfo: document.getElementById('set-contact-info').value.trim(),
-    locationInfo: document.getElementById('set-location-info').value.trim(),
-    instagramHandle: document.getElementById('set-instagram').value.trim(),
-    currency: document.getElementById('set-currency').value.trim(),
-    tableCount: parseInt(document.getElementById('set-table-count').value, 10) || 20
+    restaurantName: document.getElementById('set-restaurant-name')?.value.trim() || 'Ali Baba Döner Kafe',
+    slogan: document.getElementById('set-slogan')?.value.trim() || '',
+    logoInitials: document.getElementById('set-logo-initials')?.value.trim() || 'AB',
+    heroTitle: document.getElementById('set-hero-title')?.value.trim() || '',
+    heroSubtitle: document.getElementById('set-hero-subtitle')?.value.trim() || '',
+    heroBadge: document.getElementById('set-hero-badge')?.value.trim() || '',
+    heroImage: document.getElementById('set-hero-img')?.value.trim() || '',
+    wifiSSID: document.getElementById('set-wifi-ssid')?.value.trim() || '',
+    wifiPassword: document.getElementById('set-wifi-pass')?.value.trim() || '',
+    contactInfo: document.getElementById('set-contact-info')?.value.trim() || '',
+    locationInfo: document.getElementById('set-location-info')?.value.trim() || '',
+    instagramHandle: document.getElementById('set-instagram')?.value.trim() || '',
+    currency: document.getElementById('set-currency')?.value.trim() || '₺',
+    tableCount: parseInt(document.getElementById('set-table-count')?.value, 10) || 20,
+    baseUrl: document.getElementById('set-base-url')?.value.trim().replace(/\/+$/, '') || ''
   };
 
-  const newPin = document.getElementById('set-admin-pin').value.trim();
+  const newPin = document.getElementById('set-admin-pin')?.value.trim();
   if (newPin) payload.adminPin = newPin;
 
+  const newPassword = document.getElementById('set-admin-password')?.value.trim();
+  if (newPassword) payload.adminPassword = newPassword;
+
   try {
-    const res = await fetch('/api/settings', {
+    const res = await fetchWithAuth('/api/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -834,7 +960,11 @@ async function saveSettings(e) {
     if (result.success) {
       adminData.settings = result.data;
       updateBrandUI();
+      populateSettingsForm();
+      updateTableQRPreview(document.getElementById('qr-table-select')?.value || '04');
       showAdminToast('Ayarlar başarıyla kaydedildi!');
+    } else {
+      showAdminToast(result.message || 'Ayarlar kaydedilemedi.');
     }
   } catch (e) {
     showAdminToast('Ayarlar kaydedilirken hata oluştu.');
@@ -844,7 +974,7 @@ async function saveSettings(e) {
 async function resetDemoData() {
   if (confirm('Tüm menü ve ayarlar varsayılan demo verilerine sıfırlanacaktır. Devam etmek istiyor musunuz?')) {
     try {
-      const res = await fetch('/api/reset-demo', { method: 'POST' });
+      const res = await fetchWithAuth('/api/reset-demo', { method: 'POST' });
       const result = await res.json();
       if (result.success) {
         showAdminToast(result.message);
@@ -883,7 +1013,7 @@ function showAdminToast(msg) {
   toastTimer = setTimeout(() => {
     toast.style.opacity = '0';
     setTimeout(() => toast.style.display = 'none', 300);
-  }, 3000);
+  }, 3200);
 }
 
 function setupEventListeners() {
@@ -909,14 +1039,14 @@ function setupEventListeners() {
   const qrCustomBtn = document.getElementById('qr-custom-apply-btn');
   if (qrCustomBtn) {
     qrCustomBtn.addEventListener('click', () => {
-      const val = document.getElementById('qr-custom-table-input').value.trim();
+      const val = document.getElementById('qr-custom-table-input')?.value.trim();
       if (val) updateTableQRPreview(val);
     });
   }
 }
 
 function escapeHtml(str) {
-  if (typeof str !== 'string') return str;
+  if (typeof str !== 'string') return str === undefined || str === null ? '' : String(str);
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

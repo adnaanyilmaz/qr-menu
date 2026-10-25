@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ali Baba Döner Kafe • Dijital QR Menü</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<style>
+    @layer base {
+      html, body {
+        background-color: #ffffff;
+        color: #1e293b;
+        font-family: 'Inter', sans-serif;
+        overscroll-behavior-y: none;
+      }
+      h1, h2, h3, h4, .font-heading {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+      }
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fef2f2',
+              100: '#fee2e2',
+              600: '#dc2626',
+              700: '#b91c1c',
+              800: '#991b1b',
+              900: '#7f1d1d',
+            },
+            charcoal: '#1e293b',
+            muted: '#64748b'
+          },
+          fontFamily: {
+            heading: ['Plus Jakarta Sans', 'sans-serif'],
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-white text-charcoal antialiased min-h-screen flex flex-col">
+<!-- Main Container -->
+<div class="w-full max-w-md mx-auto min-h-screen bg-white flex flex-col relative shadow-[0_0_50px_rgba(0,0,0,0.03)] border-x border-slate-100">
+<!-- COMPACT TOP HEADER -->
+<header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 py-2.5 transition-all">
+<div class="flex items-center justify-between gap-3">
+<!-- Logo & Title -->
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-10 h-10 rounded-xl bg-brand-700 flex items-center justify-center text-white font-heading font-extrabold text-lg shadow-sm shrink-0">
+            AB
+          </div>
+<div class="flex flex-col min-w-0">
+<h1 class="font-heading font-bold text-[16px] leading-tight text-slate-900 truncate">
+              Ali Baba Döner Kafe
+            </h1>
+<p class="text-[11px] text-muted truncate">Dönerden kahveye, her molaya lezzet.</p>
+</div>
+</div>
+<!-- Meta Controls (Table & Language) -->
+<div class="flex items-center gap-1.5 shrink-0">
+<div class="flex items-center gap-1 bg-slate-50 border border-slate-200/80 px-2.5 py-1 rounded-full text-slate-700">
+<span class="material-symbols-outlined text-brand-700 text-[14px]">table_restaurant</span>
+<span class="text-[11px] font-semibold tracking-tight">Masa 04</span>
+</div>
+<span class="text-[11px] font-bold px-2 py-1 bg-slate-100 text-slate-700 rounded-full border border-slate-200/60">TR</span>
+</div>
+</div>
+</header>
+<!-- MAIN BODY CONTENT -->
+<main class="flex-1 px-4 pt-3 pb-20">
+<!-- WELCOME HERO SECTION -->
+<section class="mb-4">
+<div class="relative w-full rounded-2xl overflow-hidden shadow-sm border border-slate-100 aspect-[16/9] max-h-48 bg-slate-100">
+<img alt="Ali Baba Döner Kafe Lezzetleri" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBePhexMPVnyKWUyULjS45OYTHfSAC1FsyeNzssegLDQY6vF2GlhO7UwEdiJqL0GYtyCVhqgh20iQFMBwTIjv9TGqptOZuZOEe0nmGS6vYogAeapHGUAAta47LVr5Md675L7GMIFHW7GiCF1JpHLSdKtu8JPZXpyRxg3JSPU0vO1uPTe-I2090Zw9v_K-pSXv2L8B5IGAvuJPK8C4WtpM0x53BZAMZ5xKmR8LEztXmo74bpCdy20SNmOg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent flex flex-col justify-end p-3.5">
+<div class="inline-flex items-center gap-1.5 text-amber-300 text-[11px] font-bold tracking-wide uppercase mb-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+              Zengin Restoran &amp; Kafe Menüsü
+            </div>
+<h2 class="font-heading font-extrabold text-[20px] text-white leading-tight">Canın ne çekiyor?</h2>
+<p class="text-[12px] text-slate-200 leading-snug">İster doyurucu bir lezzet, ister keyifli bir kahve molası.</p>
+</div>
+</div>
+</section>
+<!-- LIVE SEARCH BAR -->
+<div class="sticky top-[58px] z-30 bg-white pt-1 pb-2">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3.5 text-slate-400 text-[19px] pointer-events-none">search</span>
+<input autocomplete="off" class="w-full bg-slate-50 border border-slate-200 pl-10 pr-9 py-2.5 rounded-xl text-[13.5px] text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-700 focus:bg-white transition-all shadow-xs" id="menu-search-input" placeholder="Yemek veya içecek ara…" type="text"/>
+<button aria-label="Aramayı Temizle" class="hidden absolute right-2.5 w-6 h-6 rounded-full bg-slate-200 text-slate-600 hover:text-slate-900 items-center justify-center transition-colors" id="search-clear-btn" type="button">
+<span class="material-symbols-outlined text-[15px]">close</span>
+</button>
+</div>
+</div>
+<!-- STICKY HORIZONTAL CATEGORY NAVIGATION PILLS -->
+<nav class="sticky top-[108px] z-30 bg-white/95 backdrop-blur-md py-1.5 -mx-4 px-4 border-b border-slate-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+<div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5" id="category-pills">
+<button class="category-pill active whitespace-nowrap px-3.5 py-1.5 rounded-full font-heading text-[12px] font-bold transition-all bg-brand-700 text-white shadow-xs" data-cat="all" type="button">Tümü</button>
+<button class="category-pill whitespace-nowrap px-3.5 py-1.5 rounded-full font-heading text-[12px] font-semibold text-charcoal bg-white border border-slate-200 hover:border-slate-300 transition-all" data-cat="donerler" type="button">Dönerler</button>
+<button class="category-pill whitespace-nowrap px-3.5 py-1.5 rounded-full font-heading text-[12px] font-semibold text-charcoal bg-white border border-slate-200 hover:border-slate-300 transition-all" data-cat="tostlar" type="button">Tostlar</button>
+<button class="category-pill whitespace-nowrap px-3.5 py-1.5 rounded-full font-heading text-[12px] font-semibold text-charcoal bg-white border border-slate-200 hover:border-slate-300 transition-all" data-cat="hamburgerler" type="button">Hamburgerler</button>
+<button class="category-pill whitespace-nowrap px-3.5 py-1.5 rounded-full font-heading text-[12px] font-semibold text-charcoal bg-white border border-slate-200 hover:border-slate-300 transition-all" data-cat="menuler" type="button">Menüler</button>
+<button class="category-pill whitespace-nowrap px-3.5 py-1.5 rounded-full font-heading text-[12px] font-semibold text-charcoal bg-white border border-slate-200 hover:border-slate-300 transition-all" data-cat="atistirmaliklar" type="button">Atıştırmalıklar</button>
+<button class="category-pill whitespace-nowrap px-3.5 py-1.5 rounded-full font-heading text-[12px] font-semibold text-charcoal bg-white border border-slate-200 hover:border-slate-300 transition-all" data-cat="sicak-icecekler" type="button">Sıcak İçecekler</button>
+<button class="category-pill whitespace-nowrap px-3.5 py-1.5 rounded-full font-heading text-[12px] font-semibold text-charcoal bg-white border border-slate-200 hover:border-slate-300 transition-all" data-cat="soguk-icecekler" type="button">Soğuk İçecekler</button>
+<button class="category-pill whitespace-nowrap px-3.5 py-1.5 rounded-full font-heading text-[12px] font-semibold text-charcoal bg-white border border-slate-200 hover:border-slate-300 transition-all" data-cat="frozen" type="button">Frozen</button>
+<button class="category-pill whitespace-nowrap px-3.5 py-1.5 rounded-full font-heading text-[12px] font-semibold text-charcoal bg-white border border-slate-200 hover:border-slate-300 transition-all" data-cat="tatlilar" type="button">Tatlılar</button>
+</div>
+</nav>
+<!-- EMPTY STATE (SEARCH & FILTER) -->
+<div class="hidden flex-col items-center justify-center py-14 text-center px-4" id="empty-state">
+<div class="w-12 h-12 rounded-full bg-slate-100 text-brand-700 flex items-center justify-center mb-3">
+<span class="material-symbols-outlined text-[26px]">search_off</span>
+</div>
+<h3 class="font-heading font-bold text-[16px] text-slate-800">Aradığınız ürün bulunamadı.</h3>
+<p class="text-[12.5px] text-muted max-w-[260px] mt-1">Lütfen farklı bir kelime yazmayı veya üstteki kategorilerden seçim yapmayı deneyin.</p>
+<button class="mt-4 px-4 py-1.5 text-[12px] font-bold text-brand-700 bg-brand-50 border border-brand-100 rounded-full" id="reset-search-btn" type="button">Aramayı Sıfırla</button>
+</div>
+<!-- FEATURED SHOWCASE SECTION (FAVORİ LEZZETLER) -->
+<section class="mt-4 mb-6" id="featured-section">
+<div class="flex items-baseline justify-between mb-2 px-0.5">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-brand-700 text-[18px]">stars</span>
+<h3 class="font-heading font-bold text-[15px] text-slate-900 tracking-tight">Favori Lezzetler</h3>
+</div>
+<span class="text-[11px] text-muted font-medium">Demo seçimler</span>
+</div>
+<!-- 4-Item Balanced Horizontal Scroll (Döner, Burger/Tost, Latte, Frozen) -->
+<div class="flex gap-2.5 overflow-x-auto no-scrollbar -mx-4 px-4 pb-2">
+<!-- 1. Tavuk Döner Dürüm -->
+<div class="featured-card shrink-0 w-44 bg-white rounded-xl border border-slate-200/80 p-2 shadow-xs cursor-pointer active:scale-[0.98] transition-all hover:border-brand-700/40" onclick="openModalFromData('Tavuk Döner Dürüm', '150 ₺', 'Özel sos, domates, turşu ve patates ile taze sarılmış nefis lavaş dürüm.', 'https://lh3.googleusercontent.com/aida/AEtjO1VwElxRCsFBfXN131FflYthu02UAT5ku65VvcNhu92BofBJpvVEzAH9hjSdKCzOBLmzxB5HQq6hzBrV5XTv4PIiwE7TfX5AU2UIC1FytgdhPdru3KhF0zn-If6MztzDb2wjXQipNu2QM8cOBQFGIXggjrow486A6aUnjzoYBIe-eZ7hY7d9cRru2NA9Ui69qOwm_TobUrW5T8Cw-tA7zC_IzEoOGh8L39XUtW5TmHCPhY9y7eBC8Wh_1pQb', '100g Tavuk Döner / Lavaş', 'Gluten, Süt Ürünü / Laktoz, Susam, Tavuk Eti', 'food')">
+<div class="relative w-full h-28 rounded-lg overflow-hidden bg-slate-100 mb-2">
+<img alt="Tavuk Döner Dürüm" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VwElxRCsFBfXN131FflYthu02UAT5ku65VvcNhu92BofBJpvVEzAH9hjSdKCzOBLmzxB5HQq6hzBrV5XTv4PIiwE7TfX5AU2UIC1FytgdhPdru3KhF0zn-If6MztzDb2wjXQipNu2QM8cOBQFGIXggjrow486A6aUnjzoYBIe-eZ7hY7d9cRru2NA9Ui69qOwm_TobUrW5T8Cw-tA7zC_IzEoOGh8L39XUtW5TmHCPhY9y7eBC8Wh_1pQb"/>
+<span class="absolute top-1.5 left-1.5 bg-brand-700 text-white font-heading font-bold text-[9.5px] px-2 py-0.5 rounded-full shadow-xs">
+                Çok Sevilen
+              </span>
+</div>
+<div class="flex flex-col">
+<h4 class="font-heading font-bold text-[13px] text-slate-900 truncate">Tavuk Döner Dürüm</h4>
+<p class="text-[11px] text-muted truncate mt-0.5">Özel sos, turşu &amp; patates</p>
+<div class="flex items-center justify-between mt-2 pt-1.5 border-t border-slate-100">
+<span class="text-[10px] text-muted">Dürüm</span>
+<span class="font-heading font-extrabold text-[13.5px] text-brand-700">150 ₺</span>
+</div>
+</div>
+</div>
+<!-- 2. Cheeseburger -->
+<div class="featured-card shrink-0 w-44 bg-white rounded-xl border border-slate-200/80 p-2 shadow-xs cursor-pointer active:scale-[0.98] transition-all hover:border-brand-700/40" onclick="openModalFromData('Cheeseburger', '210 ₺', 'Eritilmiş cheddar peynirli el yapımı dana burger köftesi, karamelize soğan, domates ve nefis sos.', 'https://lh3.googleusercontent.com/aida-public/AB6AXuBetkflDtDsBJcBwKFjJfvIlPJApLzuS5c52OT-by43tQKLEs4beEQO_NL-vT-a3eRvz2NzsNf83odfiECSiuizznY-VjKmxtY-td_qf1e56AkIrFYpsks-l3DF1dbx_fs3H5i9Ycqziyk2yvp7RyDsjJymUNcD5hT6Z0wzPJPGCAo_cV0RbTQYLjxJ1IJkRU4_4EUFhj_-7q-f2-qjMfdUvOJCCMWhzTKLn1G64RrqbedRqYOY1Pym9g', '120g Dana Burger + Cheddar', 'Gluten, Süt Ürünü (Cheddar), Dana Eti, Hardal', 'food')">
+<div class="relative w-full h-28 rounded-lg overflow-hidden bg-slate-100 mb-2">
+<img alt="Cheeseburger" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBetkflDtDsBJcBwKFjJfvIlPJApLzuS5c52OT-by43tQKLEs4beEQO_NL-vT-a3eRvz2NzsNf83odfiECSiuizznY-VjKmxtY-td_qf1e56AkIrFYpsks-l3DF1dbx_fs3H5i9Ycqziyk2yvp7RyDsjJymUNcD5hT6Z0wzPJPGCAo_cV0RbTQYLjxJ1IJkRU4_4EUFhj_-7q-f2-qjMfdUvOJCCMWhzTKLn1G64RrqbedRqYOY1Pym9g"/>
+<span class="absolute top-1.5 left-1.5 bg-amber-600 text-white font-heading font-bold text-[9.5px] px-2 py-0.5 rounded-full shadow-xs">
+                Şefin Önerisi
+              </span>
+</div>
+<div class="flex flex-col">
+<h4 class="font-heading font-bold text-[13px] text-slate-900 truncate">Cheeseburger</h4>
+<p class="text-[11px] text-muted truncate mt-0.5">El yapımı dana burger</p>
+<div class="flex items-center justify-between mt-2 pt-1.5 border-t border-slate-100">
+<span class="text-[10px] text-muted">Tek Burger</span>
+<span class="font-heading font-extrabold text-[13.5px] text-brand-700">210 ₺</span>
+</div>
+</div>
+</div>
+<!-- 3. Caffè Latte -->
+<div class="featured-card shrink-0 w-44 bg-white rounded-xl border border-slate-200/80 p-2 shadow-xs cursor-pointer active:scale-[0.98] transition-all hover:border-brand-700/40" onclick="openModalFromData('Caffè Latte', '95 ₺', 'Kadife dokulu mikro köpüklü taze süt ve taze kavrulmuş çift shot espresso.', 'https://lh3.googleusercontent.com/aida-public/AB6AXuAlt7WT8BEJOpYZp4I6GkMyyr33SWDQzarKxIvgrXC_yRhCPVcR94i6SwgJah9OjdRJH6Bfp6oMftDse4qSJhhCsirdLFZjewwy9itd0XQo5f2ZPIqtOvVZmXUZzGdTbmoOwK7-NHVBzZo7Hmo5UwslI0PvTzpDkJJSOaBjQX1z7m_9ANdUUa__tUbj8M8U00n0VNg_JC-yEoepA6McdUESNZFKxWh5utbRuG-uVG6u0Ngj0vh0aRMZfA', 'Standart Fincan • 250ml', 'Süt Ürünü / Laktoz, Kafein', 'drink')">
+<div class="relative w-full h-28 rounded-lg overflow-hidden bg-slate-100 mb-2">
+<img alt="Caffè Latte" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlt7WT8BEJOpYZp4I6GkMyyr33SWDQzarKxIvgrXC_yRhCPVcR94i6SwgJah9OjdRJH6Bfp6oMftDse4qSJhhCsirdLFZjewwy9itd0XQo5f2ZPIqtOvVZmXUZzGdTbmoOwK7-NHVBzZo7Hmo5UwslI0PvTzpDkJJSOaBjQX1z7m_9ANdUUa__tUbj8M8U00n0VNg_JC-yEoepA6McdUESNZFKxWh5utbRuG-uVG6u0Ngj0vh0aRMZfA"/>
+<span class="absolute top-1.5 left-1.5 bg-slate-800 text-white font-heading font-bold text-[9.5px] px-2 py-0.5 rounded-full shadow-xs">
+                Barista Özel
+              </span>
+</div>
+<div class="flex flex-col">
+<h4 class="font-heading font-bold text-[13px] text-slate-900 truncate">Caffè Latte</h4>
+<p class="text-[11px] text-muted truncate mt-0.5">Taze espresso &amp; mikro köpük</p>
+<div class="flex items-center justify-between mt-2 pt-1.5 border-t border-slate-100">
+<span class="text-[10px] text-muted">Sıcak Kahve</span>
+<span class="font-heading font-extrabold text-[13.5px] text-brand-700">95 ₺</span>
+</div>
+</div>
+</div>
+<!-- 4. Çilek Frozen -->
+<div class="featured-card shrink-0 w-44 bg-white rounded-xl border border-slate-200/80 p-2 shadow-xs cursor-pointer active:scale-[0.98] transition-all hover:border-brand-700/40" onclick="openModalFromData('Çilek Frozen', '120 ₺', 'Taze doğal çilek püresi, buz parçacıkları ve ferahlatıcı nane yaprağı ile buz gibi bir lezzet.', 'https://lh3.googleusercontent.com/aida-public/AB6AXuBZgBRCkW9G0l9473wSO0eHd9_nqgbF8hQBtclX_Vxnk2VW85lDIbn2-6zJTS95GlXYchnjHNeWZne4BhmWPWfHV0O0SXIgXWpKQs7oL8xZ6a5uq6H7oXelC6CUkvyjJ91vkZHvH3qMclXBNK4mSkSscuTjm7U14Y9AkzCibTXkFhZ2Dq3Yj1Eyt6r8F8uMwqFyqm6o4Y53_-u7MevanwS1du4RX8kLvZYC17BtiwaeibnywvHYvyADfQ', 'Büyük Boy Bardak • 400ml', 'Doğal Meyve Şekeri, Alerjen İçermez', 'drink')">
+<div class="relative w-full h-28 rounded-lg overflow-hidden bg-slate-100 mb-2">
+<img alt="Çilek Frozen" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZgBRCkW9G0l9473wSO0eHd9_nqgbF8hQBtclX_Vxnk2VW85lDIbn2-6zJTS95GlXYchnjHNeWZne4BhmWPWfHV0O0SXIgXWpKQs7oL8xZ6a5uq6H7oXelC6CUkvyjJ91vkZHvH3qMclXBNK4mSkSscuTjm7U14Y9AkzCibTXkFhZ2Dq3Yj1Eyt6r8F8uMwqFyqm6o4Y53_-u7MevanwS1du4RX8kLvZYC17BtiwaeibnywvHYvyADfQ"/>
+<span class="absolute top-1.5 left-1.5 bg-rose-600 text-white font-heading font-bold text-[9.5px] px-2 py-0.5 rounded-full shadow-xs">
+                Ferahlatıcı
+              </span>
+</div>
+<div class="flex flex-col">
+<h4 class="font-heading font-bold text-[13px] text-slate-900 truncate">Çilek Frozen</h4>
+<p class="text-[11px] text-muted truncate mt-0.5">Doğal çilek &amp; buz serinliği</p>
+<div class="flex items-center justify-between mt-2 pt-1.5 border-t border-slate-100">
+<span class="text-[10px] text-muted">Buzlu İçecek</span>
+<span class="font-heading font-extrabold text-[13.5px] text-brand-700">120 ₺</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ALL CATEGORIZED MENU ITEMS -->
+<div class="space-y-6" id="all-menu-sections">
+<!-- 1. DÖNERLER -->
+<section class="menu-category-section" data-category="donerler" id="sec-donerler">
+<div class="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2.5">
+<h3 class="font-heading font-bold text-[15px] text-slate-900 flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-brand-700"></span> Dönerler
+            </h3>
+<span class="text-[11px] text-muted font-medium cat-count">4 Ürün</span>
+</div>
+<div class="flex flex-col gap-2.5">
+<!-- Tavuk Döner Dürüm -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Süt Ürünü / Laktoz, Susam, Tavuk Eti" data-desc="Özel sos, domates, turşu ve patates ile taze fırın lavaşında sarılı lezzet." data-img="https://lh3.googleusercontent.com/aida/AEtjO1VwElxRCsFBfXN131FflYthu02UAT5ku65VvcNhu92BofBJpvVEzAH9hjSdKCzOBLmzxB5HQq6hzBrV5XTv4PIiwE7TfX5AU2UIC1FytgdhPdru3KhF0zn-If6MztzDb2wjXQipNu2QM8cOBQFGIXggjrow486A6aUnjzoYBIe-eZ7hY7d9cRru2NA9Ui69qOwm_TobUrW5T8Cw-tA7zC_IzEoOGh8L39XUtW5TmHCPhY9y7eBC8Wh_1pQb" data-name="Tavuk Döner Dürüm" data-portion="100g Tavuk Döner / Lavaş" data-price="150 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<div class="flex items-center gap-1.5">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Tavuk Döner Dürüm</h4>
+<span class="text-[9.5px] bg-brand-50 text-brand-700 font-bold px-1.5 py-0.5 rounded">Popüler</span>
+</div>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Özel sos, domates, turşu ve patates ile.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">100g Lavaş</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">150 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Tavuk Döner Dürüm" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VwElxRCsFBfXN131FflYthu02UAT5ku65VvcNhu92BofBJpvVEzAH9hjSdKCzOBLmzxB5HQq6hzBrV5XTv4PIiwE7TfX5AU2UIC1FytgdhPdru3KhF0zn-If6MztzDb2wjXQipNu2QM8cOBQFGIXggjrow486A6aUnjzoYBIe-eZ7hY7d9cRru2NA9Ui69qOwm_TobUrW5T8Cw-tA7zC_IzEoOGh8L39XUtW5TmHCPhY9y7eBC8Wh_1pQb"/>
+</div>
+</div>
+<!-- Et Döner Dürüm -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Dana Eti, Doğal Baharatlar" data-desc="İnce dilimlenmiş yaprak et döner, taze yeşillikler, sumaklı soğan ve domates ile." data-img="https://lh3.googleusercontent.com/aida/AEtjO1VI__xndxlqR5wGdoTmDrVYktGOaXyFT7gAQxn3JWZQl3siFnclzTAUB9ysTpflH9unzDr1ffTkMeryEpykwOl9xMbXR92pnnELznFRJUIRWjrEvI_cVXr9w-j1kkTFmLmCzyCivr4Wq8jbw1w-VBJ2uKybZFS8MkGv6imgbDBAljCS2VJYfG4V8Q7y7mTxEraZWZQ0glEq1w0qym6HPPXWphqj_vusVsKNRWLNFS1kw43Pm8-NT8czIsEi" data-name="Et Döner Dürüm" data-portion="110g Yaprak Et Döner" data-price="240 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Et Döner Dürüm</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">İnce dilimlenmiş et döner, taze yeşillikler ile.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">110g Yaprak Et</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">240 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Et Döner Dürüm" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VI__xndxlqR5wGdoTmDrVYktGOaXyFT7gAQxn3JWZQl3siFnclzTAUB9ysTpflH9unzDr1ffTkMeryEpykwOl9xMbXR92pnnELznFRJUIRWjrEvI_cVXr9w-j1kkTFmLmCzyCivr4Wq8jbw1w-VBJ2uKybZFS8MkGv6imgbDBAljCS2VJYfG4V8Q7y7mTxEraZWZQ0glEq1w0qym6HPPXWphqj_vusVsKNRWLNFS1kw43Pm8-NT8czIsEi"/>
+</div>
+</div>
+<!-- Ekmek Arası Tavuk Döner -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Tavuk Eti, Baharat" data-desc="Taze fırından çıtır somun ekmek içerisinde marine tavuk döner, patates ve sos." data-img="https://lh3.googleusercontent.com/aida/AEtjO1VwElxRCsFBfXN131FflYthu02UAT5ku65VvcNhu92BofBJpvVEzAH9hjSdKCzOBLmzxB5HQq6hzBrV5XTv4PIiwE7TfX5AU2UIC1FytgdhPdru3KhF0zn-If6MztzDb2wjXQipNu2QM8cOBQFGIXggjrow486A6aUnjzoYBIe-eZ7hY7d9cRru2NA9Ui69qOwm_TobUrW5T8Cw-tA7zC_IzEoOGh8L39XUtW5TmHCPhY9y7eBC8Wh_1pQb" data-name="Ekmek Arası Tavuk Döner" data-portion="Yarım Somun Ekmek" data-price="130 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Ekmek Arası Tavuk Döner</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Taze çıtır somun ekmek arasında.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Yarım Ekmek</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">130 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Ekmek Arası Tavuk Döner" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VwElxRCsFBfXN131FflYthu02UAT5ku65VvcNhu92BofBJpvVEzAH9hjSdKCzOBLmzxB5HQq6hzBrV5XTv4PIiwE7TfX5AU2UIC1FytgdhPdru3KhF0zn-If6MztzDb2wjXQipNu2QM8cOBQFGIXggjrow486A6aUnjzoYBIe-eZ7hY7d9cRru2NA9Ui69qOwm_TobUrW5T8Cw-tA7zC_IzEoOGh8L39XUtW5TmHCPhY9y7eBC8Wh_1pQb"/>
+</div>
+</div>
+<!-- Pilav Üstü Döner -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Laktoz (Tereyağı), Dana Eti" data-desc="Geleneksel tereyağlı şehriyeli pirinç pilavı üzerinde enfes yaprak et döner ve köz domates." data-img="https://lh3.googleusercontent.com/aida/AEtjO1VI__xndxlqR5wGdoTmDrVYktGOaXyFT7gAQxn3JWZQl3siFnclzTAUB9ysTpflH9unzDr1ffTkMeryEpykwOl9xMbXR92pnnELznFRJUIRWjrEvI_cVXr9w-j1kkTFmLmCzyCivr4Wq8jbw1w-VBJ2uKybZFS8MkGv6imgbDBAljCS2VJYfG4V8Q7y7mTxEraZWZQ0glEq1w0qym6HPPXWphqj_vusVsKNRWLNFS1kw43Pm8-NT8czIsEi" data-name="Pilav Üstü Döner" data-portion="130g Döner + Şehriyeli Pilav" data-price="260 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Pilav Üstü Döner</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Tereyağlı pirinç pilavı üzerinde yaprak döner.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Tabak Servis</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">260 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Pilav Üstü Döner" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VI__xndxlqR5wGdoTmDrVYktGOaXyFT7gAQxn3JWZQl3siFnclzTAUB9ysTpflH9unzDr1ffTkMeryEpykwOl9xMbXR92pnnELznFRJUIRWjrEvI_cVXr9w-j1kkTFmLmCzyCivr4Wq8jbw1w-VBJ2uKybZFS8MkGv6imgbDBAljCS2VJYfG4V8Q7y7mTxEraZWZQ0glEq1w0qym6HPPXWphqj_vusVsKNRWLNFS1kw43Pm8-NT8czIsEi"/>
+</div>
+</div>
+</div>
+</section>
+<!-- 2. TOSTLAR -->
+<section class="menu-category-section" data-category="tostlar" id="sec-tostlar">
+<div class="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2.5">
+<h3 class="font-heading font-bold text-[15px] text-slate-900 flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-brand-700"></span> Tostlar
+            </h3>
+<span class="text-[11px] text-muted font-medium cat-count">4 Ürün</span>
+</div>
+<div class="flex flex-col gap-2.5">
+<!-- Kaşarlı Tost -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Süt Ürünü / Laktoz" data-desc="Taze fırın tost ekmeğinde bol erimiş yağlı kaşar peyniri ve enfes doğal tereyağı." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuDXIHiHC8MAZi0J6wP_UXK3350NieWyt9P-_WtHDeFi_SHc8KorvLa8WKMOmxpeyxb1h_9ebUHLfpLtykNm2WyL5NazATp9OlDzwWZLCZH4A0XtGXAw_TjBS3yI5uB2i_P1sntiPEmDUYbnFcPZlx88pZa_MQLpdMqj14vcDBwu0zxcV-in7wC7KRqxGRtCVRUap9JjQQWbn2EGBJ6ponS0Fkr7AAwq3zp-E27EWO5ubmB-qTvmFOk2zQ" data-name="Kaşarlı Tost" data-portion="Standart Tost Ekmek" data-price="100 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Kaşarlı Tost</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Bol erimiş kaşar peyniri ve tereyağı ile.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Çift Dilim</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">100 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Kaşarlı Tost" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXIHiHC8MAZi0J6wP_UXK3350NieWyt9P-_WtHDeFi_SHc8KorvLa8WKMOmxpeyxb1h_9ebUHLfpLtykNm2WyL5NazATp9OlDzwWZLCZH4A0XtGXAw_TjBS3yI5uB2i_P1sntiPEmDUYbnFcPZlx88pZa_MQLpdMqj14vcDBwu0zxcV-in7wC7KRqxGRtCVRUap9JjQQWbn2EGBJ6ponS0Fkr7AAwq3zp-E27EWO5ubmB-qTvmFOk2zQ"/>
+</div>
+</div>
+<!-- Sucuklu Tost -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Dana Eti, Baharat" data-desc="Özel baharatlı kasap sucuğu ve kızarmış tereyağlı çıtır ekmek dilimleri." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuDXIHiHC8MAZi0J6wP_UXK3350NieWyt9P-_WtHDeFi_SHc8KorvLa8WKMOmxpeyxb1h_9ebUHLfpLtykNm2WyL5NazATp9OlDzwWZLCZH4A0XtGXAw_TjBS3yI5uB2i_P1sntiPEmDUYbnFcPZlx88pZa_MQLpdMqj14vcDBwu0zxcV-in7wC7KRqxGRtCVRUap9JjQQWbn2EGBJ6ponS0Fkr7AAwq3zp-E27EWO5ubmB-qTvmFOk2zQ" data-name="Sucuklu Tost" data-portion="Kasap Sucuk • Baharatlı" data-price="120 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Sucuklu Tost</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Kayseri sucuğu ve baharatlı tereyağı.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Çıtır</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">120 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Sucuklu Tost" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXIHiHC8MAZi0J6wP_UXK3350NieWyt9P-_WtHDeFi_SHc8KorvLa8WKMOmxpeyxb1h_9ebUHLfpLtykNm2WyL5NazATp9OlDzwWZLCZH4A0XtGXAw_TjBS3yI5uB2i_P1sntiPEmDUYbnFcPZlx88pZa_MQLpdMqj14vcDBwu0zxcV-in7wC7KRqxGRtCVRUap9JjQQWbn2EGBJ6ponS0Fkr7AAwq3zp-E27EWO5ubmB-qTvmFOk2zQ"/>
+</div>
+</div>
+<!-- Karışık Tost -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Süt Ürünü / Laktoz, Dana Eti" data-desc="Erimiş kaşar peyniri, kaliteli kasap sucuğu, hafif salça sosu ve tereyağlı sunum." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuDXIHiHC8MAZi0J6wP_UXK3350NieWyt9P-_WtHDeFi_SHc8KorvLa8WKMOmxpeyxb1h_9ebUHLfpLtykNm2WyL5NazATp9OlDzwWZLCZH4A0XtGXAw_TjBS3yI5uB2i_P1sntiPEmDUYbnFcPZlx88pZa_MQLpdMqj14vcDBwu0zxcV-in7wC7KRqxGRtCVRUap9JjQQWbn2EGBJ6ponS0Fkr7AAwq3zp-E27EWO5ubmB-qTvmFOk2zQ" data-name="Karışık Tost" data-portion="Sucuk &amp; Kaşar Birlikte" data-price="140 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Karışık Tost</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Sucuk, kaşar ve özel sos karışımı.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Favori</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">140 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Karışık Tost" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXIHiHC8MAZi0J6wP_UXK3350NieWyt9P-_WtHDeFi_SHc8KorvLa8WKMOmxpeyxb1h_9ebUHLfpLtykNm2WyL5NazATp9OlDzwWZLCZH4A0XtGXAw_TjBS3yI5uB2i_P1sntiPEmDUYbnFcPZlx88pZa_MQLpdMqj14vcDBwu0zxcV-in7wC7KRqxGRtCVRUap9JjQQWbn2EGBJ6ponS0Fkr7AAwq3zp-E27EWO5ubmB-qTvmFOk2zQ"/>
+</div>
+</div>
+<!-- Ayvalık Tostu -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Laktoz, Dana Eti, Yumurta" data-desc="Özel büyük boy Ayvalık ekmeğinde salam, sosis, sucuk, kaşar, turşu ve rus salatası." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuDXIHiHC8MAZi0J6wP_UXK3350NieWyt9P-_WtHDeFi_SHc8KorvLa8WKMOmxpeyxb1h_9ebUHLfpLtykNm2WyL5NazATp9OlDzwWZLCZH4A0XtGXAw_TjBS3yI5uB2i_P1sntiPEmDUYbnFcPZlx88pZa_MQLpdMqj14vcDBwu0zxcV-in7wC7KRqxGRtCVRUap9JjQQWbn2EGBJ6ponS0Fkr7AAwq3zp-E27EWO5ubmB-qTvmFOk2zQ" data-name="Ayvalık Tostu" data-portion="Büyük Boy Özel Ekmek" data-price="170 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Ayvalık Tostu</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Özel Ayvalık ekmeğinde zengin malzeme.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Doyurucu</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">170 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Ayvalık Tostu" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXIHiHC8MAZi0J6wP_UXK3350NieWyt9P-_WtHDeFi_SHc8KorvLa8WKMOmxpeyxb1h_9ebUHLfpLtykNm2WyL5NazATp9OlDzwWZLCZH4A0XtGXAw_TjBS3yI5uB2i_P1sntiPEmDUYbnFcPZlx88pZa_MQLpdMqj14vcDBwu0zxcV-in7wC7KRqxGRtCVRUap9JjQQWbn2EGBJ6ponS0Fkr7AAwq3zp-E27EWO5ubmB-qTvmFOk2zQ"/>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. HAMBURGERLER -->
+<section class="menu-category-section" data-category="hamburgerler" id="sec-hamburgerler">
+<div class="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2.5">
+<h3 class="font-heading font-bold text-[15px] text-slate-900 flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-brand-700"></span> Hamburgerler
+            </h3>
+<span class="text-[11px] text-muted font-medium cat-count">4 Ürün</span>
+</div>
+<div class="flex flex-col gap-2.5">
+<!-- Klasik Hamburger -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Susam, Dana Eti, Hardal" data-desc="120g katkısız dana köfte, kıvırcık marul, domates, kornişon turşu ve özel burger sosu." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuBetkflDtDsBJcBwKFjJfvIlPJApLzuS5c52OT-by43tQKLEs4beEQO_NL-vT-a3eRvz2NzsNf83odfiECSiuizznY-VjKmxtY-td_qf1e56AkIrFYpsks-l3DF1dbx_fs3H5i9Ycqziyk2yvp7RyDsjJymUNcD5hT6Z0wzPJPGCAo_cV0RbTQYLjxJ1IJkRU4_4EUFhj_-7q-f2-qjMfdUvOJCCMWhzTKLn1G64RrqbedRqYOY1Pym9g" data-name="Klasik Hamburger" data-portion="120g Dana Köfte" data-price="190 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Klasik Hamburger</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">120g dana köfte, turşu, karamelize soğan.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Brioche Ekmek</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">190 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Klasik Hamburger" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBetkflDtDsBJcBwKFjJfvIlPJApLzuS5c52OT-by43tQKLEs4beEQO_NL-vT-a3eRvz2NzsNf83odfiECSiuizznY-VjKmxtY-td_qf1e56AkIrFYpsks-l3DF1dbx_fs3H5i9Ycqziyk2yvp7RyDsjJymUNcD5hT6Z0wzPJPGCAo_cV0RbTQYLjxJ1IJkRU4_4EUFhj_-7q-f2-qjMfdUvOJCCMWhzTKLn1G64RrqbedRqYOY1Pym9g"/>
+</div>
+</div>
+<!-- Cheeseburger -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Süt Ürünü (Cheddar), Dana Eti" data-desc="Eritilmiş cheddar peynirli el yapımı dana burger köftesi, karamelize soğan, domates ve nefis sos." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuBetkflDtDsBJcBwKFjJfvIlPJApLzuS5c52OT-by43tQKLEs4beEQO_NL-vT-a3eRvz2NzsNf83odfiECSiuizznY-VjKmxtY-td_qf1e56AkIrFYpsks-l3DF1dbx_fs3H5i9Ycqziyk2yvp7RyDsjJymUNcD5hT6Z0wzPJPGCAo_cV0RbTQYLjxJ1IJkRU4_4EUFhj_-7q-f2-qjMfdUvOJCCMWhzTKLn1G64RrqbedRqYOY1Pym9g" data-name="Cheeseburger" data-portion="120g Dana Köfte + Cheddar" data-price="210 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Cheeseburger</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Eritilmiş cheddar peynirli el yapımı burger.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Cheddar Peynirli</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">210 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Cheeseburger" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBetkflDtDsBJcBwKFjJfvIlPJApLzuS5c52OT-by43tQKLEs4beEQO_NL-vT-a3eRvz2NzsNf83odfiECSiuizznY-VjKmxtY-td_qf1e56AkIrFYpsks-l3DF1dbx_fs3H5i9Ycqziyk2yvp7RyDsjJymUNcD5hT6Z0wzPJPGCAo_cV0RbTQYLjxJ1IJkRU4_4EUFhj_-7q-f2-qjMfdUvOJCCMWhzTKLn1G64RrqbedRqYOY1Pym9g"/>
+</div>
+</div>
+<!-- Tavuk Burger -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Tavuk Eti, Yumurta" data-desc="Çıtır mısır gevreği kaplı marine tavuk fileto, çıtır göbek marul ve sarımsaklı mayonez." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuBetkflDtDsBJcBwKFjJfvIlPJApLzuS5c52OT-by43tQKLEs4beEQO_NL-vT-a3eRvz2NzsNf83odfiECSiuizznY-VjKmxtY-td_qf1e56AkIrFYpsks-l3DF1dbx_fs3H5i9Ycqziyk2yvp7RyDsjJymUNcD5hT6Z0wzPJPGCAo_cV0RbTQYLjxJ1IJkRU4_4EUFhj_-7q-f2-qjMfdUvOJCCMWhzTKLn1G64RrqbedRqYOY1Pym9g" data-name="Tavuk Burger" data-portion="Çıtır Fileto" data-price="170 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Tavuk Burger</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Çıtır panelenmiş tavuk fileto ve mayonez.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Çıtır Pane</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">170 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Tavuk Burger" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBetkflDtDsBJcBwKFjJfvIlPJApLzuS5c52OT-by43tQKLEs4beEQO_NL-vT-a3eRvz2NzsNf83odfiECSiuizznY-VjKmxtY-td_qf1e56AkIrFYpsks-l3DF1dbx_fs3H5i9Ycqziyk2yvp7RyDsjJymUNcD5hT6Z0wzPJPGCAo_cV0RbTQYLjxJ1IJkRU4_4EUFhj_-7q-f2-qjMfdUvOJCCMWhzTKLn1G64RrqbedRqYOY1Pym9g"/>
+</div>
+</div>
+<!-- Double Burger -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Laktoz, Dana Eti" data-desc="Çift kat el yapımı dana burger köftesi (240g), çift cheddar peyniri, füme et aroması." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuBetkflDtDsBJcBwKFjJfvIlPJApLzuS5c52OT-by43tQKLEs4beEQO_NL-vT-a3eRvz2NzsNf83odfiECSiuizznY-VjKmxtY-td_qf1e56AkIrFYpsks-l3DF1dbx_fs3H5i9Ycqziyk2yvp7RyDsjJymUNcD5hT6Z0wzPJPGCAo_cV0RbTQYLjxJ1IJkRU4_4EUFhj_-7q-f2-qjMfdUvOJCCMWhzTKLn1G64RrqbedRqYOY1Pym9g" data-name="Double Burger" data-portion="240g Dana Köfte (2x120g)" data-price="280 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Double Burger</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Çift dana köfte ve çift cheddar peyniri.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Duble Köfte</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">280 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Double Burger" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBetkflDtDsBJcBwKFjJfvIlPJApLzuS5c52OT-by43tQKLEs4beEQO_NL-vT-a3eRvz2NzsNf83odfiECSiuizznY-VjKmxtY-td_qf1e56AkIrFYpsks-l3DF1dbx_fs3H5i9Ycqziyk2yvp7RyDsjJymUNcD5hT6Z0wzPJPGCAo_cV0RbTQYLjxJ1IJkRU4_4EUFhj_-7q-f2-qjMfdUvOJCCMWhzTKLn1G64RrqbedRqYOY1Pym9g"/>
+</div>
+</div>
+</div>
+</section>
+<!-- 4. MENÜLER -->
+<section class="menu-category-section" data-category="menuler" id="sec-menuler">
+<div class="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2.5">
+<h3 class="font-heading font-bold text-[15px] text-slate-900 flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-brand-700"></span> Menüler
+            </h3>
+<span class="text-[11px] text-muted font-medium cat-count">3 Ürün</span>
+</div>
+<div class="flex flex-col gap-2.5">
+<!-- Tavuk Dürüm Menü -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Laktoz, Tavuk Eti" data-desc="Tavuk döner dürüm, yanında çıtır altın sarısı patates kızartması ve soğuk köpüklü yayık ayran." data-img="https://lh3.googleusercontent.com/aida/AEtjO1V3aTDNSDAK0j4XsKFh4km6Tg69KkS8ItPRGu7gEA9YQxnBPSJ_gMAVBw-1GsVrByLMEV5KigJFEcw4rLcvrdWtxkRtcxGfaWWnm9B0MWQjMkERvk83oSHVPPuPFQi0t2hXQwaXdaN2DTFcqKiAtDWwE3DDJvyQ6K2-JDJyjHhOxwYXGH-7t_iPBNuTqRrA5749ODKTGTk5sgv5AXxAza2Y3GvA1AVBiut6vMFe5aw6FoR8Rz-2wmew8Js6" data-name="Tavuk Dürüm Menü" data-portion="Dürüm + Patates + Ayran" data-price="210 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<div class="flex items-center gap-1.5">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Tavuk Dürüm Menü</h4>
+<span class="text-[9.5px] bg-emerald-50 text-emerald-700 font-bold px-1.5 py-0.5 rounded">Avantajlı</span>
+</div>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Tavuk dürüm, çıtır patates ve yayık ayran.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Tam Menü</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">210 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Tavuk Dürüm Menü" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1V3aTDNSDAK0j4XsKFh4km6Tg69KkS8ItPRGu7gEA9YQxnBPSJ_gMAVBw-1GsVrByLMEV5KigJFEcw4rLcvrdWtxkRtcxGfaWWnm9B0MWQjMkERvk83oSHVPPuPFQi0t2hXQwaXdaN2DTFcqKiAtDWwE3DDJvyQ6K2-JDJyjHhOxwYXGH-7t_iPBNuTqRrA5749ODKTGTk5sgv5AXxAza2Y3GvA1AVBiut6vMFe5aw6FoR8Rz-2wmew8Js6"/>
+</div>
+</div>
+<!-- Hamburger Menü -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Süt Ürünü, Dana Eti" data-desc="Nefis Cheeseburger, baharatlı çıtır patates kızartması ve seçeceğiniz soğuk kutu içecek." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuBetkflDtDsBJcBwKFjJfvIlPJApLzuS5c52OT-by43tQKLEs4beEQO_NL-vT-a3eRvz2NzsNf83odfiECSiuizznY-VjKmxtY-td_qf1e56AkIrFYpsks-l3DF1dbx_fs3H5i9Ycqziyk2yvp7RyDsjJymUNcD5hT6Z0wzPJPGCAo_cV0RbTQYLjxJ1IJkRU4_4EUFhj_-7q-f2-qjMfdUvOJCCMWhzTKLn1G64RrqbedRqYOY1Pym9g" data-name="Hamburger Menü" data-portion="Burger + Patates + İçecek" data-price="260 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Hamburger Menü</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Cheeseburger, patates kızartması ve içecek.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Full Menü</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">260 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Hamburger Menü" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBetkflDtDsBJcBwKFjJfvIlPJApLzuS5c52OT-by43tQKLEs4beEQO_NL-vT-a3eRvz2NzsNf83odfiECSiuizznY-VjKmxtY-td_qf1e56AkIrFYpsks-l3DF1dbx_fs3H5i9Ycqziyk2yvp7RyDsjJymUNcD5hT6Z0wzPJPGCAo_cV0RbTQYLjxJ1IJkRU4_4EUFhj_-7q-f2-qjMfdUvOJCCMWhzTKLn1G64RrqbedRqYOY1Pym9g"/>
+</div>
+</div>
+<!-- Tost Menü -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Laktoz, Dana Eti" data-desc="Sucuklu ve kaşarlı karışık tost, çıtır patates sepeti ve taze demli Rize çayı." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuDXIHiHC8MAZi0J6wP_UXK3350NieWyt9P-_WtHDeFi_SHc8KorvLa8WKMOmxpeyxb1h_9ebUHLfpLtykNm2WyL5NazATp9OlDzwWZLCZH4A0XtGXAw_TjBS3yI5uB2i_P1sntiPEmDUYbnFcPZlx88pZa_MQLpdMqj14vcDBwu0zxcV-in7wC7KRqxGRtCVRUap9JjQQWbn2EGBJ6ponS0Fkr7AAwq3zp-E27EWO5ubmB-qTvmFOk2zQ" data-name="Tost Menü" data-portion="Karışık Tost + Patates + Çay" data-price="180 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Tost Menü</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Karışık tost, patates kızartması ve çay.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Kahvaltı/Mola</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">180 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Tost Menü" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXIHiHC8MAZi0J6wP_UXK3350NieWyt9P-_WtHDeFi_SHc8KorvLa8WKMOmxpeyxb1h_9ebUHLfpLtykNm2WyL5NazATp9OlDzwWZLCZH4A0XtGXAw_TjBS3yI5uB2i_P1sntiPEmDUYbnFcPZlx88pZa_MQLpdMqj14vcDBwu0zxcV-in7wC7KRqxGRtCVRUap9JjQQWbn2EGBJ6ponS0Fkr7AAwq3zp-E27EWO5ubmB-qTvmFOk2zQ"/>
+</div>
+</div>
+</div>
+</section>
+<!-- 5. ATIŞTIRMALIKLAR -->
+<section class="menu-category-section" data-category="atistirmaliklar" id="sec-atistirmaliklar">
+<div class="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2.5">
+<h3 class="font-heading font-bold text-[15px] text-slate-900 flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-brand-700"></span> Atıştırmalıklar
+            </h3>
+<span class="text-[11px] text-muted font-medium cat-count">3 Ürün</span>
+</div>
+<div class="flex flex-col gap-2.5">
+<!-- Patates Kızartması -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten (Eser), Baharat" data-desc="Sıcak ve çıtır patates çubukları, özel kafe baharat harmanı ve ketçap/mayonez ile." data-icon="french_fries" data-name="Patates Kızartması" data-portion="Büyük Boy Kova" data-price="80 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Patates Kızartması</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Baharatlı altın sarısı çıtır patates.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Büyük Boy</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">80 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg shrink-0 bg-amber-50/80 border border-amber-100 flex items-center justify-center text-amber-600">
+<span class="material-symbols-outlined text-[34px]">lunch_dining</span>
+</div>
+</div>
+<!-- Soğan Halkası -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Baharat" data-desc="Altın kaplamalı çıtır pane harçlı taze soğan halkaları (8 adet), barbekü sos ile." data-icon="donut_small" data-name="Soğan Halkası" data-portion="8 Adet Çıtır Halka" data-price="90 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Soğan Halkası</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Altın kaplamalı çıtır soğan halkaları.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">8 Adet</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">90 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg shrink-0 bg-orange-50/80 border border-orange-100 flex items-center justify-center text-orange-600">
+<span class="material-symbols-outlined text-[34px]">radio_button_checked</span>
+</div>
+</div>
+<!-- Çıtır Tavuk -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Tavuk Eti, Yumurta" data-desc="Özel çıtır baharatlı harçla kızartılmış yumuşacık tavuk göğsü şeritleri (5 parça)." data-icon="kebab_dining" data-name="Çıtır Tavuk" data-portion="5 Parça Fileto" data-price="140 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Çıtır Tavuk</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Özel soslu çıtır tavuk parçaları.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">5 Parça</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">140 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg shrink-0 bg-red-50 border border-red-100 flex items-center justify-center text-brand-700">
+<span class="material-symbols-outlined text-[34px]">fastfood</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 6. SICAK İÇECEKLER -->
+<section class="menu-category-section" data-category="sicak-icecekler" id="sec-sicak-icecekler">
+<div class="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2.5">
+<h3 class="font-heading font-bold text-[15px] text-slate-900 flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-brand-700"></span> Sıcak İçecekler
+            </h3>
+<span class="text-[11px] text-muted font-medium cat-count">7 Ürün</span>
+</div>
+<div class="flex flex-col gap-2.5">
+<!-- Çay -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Alerjen Bulunmamaktadır" data-desc="Geleneksel ince belli bardakta taze demlenmiş enfes Doğu Karadeniz çayı." data-icon="emoji_food_beverage" data-name="Çay" data-portion="İnce Belli Bardak" data-price="25 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Çay</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Taze demlenmiş Rize çayı.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Taze Dem</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">25 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg shrink-0 bg-red-50/70 border border-red-100 flex items-center justify-center text-brand-700">
+<span class="material-symbols-outlined text-[34px]">emoji_food_beverage</span>
+</div>
+</div>
+<!-- Türk Kahvesi -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Kafein" data-desc="Bakır cezvede köz ateşinde pişirilmiş, bol köpüklü geleneksel kahve, lokum ve su ile." data-icon="coffee" data-name="Türk Kahvesi" data-portion="Fincan • Lokum ve Su ile" data-price="70 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Türk Kahvesi</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Geleneksel lokum ve su ikramı ile.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Bol Köpüklü</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">70 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg shrink-0 bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-800">
+<span class="material-symbols-outlined text-[34px]">coffee</span>
+</div>
+</div>
+<!-- Espresso -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Kafein" data-desc="Taze çekilmiş %100 Arabica çekirdeklerinden yoğun kremalı tek shot espresso." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuAlt7WT8BEJOpYZp4I6GkMyyr33SWDQzarKxIvgrXC_yRhCPVcR94i6SwgJah9OjdRJH6Bfp6oMftDse4qSJhhCsirdLFZjewwy9itd0XQo5f2ZPIqtOvVZmXUZzGdTbmoOwK7-NHVBzZo7Hmo5UwslI0PvTzpDkJJSOaBjQX1z7m_9ANdUUa__tUbj8M8U00n0VNg_JC-yEoepA6McdUESNZFKxWh5utbRuG-uVG6u0Ngj0vh0aRMZfA" data-name="Espresso" data-portion="Tek Shot (Single)" data-price="65 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Espresso</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Yoğun aromatik tek shot İtalyan kahvesi.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Yoğun Aroma</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">65 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Espresso" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlt7WT8BEJOpYZp4I6GkMyyr33SWDQzarKxIvgrXC_yRhCPVcR94i6SwgJah9OjdRJH6Bfp6oMftDse4qSJhhCsirdLFZjewwy9itd0XQo5f2ZPIqtOvVZmXUZzGdTbmoOwK7-NHVBzZo7Hmo5UwslI0PvTzpDkJJSOaBjQX1z7m_9ANdUUa__tUbj8M8U00n0VNg_JC-yEoepA6McdUESNZFKxWh5utbRuG-uVG6u0Ngj0vh0aRMZfA"/>
+</div>
+</div>
+<!-- Americano -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Kafein" data-desc="Sıcak su ile dengelenmiş çift shot espresso, yumuşak ve temiz kahve gövdesi." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuAlt7WT8BEJOpYZp4I6GkMyyr33SWDQzarKxIvgrXC_yRhCPVcR94i6SwgJah9OjdRJH6Bfp6oMftDse4qSJhhCsirdLFZjewwy9itd0XQo5f2ZPIqtOvVZmXUZzGdTbmoOwK7-NHVBzZo7Hmo5UwslI0PvTzpDkJJSOaBjQX1z7m_9ANdUUa__tUbj8M8U00n0VNg_JC-yEoepA6McdUESNZFKxWh5utbRuG-uVG6u0Ngj0vh0aRMZfA" data-name="Americano" data-portion="Standart Kupa • 250ml" data-price="80 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Americano</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Sıcak su ile inceltilmiş espresso lezzeti.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Sade Kahve</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">80 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Americano" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlt7WT8BEJOpYZp4I6GkMyyr33SWDQzarKxIvgrXC_yRhCPVcR94i6SwgJah9OjdRJH6Bfp6oMftDse4qSJhhCsirdLFZjewwy9itd0XQo5f2ZPIqtOvVZmXUZzGdTbmoOwK7-NHVBzZo7Hmo5UwslI0PvTzpDkJJSOaBjQX1z7m_9ANdUUa__tUbj8M8U00n0VNg_JC-yEoepA6McdUESNZFKxWh5utbRuG-uVG6u0Ngj0vh0aRMZfA"/>
+</div>
+</div>
+<!-- Caffè Latte -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Süt Ürünü / Laktoz, Kafein" data-desc="Kadife dokulu buharla köpürtülmüş süt ve taze espresso ile hazırlanan hafif kahve." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuAlt7WT8BEJOpYZp4I6GkMyyr33SWDQzarKxIvgrXC_yRhCPVcR94i6SwgJah9OjdRJH6Bfp6oMftDse4qSJhhCsirdLFZjewwy9itd0XQo5f2ZPIqtOvVZmXUZzGdTbmoOwK7-NHVBzZo7Hmo5UwslI0PvTzpDkJJSOaBjQX1z7m_9ANdUUa__tUbj8M8U00n0VNg_JC-yEoepA6McdUESNZFKxWh5utbRuG-uVG6u0Ngj0vh0aRMZfA" data-name="Caffè Latte" data-portion="Büyük Kupa • 300ml" data-price="95 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Caffè Latte</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Kadife dokulu süt köpüğü ve taze espresso.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Sütlü</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">95 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Caffè Latte" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlt7WT8BEJOpYZp4I6GkMyyr33SWDQzarKxIvgrXC_yRhCPVcR94i6SwgJah9OjdRJH6Bfp6oMftDse4qSJhhCsirdLFZjewwy9itd0XQo5f2ZPIqtOvVZmXUZzGdTbmoOwK7-NHVBzZo7Hmo5UwslI0PvTzpDkJJSOaBjQX1z7m_9ANdUUa__tUbj8M8U00n0VNg_JC-yEoepA6McdUESNZFKxWh5utbRuG-uVG6u0Ngj0vh0aRMZfA"/>
+</div>
+</div>
+<!-- Cappuccino -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Süt Ürünü / Laktoz, Kafein" data-desc="Eşit oranda espresso, sıcak süt ve yoğun kıvamlı süt kreması, kakao tozu ilavesiyle." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuAlt7WT8BEJOpYZp4I6GkMyyr33SWDQzarKxIvgrXC_yRhCPVcR94i6SwgJah9OjdRJH6Bfp6oMftDse4qSJhhCsirdLFZjewwy9itd0XQo5f2ZPIqtOvVZmXUZzGdTbmoOwK7-NHVBzZo7Hmo5UwslI0PvTzpDkJJSOaBjQX1z7m_9ANdUUa__tUbj8M8U00n0VNg_JC-yEoepA6McdUESNZFKxWh5utbRuG-uVG6u0Ngj0vh0aRMZfA" data-name="Cappuccino" data-portion="Standart Fincan" data-price="95 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Cappuccino</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Bol süt kreması ve kakao serpintisi ile.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Bol Köpük</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">95 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Cappuccino" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlt7WT8BEJOpYZp4I6GkMyyr33SWDQzarKxIvgrXC_yRhCPVcR94i6SwgJah9OjdRJH6Bfp6oMftDse4qSJhhCsirdLFZjewwy9itd0XQo5f2ZPIqtOvVZmXUZzGdTbmoOwK7-NHVBzZo7Hmo5UwslI0PvTzpDkJJSOaBjQX1z7m_9ANdUUa__tUbj8M8U00n0VNg_JC-yEoepA6McdUESNZFKxWh5utbRuG-uVG6u0Ngj0vh0aRMZfA"/>
+</div>
+</div>
+<!-- Sıcak Çikolata -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Süt Ürünü / Laktoz, Soya" data-desc="Hakiki Belçika çikolatası ve tam yağlı süt ile pişirilen kremsi sıcacık içecek." data-icon="mug" data-name="Sıcak Çikolata" data-portion="Standart Kupa • 250ml" data-price="100 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Sıcak Çikolata</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Yoğun çikolatalı kremsi sıcak lezzet.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Tatlı Keyfi</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">100 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg shrink-0 bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700">
+<span class="material-symbols-outlined text-[34px]">local_cafe</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 7. SOĞUK İÇECEKLER -->
+<section class="menu-category-section" data-category="soguk-icecekler" id="sec-soguk-icecekler">
+<div class="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2.5">
+<h3 class="font-heading font-bold text-[15px] text-slate-900 flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-brand-700"></span> Soğuk İçecekler
+            </h3>
+<span class="text-[11px] text-muted font-medium cat-count">7 Ürün</span>
+</div>
+<div class="flex flex-col gap-2.5">
+<!-- Ayran -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Süt Ürünü / Laktoz" data-desc="Geleneksel usulle mayalanmış yoğurttan bol köpüklü soğuk cam şişe ayran." data-icon="local_drink" data-name="Ayran" data-portion="300ml Cam Şişe" data-price="35 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Ayran</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Geleneksel soğuk cam şişe ayran.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">300ml</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">35 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg shrink-0 bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700">
+<span class="material-symbols-outlined text-[34px]">water_full</span>
+</div>
+</div>
+<!-- Kola -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Kafein" data-desc="Buz gibi soğuk servis edilen kutu gazlı içecek." data-icon="liquor" data-name="Kola" data-portion="330ml Kutu" data-price="50 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Kola</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Soğuk servis kutu içecek.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">330ml Kutu</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">50 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg shrink-0 bg-red-50 border border-red-100 flex items-center justify-center text-brand-700">
+<span class="material-symbols-outlined text-[34px]">local_drink</span>
+</div>
+</div>
+<!-- Limonata -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Alerjen Bulunmamaktadır" data-desc="Taze sıkılmış limon suyu, nane yaprakları ve narenciye kabuğu rendesiyle ev yapımı ferahlık." data-icon="water_drop" data-name="Limonata" data-portion="350ml Bardak" data-price="75 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Limonata</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Taze nane ve limon dilimi ile ev yapımı.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Ev Yapımı</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">75 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg shrink-0 bg-yellow-50 border border-yellow-200 flex items-center justify-center text-yellow-600">
+<span class="material-symbols-outlined text-[34px]">nutrition</span>
+</div>
+</div>
+<!-- Ice Americano -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Kafein" data-desc="Bol kristal buz, filtrelenmiş soğuk su ve duble espresso shot." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuAlt7WT8BEJOpYZp4I6GkMyyr33SWDQzarKxIvgrXC_yRhCPVcR94i6SwgJah9OjdRJH6Bfp6oMftDse4qSJhhCsirdLFZjewwy9itd0XQo5f2ZPIqtOvVZmXUZzGdTbmoOwK7-NHVBzZo7Hmo5UwslI0PvTzpDkJJSOaBjQX1z7m_9ANdUUa__tUbj8M8U00n0VNg_JC-yEoepA6McdUESNZFKxWh5utbRuG-uVG6u0Ngj0vh0aRMZfA" data-name="Ice Americano" data-portion="350ml Buzlu Bardak" data-price="90 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Ice Americano</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Bol buzlu ferahlatıcı soğuk kahve.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Buzlu Kahve</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">90 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Ice Americano" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlt7WT8BEJOpYZp4I6GkMyyr33SWDQzarKxIvgrXC_yRhCPVcR94i6SwgJah9OjdRJH6Bfp6oMftDse4qSJhhCsirdLFZjewwy9itd0XQo5f2ZPIqtOvVZmXUZzGdTbmoOwK7-NHVBzZo7Hmo5UwslI0PvTzpDkJJSOaBjQX1z7m_9ANdUUa__tUbj8M8U00n0VNg_JC-yEoepA6McdUESNZFKxWh5utbRuG-uVG6u0Ngj0vh0aRMZfA"/>
+</div>
+</div>
+<!-- Ice Latte -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Süt Ürünü / Laktoz, Kafein" data-desc="Soğuk süt, bol buz küpleri ve üzerinde süzülen taze espresso katmanı." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuAlt7WT8BEJOpYZp4I6GkMyyr33SWDQzarKxIvgrXC_yRhCPVcR94i6SwgJah9OjdRJH6Bfp6oMftDse4qSJhhCsirdLFZjewwy9itd0XQo5f2ZPIqtOvVZmXUZzGdTbmoOwK7-NHVBzZo7Hmo5UwslI0PvTzpDkJJSOaBjQX1z7m_9ANdUUa__tUbj8M8U00n0VNg_JC-yEoepA6McdUESNZFKxWh5utbRuG-uVG6u0Ngj0vh0aRMZfA" data-name="Ice Latte" data-portion="400ml Buzlu Bardak" data-price="105 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Ice Latte</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Soğuk süt ve espresso katmanları.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Soğuk Sütlü</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">105 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Ice Latte" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlt7WT8BEJOpYZp4I6GkMyyr33SWDQzarKxIvgrXC_yRhCPVcR94i6SwgJah9OjdRJH6Bfp6oMftDse4qSJhhCsirdLFZjewwy9itd0XQo5f2ZPIqtOvVZmXUZzGdTbmoOwK7-NHVBzZo7Hmo5UwslI0PvTzpDkJJSOaBjQX1z7m_9ANdUUa__tUbj8M8U00n0VNg_JC-yEoepA6McdUESNZFKxWh5utbRuG-uVG6u0Ngj0vh0aRMZfA"/>
+</div>
+</div>
+<!-- Şeftalili Soğuk Çay -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Alerjen Bulunmamaktadır" data-desc="Ferahlatıcı şeftali aroması ve soğuk demlenmiş buzlu çay keyfi." data-icon="icecream" data-name="Şeftalili Soğuk Çay" data-portion="330ml Kutu" data-price="50 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Şeftalili Soğuk Çay</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Buzlu aromatik soğuk çay.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Soğuk Çay</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">50 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg shrink-0 bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600">
+<span class="material-symbols-outlined text-[34px]">water</span>
+</div>
+</div>
+<!-- Su -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Alerjen Bulunmamaktadır" data-desc="Doğal kaynak suyu, hijyenik kapaklı ambalajında soğuk servis." data-icon="water_drop" data-name="Su" data-portion="0.5L Şişe" data-price="20 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Su</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Doğal kaynak suyu 0.5L.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">0.5 Litre</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">20 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg shrink-0 bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500">
+<span class="material-symbols-outlined text-[34px]">water_drop</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 8. FROZEN -->
+<section class="menu-category-section" data-category="frozen" id="sec-frozen">
+<div class="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2.5">
+<h3 class="font-heading font-bold text-[15px] text-slate-900 flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-brand-700"></span> Frozen
+            </h3>
+<span class="text-[11px] text-muted font-medium cat-count">4 Ürün</span>
+</div>
+<div class="flex flex-col gap-2.5">
+<!-- Çilek Frozen -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Doğal Meyve Şekeri, Alerjen Yok" data-desc="Taze çilek püresi ve kırılmış buz parçalarının ferahlatıcı uyumu, taze nane dalı ile." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuBZgBRCkW9G0l9473wSO0eHd9_nqgbF8hQBtclX_Vxnk2VW85lDIbn2-6zJTS95GlXYchnjHNeWZne4BhmWPWfHV0O0SXIgXWpKQs7oL8xZ6a5uq6H7oXelC6CUkvyjJ91vkZHvH3qMclXBNK4mSkSscuTjm7U14Y9AkzCibTXkFhZ2Dq3Yj1Eyt6r8F8uMwqFyqm6o4Y53_-u7MevanwS1du4RX8kLvZYC17BtiwaeibnywvHYvyADfQ" data-name="Çilek Frozen" data-portion="400ml Büyük Bardak" data-price="120 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Çilek Frozen</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Taze çilek püresi ve kırılmış buz serinliği.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Buzlu Meyve</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">120 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Çilek Frozen" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZgBRCkW9G0l9473wSO0eHd9_nqgbF8hQBtclX_Vxnk2VW85lDIbn2-6zJTS95GlXYchnjHNeWZne4BhmWPWfHV0O0SXIgXWpKQs7oL8xZ6a5uq6H7oXelC6CUkvyjJ91vkZHvH3qMclXBNK4mSkSscuTjm7U14Y9AkzCibTXkFhZ2Dq3Yj1Eyt6r8F8uMwqFyqm6o4Y53_-u7MevanwS1du4RX8kLvZYC17BtiwaeibnywvHYvyADfQ"/>
+</div>
+</div>
+<!-- Mango Frozen -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Alerjen Bulunmamaktadır" data-desc="Egzotik mango püresi ve ince çekilmiş buz, tropikal ferahlatıcı yaz lezzeti." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuBZgBRCkW9G0l9473wSO0eHd9_nqgbF8hQBtclX_Vxnk2VW85lDIbn2-6zJTS95GlXYchnjHNeWZne4BhmWPWfHV0O0SXIgXWpKQs7oL8xZ6a5uq6H7oXelC6CUkvyjJ91vkZHvH3qMclXBNK4mSkSscuTjm7U14Y9AkzCibTXkFhZ2Dq3Yj1Eyt6r8F8uMwqFyqm6o4Y53_-u7MevanwS1du4RX8kLvZYC17BtiwaeibnywvHYvyADfQ" data-name="Mango Frozen" data-portion="400ml Büyük Bardak" data-price="120 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Mango Frozen</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Egzotik mango aroması ve nane yaprağı.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Tropikal</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">120 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Mango Frozen" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZgBRCkW9G0l9473wSO0eHd9_nqgbF8hQBtclX_Vxnk2VW85lDIbn2-6zJTS95GlXYchnjHNeWZne4BhmWPWfHV0O0SXIgXWpKQs7oL8xZ6a5uq6H7oXelC6CUkvyjJ91vkZHvH3qMclXBNK4mSkSscuTjm7U14Y9AkzCibTXkFhZ2Dq3Yj1Eyt6r8F8uMwqFyqm6o4Y53_-u7MevanwS1du4RX8kLvZYC17BtiwaeibnywvHYvyADfQ"/>
+</div>
+</div>
+<!-- Orman Meyveli Frozen -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Alerjen Bulunmamaktadır" data-desc="Böğürtlen, ahududu ve yaban mersini püresi ile hazırlanan mor meyve şöleni." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuBZgBRCkW9G0l9473wSO0eHd9_nqgbF8hQBtclX_Vxnk2VW85lDIbn2-6zJTS95GlXYchnjHNeWZne4BhmWPWfHV0O0SXIgXWpKQs7oL8xZ6a5uq6H7oXelC6CUkvyjJ91vkZHvH3qMclXBNK4mSkSscuTjm7U14Y9AkzCibTXkFhZ2Dq3Yj1Eyt6r8F8uMwqFyqm6o4Y53_-u7MevanwS1du4RX8kLvZYC17BtiwaeibnywvHYvyADfQ" data-name="Orman Meyveli Frozen" data-portion="400ml Büyük Bardak" data-price="130 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Orman Meyveli Frozen</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Böğürtlen ve ahududu ferahlığı.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Antioksidan</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">130 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Orman Meyveli Frozen" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZgBRCkW9G0l9473wSO0eHd9_nqgbF8hQBtclX_Vxnk2VW85lDIbn2-6zJTS95GlXYchnjHNeWZne4BhmWPWfHV0O0SXIgXWpKQs7oL8xZ6a5uq6H7oXelC6CUkvyjJ91vkZHvH3qMclXBNK4mSkSscuTjm7U14Y9AkzCibTXkFhZ2Dq3Yj1Eyt6r8F8uMwqFyqm6o4Y53_-u7MevanwS1du4RX8kLvZYC17BtiwaeibnywvHYvyADfQ"/>
+</div>
+</div>
+<!-- Limon Frozen -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Alerjen Bulunmamaktadır" data-desc="Doğal limon meyvesi, limon kabuğu yağı ve kırık buz taneleriyle ekşi-tatlı ferahlık." data-img="https://lh3.googleusercontent.com/aida-public/AB6AXuBZgBRCkW9G0l9473wSO0eHd9_nqgbF8hQBtclX_Vxnk2VW85lDIbn2-6zJTS95GlXYchnjHNeWZne4BhmWPWfHV0O0SXIgXWpKQs7oL8xZ6a5uq6H7oXelC6CUkvyjJ91vkZHvH3qMclXBNK4mSkSscuTjm7U14Y9AkzCibTXkFhZ2Dq3Yj1Eyt6r8F8uMwqFyqm6o4Y53_-u7MevanwS1du4RX8kLvZYC17BtiwaeibnywvHYvyADfQ" data-name="Limon Frozen" data-portion="400ml Büyük Bardak" data-price="110 ₺" data-type="drink">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Limon Frozen</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Ekşi tatlı ferahlatıcı limon püresi.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Ekşi-Tatlı</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">110 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-100">
+<img alt="Limon Frozen" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZgBRCkW9G0l9473wSO0eHd9_nqgbF8hQBtclX_Vxnk2VW85lDIbn2-6zJTS95GlXYchnjHNeWZne4BhmWPWfHV0O0SXIgXWpKQs7oL8xZ6a5uq6H7oXelC6CUkvyjJ91vkZHvH3qMclXBNK4mSkSscuTjm7U14Y9AkzCibTXkFhZ2Dq3Yj1Eyt6r8F8uMwqFyqm6o4Y53_-u7MevanwS1du4RX8kLvZYC17BtiwaeibnywvHYvyADfQ"/>
+</div>
+</div>
+</div>
+</section>
+<!-- 9. TATLILAR -->
+<section class="menu-category-section" data-category="tatlilar" id="sec-tatlilar">
+<div class="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-2.5">
+<h3 class="font-heading font-bold text-[15px] text-slate-900 flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-brand-700"></span> Tatlılar
+            </h3>
+<span class="text-[11px] text-muted font-medium cat-count">3 Ürün</span>
+</div>
+<div class="flex flex-col gap-2.5">
+<!-- Sütlaç -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Süt Ürünü / Laktoz, Fındık (Kuruyemiş)" data-desc="Toprak güveçte nar gibi kızarmış geleneksel fırın sütlaç, kavrulmuş Karadeniz fındığı ile." data-icon="icecream" data-name="Sütlaç" data-portion="Fırın Güveç • Fındıklı" data-price="90 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Sütlaç</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Fırınlanmış geleneksel sütlü tatlı, fındıklı.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Fırın Güveç</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">90 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg shrink-0 bg-amber-50/70 border border-amber-100 flex items-center justify-center text-amber-700">
+<span class="material-symbols-outlined text-[34px]">bakery_dining</span>
+</div>
+</div>
+<!-- Brownie -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Süt Ürünü, Ceviz (Kuruyemiş), Yumurta" data-desc="Yoğun bitter çikolatalı ıslak kek hamuru ve iri ceviz parçalarıyla fırından sıcak sunum." data-icon="cake" data-name="Brownie" data-portion="Porsiyon Dilim" data-price="130 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Brownie</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Sıcak çikolatalı ve cevizli fırın lezzeti.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Sıcak Servis</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">130 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg shrink-0 bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-800">
+<span class="material-symbols-outlined text-[34px]">cake</span>
+</div>
+</div>
+<!-- Cheesecake -->
+<div class="product-item bg-white border border-slate-200/90 rounded-xl p-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-brand-700/40 active:bg-slate-50 transition-all shadow-xs" data-allergens="Gluten, Süt Ürünü / Laktoz, Yumurta" data-desc="Krema peynir dokusu ve üzerine taze orman meyveli frambuaz sosu ile San Sebastian tarzı cheesecake." data-icon="pie_chart" data-name="Cheesecake" data-portion="Büyük Dilim" data-price="150 ₺" data-type="food">
+<div class="flex-1 min-w-0 pr-1">
+<h4 class="font-heading font-bold text-[13.5px] text-slate-900 truncate">Cheesecake</h4>
+<p class="text-[11.5px] text-muted line-clamp-2 mt-0.5 leading-snug">Frambuaz soslu San Sebastian tarzı cheesecake.</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Frambuazlı</span>
+<span class="font-heading font-extrabold text-[14px] text-brand-700">150 ₺</span>
+</div>
+</div>
+<div class="w-20 h-20 rounded-lg shrink-0 bg-pink-50 border border-pink-100 flex items-center justify-center text-rose-700">
+<span class="material-symbols-outlined text-[34px]">cookie</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- FOOTER -->
+<footer class="w-full bg-white border-t border-slate-100 py-6 px-4 text-center mt-auto">
+<div class="flex flex-col items-center gap-3">
+<!-- Quick Informative Actions -->
+<div class="flex items-center justify-center gap-3 text-[12px] font-semibold text-slate-600">
+<button class="flex items-center gap-1 hover:text-brand-700 transition-colors" onclick="openWifiModal()" type="button">
+<span class="material-symbols-outlined text-[16px] text-brand-700">wifi</span> Wi-Fi
+          </button>
+<span class="text-slate-300">•</span>
+<button class="flex items-center gap-1 hover:text-brand-700 transition-colors" onclick="openInfoModal('İletişim &amp; Danışma', 'Restoran içi siparişler ve özel talepleriniz için lütfen salon görevlimiz ile iletişime geçiniz.')" type="button">
+<span class="material-symbols-outlined text-[16px] text-brand-700">contact_support</span> İletişim
+          </button>
+<span class="text-slate-300">•</span>
+<button class="flex items-center gap-1 hover:text-brand-700 transition-colors" onclick="openInfoModal('Konum Bilgisi', 'Ali Baba Döner Kafe ana cadde şubemizde açık ve kapalı teras alanlarımızla hizmetinizdeyiz.')" type="button">
+<span class="material-symbols-outlined text-[16px] text-brand-700">location_on</span> Konum
+          </button>
+<span class="text-slate-300">•</span>
+<button class="flex items-center gap-1 hover:text-brand-700 transition-colors" onclick="openInfoModal('Sosyal Medya', '@alibabadonerkafe hesabımızdan günlük özel menü ve kahve çeşitlerimizi takip edebilirsiniz.')" type="button">
+<span class="material-symbols-outlined text-[16px] text-brand-700">share</span> Instagram
+          </button>
+</div>
+<div class="pt-1">
+<h4 class="font-heading font-extrabold text-[15px] text-brand-700">Ali Baba Döner Kafe</h4>
+<p class="text-[12.5px] font-medium text-slate-800 mt-0.5">Afiyet olsun, yine bekleriz!</p>
+</div>
+<div class="text-[11px] text-slate-400 space-y-0.5 border-t border-slate-100 pt-3 w-full max-w-xs">
+<p>Fiyatlarımıza KDV dahildir • QR Dijital Menü</p>
+<p>© 2025 Ali Baba Döner Kafe</p>
+</div>
+</div>
+</footer>
+<!-- PRODUCT DETAIL BOTTOM SHEET / MODAL -->
+<div class="fixed inset-0 z-50 bg-black/60 opacity-0 pointer-events-none transition-opacity duration-200 flex items-end sm:items-center justify-center p-0 sm:p-4" id="product-detail-modal">
+<div class="w-full max-w-md bg-white rounded-t-3xl sm:rounded-2xl max-h-[92vh] overflow-y-auto transform translate-y-full transition-transform duration-250 ease-out shadow-2xl relative flex flex-col" id="modal-card">
+<!-- Sheet Handle Bar (Mobile) -->
+<div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mt-2.5 mb-1 sm:hidden"></div>
+<!-- Sticky Close Icon Header -->
+<div class="sticky top-0 right-0 z-20 flex justify-end p-2 bg-gradient-to-b from-white/90 to-transparent pointer-events-none">
+<button aria-label="Kapat" class="pointer-events-auto w-8 h-8 rounded-full bg-white/90 border border-slate-200 text-slate-700 hover:text-brand-700 flex items-center justify-center shadow-sm transition-transform active:scale-90" onclick="closeProductModal()" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Modal Content Container -->
+<div class="px-5 pb-6 -mt-8">
+<!-- Big Product Image / Visual Badge -->
+<div class="relative w-full h-48 rounded-xl overflow-hidden bg-slate-100 border border-slate-100 mb-3.5 shadow-xs flex items-center justify-center" id="modal-img-container">
+<img alt="Ürün Fotoğrafı" class="w-full h-full object-cover hidden" id="modal-product-img" src=""/>
+<div class="w-full h-full flex flex-col items-center justify-center bg-slate-50 text-brand-700" id="modal-product-fallback">
+<span class="material-symbols-outlined text-[54px]" id="modal-fallback-icon">restaurant</span>
+</div>
+</div>
+<!-- Product Title & Price -->
+<div class="flex items-start justify-between gap-2 mb-1.5">
+<div>
+<h3 class="font-heading font-extrabold text-[19px] text-slate-900 leading-tight" id="modal-product-name">Ürün Başlığı</h3>
+<p class="text-[12px] font-medium text-slate-500 mt-0.5" id="modal-product-portion">Porsiyon bilgisi</p>
+</div>
+<div class="text-right shrink-0">
+<span class="font-heading font-extrabold text-[20px] text-brand-700" id="modal-product-price">0 ₺</span>
+</div>
+</div>
+<!-- Description -->
+<p class="text-[13px] text-slate-600 leading-relaxed mb-4" id="modal-product-desc">
+            Ürün detaylı açıklaması burada yer alır.
+          </p>
+<!-- Size / Portion Customization Selector (Informational Only) -->
+<div class="mb-4">
+<label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5" id="modal-portion-label">Porsiyon / Boyut Seçenekleri</label>
+<div class="grid grid-cols-3 gap-2" id="portion-options-group">
+<button class="portion-btn active py-2 px-1 text-center rounded-lg border text-[11.5px] font-bold transition-all bg-brand-700 text-white border-brand-700 shadow-xs" type="button">
+                Standart
+              </button>
+<button class="portion-btn py-2 px-1 text-center rounded-lg border text-[11.5px] font-semibold transition-all bg-white text-slate-700 border-slate-200 hover:border-slate-300" type="button">
+                Orta / 1.5
+              </button>
+<button class="portion-btn py-2 px-1 text-center rounded-lg border text-[11.5px] font-semibold transition-all bg-white text-slate-700 border-slate-200 hover:border-slate-300" type="button">
+                Büyük / Duble
+              </button>
+</div>
+</div>
+<!-- Allergens & Ingredients (Demo Info) -->
+<div class="p-3 bg-slate-50 border border-slate-100 rounded-xl mb-5">
+<div class="flex items-center justify-between mb-1.5">
+<span class="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-amber-600">info</span> İçerik &amp; Alerjenler
+              </span>
+<span class="text-[10px] text-muted">Örnek demo bilgi</span>
+</div>
+<div class="flex flex-wrap gap-1.5" id="modal-allergens-list">
+<!-- Dynamically populated tags -->
+</div>
+</div>
+<!-- Clear Visible Close Button (NO Cart / Ordering Flow) -->
+<button class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-heading font-bold text-[13.5px] rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 active:scale-[0.99]" onclick="closeProductModal()" type="button">
+<span>Kapat</span>
+</button>
+</div>
+</div>
+</div>
+<!-- GENERAL / WI-FI POPUP MODAL -->
+<div class="fixed inset-0 z-50 bg-black/60 opacity-0 pointer-events-none transition-opacity duration-200 flex items-center justify-center p-4" id="info-modal-backdrop">
+<div class="w-full max-w-xs bg-white rounded-2xl p-5 shadow-2xl relative text-center" id="info-modal-card">
+<button class="absolute top-3 right-3 w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 flex items-center justify-center" onclick="closeInfoModal()" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+<div class="w-12 h-12 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center mx-auto mb-2.5" id="info-modal-icon-wrap">
+<span class="material-symbols-outlined text-[26px]" id="info-modal-icon">wifi</span>
+</div>
+<h3 class="font-heading font-bold text-[16px] text-slate-900 mb-1" id="info-modal-title">Başlık</h3>
+<div class="text-[12.5px] text-slate-600 leading-relaxed mb-4" id="info-modal-body">
+          Açıklama metni
+        </div>
+<button class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-heading font-bold text-[12.5px] rounded-lg transition-colors" onclick="closeInfoModal()" type="button">
+          Tamam
+        </button>
+</div>
+</div>
+</div>
+<!-- JAVASCRIPT: FILTERING, SEARCH, MODAL & INTERACTION -->
+<script>
+    // Search & Category Elements
+    const searchInput = document.getElementById('menu-search-input');
+    const searchClearBtn = document.getElementById('search-clear-btn');
+    const resetSearchBtn = document.getElementById('reset-search-btn');
+    const emptyState = document.getElementById('empty-state');
+    const featuredSection = document.getElementById('featured-section');
+    const categorySections = document.querySelectorAll('.menu-category-section');
+    const categoryPills = document.querySelectorAll('.category-pill');
+    const productItems = document.querySelectorAll('.product-item');
+
+    // Product Modal Elements
+    const productModal = document.getElementById('product-detail-modal');
+    const modalCard = document.getElementById('modal-card');
+    const modalName = document.getElementById('modal-product-name');
+    const modalPrice = document.getElementById('modal-product-price');
+    const modalDesc = document.getElementById('modal-product-desc');
+    const modalPortion = document.getElementById('modal-product-portion');
+    const modalImg = document.getElementById('modal-product-img');
+    const modalFallback = document.getElementById('modal-product-fallback');
+    const modalFallbackIcon = document.getElementById('modal-fallback-icon');
+    const modalAllergensList = document.getElementById('modal-allergens-list');
+    const modalPortionLabel = document.getElementById('modal-portion-label');
+    const portionButtons = document.querySelectorAll('.portion-btn');
+
+    // Info Modal Elements
+    const infoModal = document.getElementById('info-modal-backdrop');
+    const infoTitle = document.getElementById('info-modal-title');
+    const infoBody = document.getElementById('info-modal-body');
+    const infoIcon = document.getElementById('info-modal-icon');
+
+    let currentCategory = 'all';
+
+    // Live Filter Logic
+    function applyFilter() {
+      const query = (searchInput.value || '').trim().toLowerCase();
+      let totalVisible = 0;
+
+      // Handle search clear button state
+      if (query.length > 0) {
+        searchClearBtn.classList.remove('hidden');
+        searchClearBtn.classList.add('flex');
+      } else {
+        searchClearBtn.classList.add('hidden');
+        searchClearBtn.classList.remove('flex');
+      }
+
+      // Hide or show featured section during active search
+      if (query.length > 0) {
+        featuredSection.classList.add('hidden');
+      } else {
+        featuredSection.classList.remove('hidden');
+      }
+
+      categorySections.forEach(section => {
+        const catKey = section.getAttribute('data-category');
+        const items = section.querySelectorAll('.product-item');
+        let sectionVisibleCount = 0;
+
+        const isCatMatch = (currentCategory === 'all') || (currentCategory === catKey);
+
+        items.forEach(item => {
+          const name = (item.getAttribute('data-name') || '').toLowerCase();
+          const desc = (item.getAttribute('data-desc') || '').toLowerCase();
+          const matchesQuery = !query || name.includes(query) || desc.includes(query);
+
+          if (isCatMatch && matchesQuery) {
+            item.classList.remove('hidden');
+            item.classList.add('flex');
+            sectionVisibleCount++;
+            totalVisible++;
+          } else {
+            item.classList.add('hidden');
+            item.classList.remove('flex');
+          }
+        });
+
+        // Hide whole section header if no items match
+        if (sectionVisibleCount === 0) {
+          section.classList.add('hidden');
+        } else {
+          section.classList.remove('hidden');
+          const countBadge = section.querySelector('.cat-count');
+          if (countBadge) countBadge.textContent = sectionVisibleCount + ' Ürün';
+        }
+      });
+
+      // Show empty state if nothing matches anywhere
+      if (totalVisible === 0) {
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
+      } else {
+        emptyState.classList.add('hidden');
+        emptyState.classList.remove('flex');
+      }
+    }
+
+    // Category Pill Click
+    categoryPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        categoryPills.forEach(p => {
+          p.classList.remove('bg-brand-700', 'text-white', 'border-brand-700', 'active', 'shadow-xs');
+          p.classList.add('text-charcoal', 'bg-white', 'border-slate-200');
+        });
+        pill.classList.add('bg-brand-700', 'text-white', 'border-brand-700', 'active', 'shadow-xs');
+        pill.classList.remove('text-charcoal', 'bg-white', 'border-slate-200');
+
+        currentCategory = pill.getAttribute('data-cat');
+        applyFilter();
+
+        // Smooth scroll pill into comfortable view
+        pill.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      });
+    });
+
+    // Search events
+    searchInput.addEventListener('input', applyFilter);
+
+    searchClearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      applyFilter();
+      searchInput.focus();
+    });
+
+    resetSearchBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      currentCategory = 'all';
+      categoryPills.forEach((p, idx) => {
+        if (idx === 0) {
+          p.classList.add('bg-brand-700', 'text-white', 'border-brand-700', 'active', 'shadow-xs');
+          p.classList.remove('text-charcoal', 'bg-white', 'border-slate-200');
+        } else {
+          p.classList.remove('bg-brand-700', 'text-white', 'border-brand-700', 'active', 'shadow-xs');
+          p.classList.add('text-charcoal', 'bg-white', 'border-slate-200');
+        }
+      });
+      applyFilter();
+    });
+
+    // Open Modal from Card Data
+    function openModalFromData(name, price, desc, img, portion, allergens, type) {
+      modalName.textContent = name;
+      modalPrice.textContent = price;
+      modalDesc.textContent = desc;
+      modalPortion.textContent = portion || 'Standart Servis';
+
+      // Adapt size button text based on beverage vs food
+      if (type === 'drink') {
+        modalPortionLabel.textContent = 'Boyut Seçenekleri';
+        portionButtons[0].textContent = 'Küçük';
+        portionButtons[1].textContent = 'Orta';
+        portionButtons[2].textContent = 'Büyük';
+      } else {
+        modalPortionLabel.textContent = 'Porsiyon Seçenekleri';
+        portionButtons[0].textContent = 'Standart';
+        portionButtons[1].textContent = '1.5 Porsiyon';
+        portionButtons[2].textContent = 'Duble';
+      }
+
+      // Reset portion selection to first button
+      portionButtons.forEach((btn, index) => {
+        if (index === 0) {
+          btn.classList.add('bg-brand-700', 'text-white', 'border-brand-700', 'active');
+          btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
+        } else {
+          btn.classList.remove('bg-brand-700', 'text-white', 'border-brand-700', 'active');
+          btn.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
+        }
+      });
+
+      // Handle Image vs Icon
+      if (img && img.trim() !== '') {
+        modalImg.src = img;
+        modalImg.alt = name;
+        modalImg.classList.remove('hidden');
+        modalFallback.classList.add('hidden');
+      } else {
+        modalImg.classList.add('hidden');
+        modalFallback.classList.remove('hidden');
+        modalFallbackIcon.textContent = type === 'drink' ? 'local_cafe' : 'restaurant';
+      }
+
+      // Build allergens tags
+      modalAllergensList.innerHTML = '';
+      if (allergens) {
+        allergens.split(',').forEach(item => {
+          const tag = document.createElement('span');
+          tag.className = 'text-[11px] font-medium px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700';
+          tag.textContent = item.trim();
+          modalAllergensList.appendChild(tag);
+        });
+      }
+
+      // Open Modal animation
+      productModal.classList.remove('opacity-0', 'pointer-events-none');
+      productModal.classList.add('opacity-100');
+      modalCard.classList.remove('translate-y-full');
+      modalCard.classList.add('translate-y-0');
+      document.body.style.overflow = 'hidden';
+    }
+
+    // Attach click to product items in list
+    productItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const name = item.getAttribute('data-name');
+        const price = item.getAttribute('data-price');
+        const desc = item.getAttribute('data-desc');
+        const img = item.getAttribute('data-img');
+        const portion = item.getAttribute('data-portion');
+        const allergens = item.getAttribute('data-allergens');
+        const type = item.getAttribute('data-type');
+        openModalFromData(name, price, desc, img, portion, allergens, type);
+      });
+    });
+
+    // Close Product Modal
+    function closeProductModal() {
+      productModal.classList.add('opacity-0', 'pointer-events-none');
+      productModal.classList.remove('opacity-100');
+      modalCard.classList.add('translate-y-full');
+      modalCard.classList.remove('translate-y-0');
+      document.body.style.overflow = '';
+    }
+
+    // Close on backdrop tap
+    productModal.addEventListener('click', (e) => {
+      if (e.target === productModal) {
+        closeProductModal();
+      }
+    });
+
+    // Portion Button Micro-interaction
+    portionButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        portionButtons.forEach(b => {
+          b.classList.remove('bg-brand-700', 'text-white', 'border-brand-700', 'active');
+          b.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
+        });
+        btn.classList.add('bg-brand-700', 'text-white', 'border-brand-700', 'active');
+        btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
+      });
+    });
+
+    // Info & Wi-Fi Modal Helpers
+    function openInfoModal(title, text, iconName = 'info') {
+      infoTitle.textContent = title;
+      infoBody.innerHTML = `<p>${text}</p>`;
+      infoIcon.textContent = iconName;
+      infoModal.classList.remove('opacity-0', 'pointer-events-none');
+      infoModal.classList.add('opacity-100');
+    }
+
+    function openWifiModal() {
+      infoTitle.textContent = "Ücretsiz Misafir Wi-Fi";
+      infoIcon.textContent = "wifi";
+      infoBody.innerHTML = `
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-left space-y-2 mt-1">
+          <div>
+            <span class="text-[10px] uppercase font-bold text-slate-400 block">Ağ Adı (SSID)</span>
+            <span class="text-[13px] font-bold text-slate-800">AliBaba_Misafir</span>
+          </div>
+          <div class="border-t border-slate-200 pt-2">
+            <span class="text-[10px] uppercase font-bold text-slate-400 block">Şifre</span>
+            <span class="text-[13px] font-bold text-brand-700">alibaba2025</span>
+          </div>
+        </div>
+        <p class="text-[11px] text-muted mt-2">Masalarımızda sınırsız internet keyfi sizleri bekliyor.</p>
+      `;
+      infoModal.classList.remove('opacity-0', 'pointer-events-none');
+      infoModal.classList.add('opacity-100');
+    }
+
+    function closeInfoModal() {
+      infoModal.classList.add('opacity-0', 'pointer-events-none');
+      infoModal.classList.remove('opacity-100');
+    }
+
+    infoModal.addEventListener('click', (e) => {
+      if (e.target === infoModal) {
+        closeInfoModal();
+      }
+    });
+  </script>
+</body></html>

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ali Baba Döner Kafe • Yönetici Admin Paneli</title>
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
+  <!-- Admin CSS -->
+  <link rel="stylesheet" href="/css/admin.css"/>
+</head>
+<body>
+
+  <!-- 1. LOGIN OVERLAY (PIN & PASSWORD ACCESS) -->
+  <div class="login-screen" id="login-screen">
+    <div class="login-card">
+      <div class="login-logo" id="login-logo">AB</div>
+      <h2 style="font-size:20px; font-weight:800; color:#0f172a; margin-bottom:4px;">Yönetici Girişi</h2>
+      <p style="font-size:12px; color:#64748b; margin-bottom:16px;">Menü ve sipariş yönetim paneline erişmek için PIN veya şifrenizi girin.</p>
+
+      <form onsubmit="handleLogin(event)">
+        <input type="password" id="login-pin" class="form-control login-pin-input" placeholder="••••" autofocus/>
+        <div id="login-error" style="color:#ef4444; font-size:12px; margin-bottom:12px; min-height:18px;"></div>
+        <button type="submit" class="btn-primary" style="width:100%; justify-content:center; padding:12px;">
+          <span class="material-symbols-outlined" style="font-size:18px;">lock_open</span>
+          <span>Giriş Yap</span>
+        </button>
+      </form>
+      <p style="font-size:11px; color:#94a3b8; margin-top:16px;">Varsayılan PIN: <strong>1234</strong> (veya Şifre: <strong>admin</strong>)</p>
+    </div>
+  </div>
+
+  <!-- 2. MAIN APPLICATION LAYOUT -->
+  <div class="admin-layout">
+
+    <!-- Sidebar Navigation -->
+    <aside class="admin-sidebar" id="admin-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo" id="sidebar-logo">AB</div>
+        <div>
+          <h2 class="sidebar-brand-name" id="sidebar-brand-name">Ali Baba Döner</h2>
+          <span class="sidebar-brand-sub">Yönetim Portalı</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button type="button" class="nav-item-btn active" data-tab="dashboard">
+          <span class="material-symbols-outlined">dashboard</span>
+          <span>Genel Bakış</span>
+          <span class="nav-badge" id="notif-nav-badge" style="display:none;">0</span>
+        </button>
+        <button type="button" class="nav-item-btn" data-tab="products">
+          <span class="material-symbols-outlined">restaurant_menu</span>
+          <span>Ürünler & Fiyatlar</span>
+        </button>
+        <button type="button" class="nav-item-btn" data-tab="categories">
+          <span class="material-symbols-outlined">category</span>
+          <span>Kategoriler</span>
+        </button>
+        <button type="button" class="nav-item-btn" data-tab="qr-studio">
+          <span class="material-symbols-outlined">qr_code_2</span>
+          <span>Masa QR Stüdyosu</span>
+        </button>
+        <button type="button" class="nav-item-btn" data-tab="settings">
+          <span class="material-symbols-outlined">settings</span>
+          <span>Kafe Ayarları</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="/" target="_blank" class="sidebar-link">
+          <span class="material-symbols-outlined">smartphone</span>
+          <span>Müşteri Menüsünü Aç</span>
+        </a>
+        <button type="button" class="sidebar-link" onclick="handleLogout()" style="background:none; border:none; width:100%; text-align:left; cursor:pointer;">
+          <span class="material-symbols-outlined">logout</span>
+          <span>Çıkış Yap</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Panel -->
+    <main class="admin-main">
+
+      <!-- Top Navbar -->
+      <header class="admin-topbar">
+        <div class="topbar-left">
+          <button type="button" class="menu-toggle-btn" id="menu-toggle-btn">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+          <h1 class="page-title" id="page-title">Genel Bakış & Masalar</h1>
+        </div>
+
+        <div class="topbar-right">
+          <div class="status-pill">
+            <span class="status-dot"></span>
+            <span>Sistem Çevrimiçi</span>
+          </div>
+          <a href="/" target="_blank" class="btn-preview-menu">
+            <span class="material-symbols-outlined" style="font-size:16px;">open_in_new</span>
+            <span>Menüyü Gör</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- Dynamic Tab Contents -->
+      <div class="admin-content">
+
+        <!-- ==================== TAB 1: DASHBOARD ==================== -->
+        <section class="tab-content active" id="tab-dashboard">
+          <!-- Stat Counters -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Toplam Ürün</span>
+                <span class="stat-val" id="stat-total-products">0</span>
+              </div>
+              <div class="stat-icon icon-red">
+                <span class="material-symbols-outlined">fastfood</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Stokta Olanlar</span>
+                <span class="stat-val" id="stat-in-stock">0</span>
+              </div>
+              <div class="stat-icon icon-emerald">
+                <span class="material-symbols-outlined">check_circle</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Tükenen Ürünler</span>
+                <span class="stat-val" id="stat-out-stock">0</span>
+              </div>
+              <div class="stat-icon icon-amber">
+                <span class="material-symbols-outlined">remove_shopping_cart</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Aktif Kategoriler</span>
+                <span class="stat-val" id="stat-total-categories">0</span>
+              </div>
+              <div class="stat-icon icon-blue">
+                <span class="material-symbols-outlined">category</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Table Requests and Quick Action -->
+          <div class="dashboard-grid">
+            <!-- Left: Live Table Calls -->
+            <div class="widget-card">
+              <div class="widget-head">
+                <div class="widget-title">
+                  <span class="material-symbols-outlined" style="color:#b91c1c;">notifications_active</span>
+                  <span>Canlı Masa Çağrıları & Talepleri</span>
+                </div>
+                <button type="button" class="btn-secondary" onclick="fetchNotifications()" style="padding:4px 10px; font-size:11px;">
+                  <span class="material-symbols-outlined" style="font-size:14px;">refresh</span> Yenile
+                </button>
+              </div>
+              <div class="widget-body">
+                <div class="notification-list" id="notification-list">
+                  <!-- Dynamically populated table calls -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Quick Actions Card -->
+            <div class="widget-card">
+              <div class="widget-head">
+                <div class="widget-title">
+                  <span class="material-symbols-outlined">bolt</span>
+                  <span>Hızlı Eylemler</span>
+                </div>
+              </div>
+              <div class="widget-body" style="display:flex; flex-direction:column; gap:10px;">
+                <button type="button" class="btn-primary" onclick="openAddProductModal()" style="width:100%; justify-content:center;">
+                  <span class="material-symbols-outlined">add_circle</span>
+                  <span>Yeni Ürün Ekle</span>
+                </button>
+                <button type="button" class="btn-secondary" onclick="openAddCategoryModal()" style="width:100%; justify-content:center;">
+                  <span class="material-symbols-outlined">create_new_folder</span>
+                  <span>Yeni Kategori Ekle</span>
+                </button>
+                <button type="button" class="btn-secondary" onclick="switchTab('qr-studio')" style="width:100%; justify-content:center;">
+                  <span class="material-symbols-outlined">qr_code</span>
+                  <span>Masa QR Kartı Yazdır</span>
+                </button>
+                <button type="button" class="btn-secondary" onclick="switchTab('settings')" style="width:100%; justify-content:center;">
+                  <span class="material-symbols-outlined">tune</span>
+                  <span>Kafe & Wi-Fi Bilgilerini Güncelle</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 2: PRODUCTS ==================== -->
+        <section class="tab-content" id="tab-products">
+          <div class="section-toolbar">
+            <div class="toolbar-filters">
+              <input type="text" id="product-search-input" class="admin-search-input" placeholder="Ürün adı veya açıklama ile ara…"/>
+              <select id="product-filter-category" class="admin-select">
+                <option value="all">Tüm Kategoriler</option>
+              </select>
+              <select id="product-filter-stock" class="admin-select">
+                <option value="all">Tüm Stok Durumları</option>
+                <option value="in">Sadece Stokta Olanlar</option>
+                <option value="out">Tükenenler</option>
+              </select>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span id="filtered-product-count" style="font-size:12px; color:#64748b; font-weight:600;"></span>
+              <button type="button" class="btn-primary" onclick="openAddProductModal()">
+                <span class="material-symbols-outlined">add</span>
+                <span>Yeni Ürün Ekle</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Products Table -->
+          <div class="table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Görsel</th>
+                  <th>Ürün Bilgisi</th>
+                  <th>Kategori</th>
+                  <th>Fiyat (Düzenlenebilir)</th>
+                  <th>Stok Durumu</th>
+                  <th>Favori</th>
+                  <th>İşlemler</th>
+                </tr>
+              </thead>
+              <tbody id="products-table-body">
+                <!-- Dynamically populated table rows -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 3: CATEGORIES ==================== -->
+        <section class="tab-content" id="tab-categories">
+          <div class="section-toolbar">
+            <div>
+              <h3 style="font-size:16px; font-weight:800;">Kategoriler</h3>
+              <p style="font-size:12px; color:#64748b;">Menünüzdeki tüm ürün gruplarını buradan yönetebilirsiniz.</p>
+            </div>
+            <button type="button" class="btn-primary" onclick="openAddCategoryModal()">
+              <span class="material-symbols-outlined">add</span>
+              <span>Yeni Kategori Ekle</span>
+            </button>
+          </div>
+
+          <div id="categories-list-container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
+            <!-- Dynamically populated category cards -->
+          </div>
+        </section>
+
+        <!-- ==================== TAB 4: TABLE QR STUDIO ==================== -->
+        <section class="tab-content" id="tab-qr-studio">
+          <div class="section-toolbar">
+            <div>
+              <h3 style="font-size:16px; font-weight:800;">Masa QR Kod & Baskı Stüdyosu</h3>
+              <p style="font-size:12px; color:#64748b;">Masanıza özel yüksek çözünürlüklü dijital menü QR kartları üretin ve yazdırın.</p>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button type="button" class="btn-secondary" onclick="printBatchQRCards()">
+                <span class="material-symbols-outlined">print_connect</span>
+                <span>Tüm Masaları Toplu Yazdır (1-20)</span>
+              </button>
+              <button type="button" class="btn-primary" onclick="printSingleTableCard()">
+                <span class="material-symbols-outlined">print</span>
+                <span>Bu Kartı Yazdır</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="qr-studio-grid">
+            <!-- Left: Table Selection & Settings -->
+            <div class="widget-card">
+              <div class="widget-head">
+                <span class="widget-title">Masa Seçimi</span>
+              </div>
+              <div class="widget-body">
+                <div class="form-group">
+                  <label class="form-label">Masa Numarası Seçin</label>
+                  <select id="qr-table-select" class="form-control" style="font-weight:700;">
+                    <option value="01">Masa 01</option>
+                    <option value="02">Masa 02</option>
+                    <option value="03">Masa 03</option>
+                    <option value="04" selected>Masa 04</option>
+                    <option value="05">Masa 05</option>
+                    <option value="06">Masa 06</option>
+                    <option value="07">Masa 07</option>
+                    <option value="08">Masa 08</option>
+                    <option value="09">Masa 09</option>
+                    <option value="10">Masa 10</option>
+                    <option value="11">Masa 11</option>
+                    <option value="12">Masa 12</option>
+                    <option value="15">Masa 15</option>
+                    <option value="18">Masa 18</option>
+                    <option value="20">Masa 20</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="margin-top:14px;">
+                  <label class="form-label">Veya Özel Masa / Bölüm Adı</label>
+                  <div style="display:flex; gap:6px;">
+                    <input type="text" id="qr-custom-table-input" class="form-control" placeholder="Örn: Teras 02"/>
+                    <button type="button" id="qr-custom-apply-btn" class="btn-secondary" style="white-space:nowrap;">Uygula</button>
+                  </div>
+                </div>
+
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px; margin-top:20px;">
+                  <span style="font-size:11px; text-transform:uppercase; font-weight:800; color:#64748b; display:block; margin-bottom:4px;">QR Hedef Adresi:</span>
+                  <code id="qr-direct-url" style="font-size:11px; color:#b91c1c; word-break:break-all;">http://localhost:3000/?masa=04</code>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Printable Table Stand Card Preview -->
+            <div style="display:flex; flex-direction:column; align-items:center;">
+              <div class="qr-preview-card" id="printable-table-card">
+                <div class="qr-card-logo" id="qr-card-logo">AB</div>
+                <h3 class="qr-card-title" id="qr-card-title">Ali Baba Döner Kafe</h3>
+                <p class="qr-card-sub">Temassız Dijital QR Menü</p>
+
+                <div class="qr-card-code-wrap">
+                  <img id="qr-card-img" class="qr-card-img" src="" alt="Masa QR Kodu"/>
+                </div>
+
+                <div class="qr-card-table-badge" id="qr-card-table-badge">Masa 04</div>
+                <p class="qr-card-instruction">Kameranızı açıp okutarak menümüzü hemen inceleyin ve garson çağırın.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 5: SETTINGS ==================== -->
+        <section class="tab-content" id="tab-settings">
+          <form onsubmit="saveSettings(event)">
+            <div class="settings-grid">
+              <!-- General Info -->
+              <div class="widget-card">
+                <div class="widget-head">
+                  <span class="widget-title">Restoran Genel Bilgileri</span>
+                </div>
+                <div class="widget-body">
+                  <div class="form-group">
+                    <label class="form-label">Restoran / Kafe Adı</label>
+                    <input type="text" id="set-restaurant-name" class="form-control" required/>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Slogan / Alt Başlık</label>
+                    <input type="text" id="set-slogan" class="form-control"/>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Logo Baş Harfleri (İkon içi)</label>
+                    <input type="text" id="set-logo-initials" class="form-control" maxlength="3"/>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Para Birimi Simgesi</label>
+                    <input type="text" id="set-currency" class="form-control" style="max-width:100px;"/>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Masa Sayısı</label>
+                    <input type="number" id="set-table-count" class="form-control" min="1" max="100"/>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Wi-Fi & Contact -->
+              <div class="widget-card">
+                <div class="widget-head">
+                  <span class="widget-title">Wi-Fi & İletişim Bilgileri</span>
+                </div>
+                <div class="widget-body">
+                  <div class="form-group">
+                    <label class="form-label">Wi-Fi Ağ Adı (SSID)</label>
+                    <input type="text" id="set-wifi-ssid" class="form-control"/>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Wi-Fi Şifresi</label>
+                    <input type="text" id="set-wifi-pass" class="form-control"/>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">İletişim & Danışma Notu</label>
+                    <textarea id="set-contact-info" class="form-control"></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Konum / Şube Bilgisi</label>
+                    <textarea id="set-location-info" class="form-control"></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Instagram Kullanıcı Adı</label>
+                    <input type="text" id="set-instagram" class="form-control"/>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Hero Banner Settings -->
+              <div class="widget-card">
+                <div class="widget-head">
+                  <span class="widget-title">Menü Üst Vitrin (Hero) Ayarları</span>
+                </div>
+                <div class="widget-body">
+                  <div class="form-group">
+                    <label class="form-label">Rozet Metni</label>
+                    <input type="text" id="set-hero-badge" class="form-control"/>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Hero Ana Başlığı</label>
+                    <input type="text" id="set-hero-title" class="form-control"/>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Hero Alt Açıklaması</label>
+                    <input type="text" id="set-hero-subtitle" class="form-control"/>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Vitrin Fotoğraf URL'si</label>
+                    <input type="text" id="set-hero-img" class="form-control"/>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Admin Security & System -->
+              <div class="widget-card">
+                <div class="widget-head">
+                  <span class="widget-title">Güvenlik & Sıfırlama</span>
+                </div>
+                <div class="widget-body">
+                  <div class="form-group">
+                    <label class="form-label">Yeni Admin Giriş PIN Kodu</label>
+                    <input type="text" id="set-admin-pin" class="form-control" placeholder="Değiştirmek istemiyorsanız boş bırakın"/>
+                    <span style="font-size:11px; color:#64748b;">Mevcut varsayılan PIN: 1234</span>
+                  </div>
+                  <hr style="margin:20px 0; border:none; border-top:1px solid #e2e8f0;"/>
+                  <div>
+                    <label class="form-label" style="color:#ef4444;">Sistem Sıfırlama</label>
+                    <p style="font-size:12px; color:#64748b; margin-bottom:10px;">Menüyü orijinal ilk kurulduğu demo durumuna geri döndürmek için tıklayabilirsiniz.</p>
+                    <button type="button" class="btn-secondary" onclick="resetDemoData()" style="color:#b91c1c; border-color:#fca5a5;">
+                      <span class="material-symbols-outlined">history</span>
+                      <span>Demo Verilerine Sıfırla</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Save Settings Button -->
+            <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+              <button type="submit" class="btn-primary" style="padding:12px 28px; font-size:14px;">
+                <span class="material-symbols-outlined">save</span>
+                <span>Tüm Ayarları Kaydet</span>
+              </button>
+            </div>
+          </form>
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ==================== PRODUCT ADD / EDIT MODAL ==================== -->
+  <div class="admin-modal-backdrop" id="product-modal">
+    <div class="admin-modal-box">
+      <div class="admin-modal-head">
+        <h3 class="admin-modal-title" id="modal-product-form-title">Ürün Ekle</h3>
+        <button type="button" class="icon-action-btn" onclick="closeAdminModal('product-modal')">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form id="product-form" onsubmit="saveProductForm(event)">
+        <div class="admin-modal-body">
+          <div class="form-group">
+            <label class="form-label">Ürün Adı *</label>
+            <input type="text" id="form-prod-name" class="form-control" placeholder="Örn: Tavuk Döner Dürüm" required/>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Kategori *</label>
+              <select id="form-prod-category" class="form-control" required></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fiyat (₺) *</label>
+              <input type="text" id="form-prod-price" class="form-control" placeholder="Örn: 150" required/>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Porsiyon / Gramaj</label>
+              <input type="text" id="form-prod-portion" class="form-control" placeholder="Örn: 100g Lavaş veya 250ml"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tür</label>
+              <select id="form-prod-type" class="form-control">
+                <option value="food">Yiyecek</option>
+                <option value="drink">İçecek</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Öne Çıkan Rozet (İsteğe Bağlı)</label>
+            <input type="text" id="form-prod-badge" class="form-control" placeholder="Örn: Popüler, Şefin Önerisi, Barista Özel"/>
+          </div>
+
+          <!-- Image Upload / URL -->
+          <div class="form-group">
+            <label class="form-label">Ürün Fotoğrafı</label>
+            <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
+              <input type="file" id="form-prod-file" accept="image/*" onchange="handleImageUpload(this)" style="font-size:12px;"/>
+            </div>
+            <input type="text" id="form-prod-img-url" class="form-control" placeholder="Veya internet resim linki (URL) yapıştırın"/>
+            <img id="img-upload-preview" src="" alt="Önizleme" style="display:none; width:100%; height:130px; object-fit:cover; border-radius:8px; margin-top:8px; border:1px solid #e2e8f0;"/>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Alerjenler (Virgülle ayırın)</label>
+            <input type="text" id="form-prod-allergens" class="form-control" placeholder="Örn: Gluten, Laktoz, Susam"/>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Açıklama</label>
+            <textarea id="form-prod-desc" class="form-control" placeholder="Özel sos, taze yeşillikler ve fırın lavaşı ile..."></textarea>
+          </div>
+
+          <!-- Toggles -->
+          <div style="display:flex; gap:20px; margin-top:14px; background:#f8fafc; padding:12px; border-radius:8px;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; cursor:pointer;">
+              <input type="checkbox" id="form-prod-instock" checked style="width:16px; height:16px; accent-color:#93000b;"/>
+              <span>Ürün Stokta Var (Yayında)</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; cursor:pointer;">
+              <input type="checkbox" id="form-prod-featured" style="width:16px; height:16px; accent-color:#d97706;"/>
+              <span>Favori Lezzetler Vitrininde Göster</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="admin-modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeAdminModal('product-modal')">İptal</button>
+          <button type="submit" class="btn-primary">Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== CATEGORY ADD / EDIT MODAL ==================== -->
+  <div class="admin-modal-backdrop" id="category-modal">
+    <div class="admin-modal-box" style="max-width:400px;">
+      <div class="admin-modal-head">
+        <h3 class="admin-modal-title" id="modal-cat-form-title">Kategori Ekle</h3>
+        <button type="button" class="icon-action-btn" onclick="closeAdminModal('category-modal')">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form onsubmit="saveCategoryForm(event)">
+        <div class="admin-modal-body">
+          <div class="form-group">
+            <label class="form-label">Kategori Adı *</label>
+            <input type="text" id="form-cat-name" class="form-control" placeholder="Örn: Özel Soslu Dürümler" required/>
+          </div>
+        </div>
+        <div class="admin-modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeAdminModal('category-modal')">İptal</button>
+          <button type="submit" class="btn-primary">Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADMIN TOAST -->
+  <div id="admin-toast" style="position:fixed; bottom:20px; right:20px; background:#0f172a; color:#fff; padding:12px 20px; border-radius:10px; font-size:13px; font-weight:600; display:none; align-items:center; gap:8px; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:9999; transition:opacity 0.25s ease;">
+    <span class="material-symbols-outlined" style="color:#10b981; font-size:18px;">check_circle</span>
+    <span id="admin-toast-text">İşlem tamamlandı</span>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Ali Baba Döner Kafe • Dijital QR Menü</title>
+  <meta name="description" content="Ali Baba Döner Kafe temassız dijital QR menüsü. Dönerler, tostlar, burgerler, kahveler, tatlılar ve soğuk içecekler."/>
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
+  <!-- Menu CSS -->
+  <link rel="stylesheet" href="/css/menu.css"/>
+</head>
+<body>
+
+  <!-- Main Responsive Container (Mobile-first, Centered Kiosk on Desktop) -->
+  <div class="app-viewport">
+
+    <!-- 1. COMPACT TOP HEADER -->
+    <header class="header-bar">
+      <div class="header-inner">
+        <!-- Logo & Title -->
+        <a href="/" class="brand-wrapper">
+          <div class="brand-logo" id="brand-logo">AB</div>
+          <div class="brand-text">
+            <h1 class="brand-title" id="brand-title">Ali Baba Döner Kafe</h1>
+            <p class="brand-slogan" id="brand-slogan">Dönerden kahveye, her molaya lezzet.</p>
+          </div>
+        </a>
+
+        <!-- Table Badge & Language Selector -->
+        <div class="header-actions">
+          <button class="table-badge-btn" id="table-badge-btn" type="button" title="Masa numarasını değiştirmek için tıklayın">
+            <span class="material-symbols-outlined">table_restaurant</span>
+            <span id="table-badge-text">Masa 04</span>
+          </button>
+          <span class="lang-badge">TR</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 2. QUICK WAITER SERVICE BAR -->
+    <div class="service-quick-bar">
+      <button class="service-btn service-btn-waiter" id="quick-call-waiter-btn" type="button">
+        <span class="material-symbols-outlined">notifications_active</span>
+        <span>Garson Çağır</span>
+      </button>
+      <button class="service-btn service-btn-bill" id="quick-ask-bill-btn" type="button">
+        <span class="material-symbols-outlined">receipt_long</span>
+        <span>Hesap İste</span>
+      </button>
+    </div>
+
+    <!-- 3. HERO BANNER SECTION -->
+    <section class="hero-section">
+      <div class="hero-banner">
+        <img id="hero-img" class="hero-img" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBePhexMPVnyKWUyULjS45OYTHfSAC1FsyeNzssegLDQY6vF2GlhO7UwEdiJqL0GYtyCVhqgh20iQFMBwTIjv9TGqptOZuZOEe0nmGS6vYogAeapHGUAAta47LVr5Md675L7GMIFHW7GiCF1JpHLSdKtu8JPZXpyRxg3JSPU0vO1uPTe-I2090Zw9v_K-pSXv2L8B5IGAvuJPK8C4WtpM0x53BZAMZ5xKmR8LEztXmo74bpCdy20SNmOg" alt="Ali Baba Döner Kafe Lezzetleri"/>
+        <div class="hero-overlay">
+          <div class="hero-badge">
+            <span class="pulse-dot"></span>
+            <span id="hero-badge-text">Zengin Restoran & Kafe Menüsü</span>
+          </div>
+          <h2 class="hero-title" id="hero-title">Canın ne çekiyor?</h2>
+          <p class="hero-subtitle" id="hero-subtitle">İster doyurucu bir lezzet, ister keyifli bir kahve molası.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. LIVE STICKY SEARCH BAR -->
+    <div class="search-sticky-container">
+      <div class="search-input-wrap">
+        <span class="material-symbols-outlined search-icon">search</span>
+        <input autocomplete="off" class="search-input" id="menu-search-input" placeholder="Yemek veya içecek ara…" type="text"/>
+        <button aria-label="Aramayı Temizle" class="search-clear-btn" id="search-clear-btn" type="button">
+          <span class="material-symbols-outlined" style="font-size:15px;">close</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 5. HORIZONTAL CATEGORY NAVIGATION PILLS -->
+    <nav class="category-nav-bar">
+      <div class="category-pill-track no-scrollbar" id="category-pill-track">
+        <!-- Dynamically populated categories -->
+        <button class="category-pill active" data-cat="all" type="button">Tümü</button>
+      </div>
+    </nav>
+
+    <!-- 6. EMPTY SEARCH / FILTER STATE -->
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon-wrap">
+        <span class="material-symbols-outlined">search_off</span>
+      </div>
+      <h3 class="empty-title">Aradığınız ürün bulunamadı.</h3>
+      <p class="empty-desc">Farklı bir kelime yazmayı veya üstteki kategorilerden seçim yapmayı deneyin.</p>
+      <button class="empty-reset-btn" id="reset-search-btn" type="button">Aramayı Sıfırla</button>
+    </div>
+
+    <!-- 7. FEATURED ITEMS SHOWCASE (FAVORİ LEZZETLER) -->
+    <section class="featured-section" id="featured-section">
+      <div class="section-head">
+        <div class="section-title">
+          <span class="material-symbols-outlined">stars</span>
+          <h3>Favori Lezzetler</h3>
+        </div>
+        <span class="section-subtitle">En çok tercih edilenler</span>
+      </div>
+      <div class="featured-track no-scrollbar" id="featured-track">
+        <!-- Dynamically populated featured items -->
+      </div>
+    </section>
+
+    <!-- 8. ALL CATEGORIZED MENU ITEMS -->
+    <main class="menu-content" id="all-menu-sections">
+      <!-- Dynamically populated categories & product items -->
+    </main>
+
+    <!-- 9. FOOTER -->
+    <footer class="footer-bar">
+      <!-- Quick Info Links -->
+      <nav class="footer-nav">
+        <button type="button" onclick="openWifiModal()">
+          <span class="material-symbols-outlined">wifi</span> Wi-Fi
+        </button>
+        <span class="footer-sep">•</span>
+        <button type="button" onclick="openContactModal()">
+          <span class="material-symbols-outlined">contact_support</span> İletişim
+        </button>
+        <span class="footer-sep">•</span>
+        <button type="button" onclick="openLocationModal()">
+          <span class="material-symbols-outlined">location_on</span> Konum
+        </button>
+        <span class="footer-sep">•</span>
+        <button type="button" onclick="openInstagramModal()">
+          <span class="material-symbols-outlined">share</span> Instagram
+        </button>
+      </nav>
+
+      <div class="footer-brand" id="footer-brand">Ali Baba Döner Kafe</div>
+      <p class="footer-tagline">Afiyet olsun, yine bekleriz!</p>
+
+      <div class="footer-legal">
+        <p>Fiyatlarımıza KDV dahildir • Temassız QR Dijital Menü</p>
+        <p>© 2026 Ali Baba Döner Kafe</p>
+      </div>
+
+      <!-- Quick Admin Panel Switcher -->
+      <div>
+        <a href="/admin" class="admin-link-btn" title="Yönetici Paneline Geçiş">
+          <span class="material-symbols-outlined" style="font-size:14px; color:#b91c1c;">admin_panel_settings</span>
+          <span>Yönetici / Admin Girişi</span>
+        </a>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- PRODUCT DETAIL BOTTOM SHEET / MODAL -->
+  <div class="modal-backdrop" id="product-detail-modal">
+    <div class="modal-card" id="modal-card">
+      <div class="modal-handle-bar"></div>
+      <button aria-label="Kapat" class="modal-close-btn" onclick="closeProductModal()" type="button">
+        <span class="material-symbols-outlined" style="font-size:18px;">close</span>
+      </button>
+
+      <div class="modal-body">
+        <!-- Product Image or Fallback -->
+        <div class="modal-img-container">
+          <img id="modal-product-img" class="modal-img" src="" alt="Ürün Fotoğrafı"/>
+          <div id="modal-product-fallback" class="modal-img-fallback">
+            <span class="material-symbols-outlined" id="modal-fallback-icon">restaurant</span>
+          </div>
+        </div>
+
+        <!-- Title & Price -->
+        <div class="modal-title-row">
+          <div>
+            <h3 class="modal-product-name" id="modal-product-name">Ürün Başlığı</h3>
+            <p class="modal-product-portion" id="modal-product-portion">Porsiyon bilgisi</p>
+          </div>
+          <span class="modal-product-price" id="modal-product-price">0 ₺</span>
+        </div>
+
+        <!-- Description -->
+        <p class="modal-product-desc" id="modal-product-desc">Ürün açıklaması burada yer alır.</p>
+
+        <!-- Portion Options -->
+        <div>
+          <label class="modal-section-label" id="modal-portion-label">Porsiyon / Boyut Seçenekleri</label>
+          <div class="portion-grid">
+            <button class="portion-btn active" type="button">Standart</button>
+            <button class="portion-btn" type="button">1.5 Porsiyon</button>
+            <button class="portion-btn" type="button">Duble</button>
+          </div>
+        </div>
+
+        <!-- Allergens -->
+        <div class="allergens-box">
+          <div class="allergens-head">
+            <span class="material-symbols-outlined">info</span>
+            <span>İçerik & Alerjen Bilgisi</span>
+          </div>
+          <div class="allergens-tags" id="modal-allergens-list">
+            <!-- Dynamically populated allergen tags -->
+          </div>
+        </div>
+
+        <!-- Action / Order Button -->
+        <button class="modal-action-btn" id="modal-order-action-btn" type="button">
+          <span class="material-symbols-outlined" style="font-size:18px;">notifications_active</span>
+          <span>Garsona Bu Ürünü Bildir</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER DIALOG (Wi-Fi, Table, Info) -->
+  <div class="modal-backdrop" id="center-modal-backdrop">
+    <div class="center-modal-card">
+      <button aria-label="Kapat" class="modal-close-btn" onclick="closeCenterModal()" type="button">
+        <span class="material-symbols-outlined" style="font-size:18px;">close</span>
+      </button>
+      <div class="center-modal-icon">
+        <span class="material-symbols-outlined" id="center-modal-icon-symbol">wifi</span>
+      </div>
+      <h3 class="center-modal-title" id="center-modal-title">Başlık</h3>
+      <div class="center-modal-text" id="center-modal-body">İçerik</div>
+      <button type="button" class="modal-action-btn" onclick="closeCenterModal()" style="margin-top:8px; padding:10px;">
+        Tamam
+      </button>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast-notice" id="toast-notice">
+    <span class="material-symbols-outlined">check_circle</span>
+    <span id="toast-text">Bildirim iletildi</span>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/js/menu.js"></script>
+</body>
+</html>

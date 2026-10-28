@@ -571,6 +571,7 @@ function selectTable(tableId) {
   renderHeader();
   renderTables();
   renderAdisyon();
+  renderProducts();
 
   // If mobile, switch view smoothly
   if (window.innerWidth <= 768) {
@@ -584,12 +585,19 @@ function selectTable(tableId) {
 // 3. Category Bar Rendering
 function renderCategories() {
   const categories = [{ id: 'all', name: 'Tüm Menü', icon: 'restaurant' }, ...state.categories];
-  dom.categoryScrollBar.innerHTML = categories.map(c => `
-    <button type="button" class="cat-pill ${state.selectedCategory === c.id ? 'active' : ''}" onclick="selectCategory('${c.id}')">
-      <span class="material-symbols-outlined" style="font-size:16px;">${c.icon || 'restaurant'}</span>
-      <span>${escapeHtml(c.name)}</span>
-    </button>
-  `).join('');
+  dom.categoryScrollBar.innerHTML = categories.map(c => {
+    const count = c.id === 'all'
+      ? state.products.length
+      : state.products.filter(p => p.category === c.id).length;
+
+    return `
+      <button type="button" class="cat-pill ${state.selectedCategory === c.id ? 'active' : ''}" onclick="selectCategory('${c.id}')">
+        <span class="material-symbols-outlined" style="font-size:16px;">${c.icon || 'restaurant'}</span>
+        <span class="cat-pill-name">${escapeHtml(c.name)}</span>
+        <span class="cat-count-badge">${count}</span>
+      </button>
+    `;
+  }).join('');
 }
 
 function selectCategory(catId) {
@@ -598,9 +606,27 @@ function selectCategory(catId) {
   renderProducts();
 }
 
+function getCategoryIcon(catId) {
+  switch (catId) {
+    case 'donerler': return 'lunch_dining';
+    case 'tostlar': return 'breakfast_dining';
+    case 'burgerler': return 'lunch_dining';
+    case 'menuler': return 'restaurant_menu';
+    case 'citir-lezzetler': return 'fastfood';
+    case 'sicak-icecekler': return 'local_cafe';
+    case 'soguk-icecekler': return 'local_drink';
+    case 'frozen': return 'icecream';
+    case 'tatlilar': return 'cake';
+    default: return 'restaurant';
+  }
+}
+
 // 4. Products Grid Rendering (HIZLI ÜRÜN EKLEME)
 function renderProducts() {
   const query = state.searchQuery.toLowerCase().trim();
+  const currentTableNorm = normalizeTableId(state.selectedTableId);
+  const currentAdisyon = state.adisyons[currentTableNorm];
+  const adisyonItems = (currentAdisyon && Array.isArray(currentAdisyon.items)) ? currentAdisyon.items : [];
 
   const filtered = state.products.filter(p => {
     if (state.selectedCategory !== 'all' && p.category !== state.selectedCategory) {
@@ -617,9 +643,10 @@ function renderProducts() {
 
   if (filtered.length === 0) {
     dom.productsGrid.innerHTML = `
-      <div style="grid-column: 1/-1; text-align:center; padding: 40px; color:var(--text-dim);">
-        <span class="material-symbols-outlined" style="font-size:40px;">search_off</span>
-        <p style="margin-top:8px; font-weight:600;">Eşleşen ürün bulunamadı.</p>
+      <div class="products-empty-state">
+        <span class="material-symbols-outlined">search_off</span>
+        <p>Eşleşen ürün bulunamadı</p>
+        <span>Farklı bir arama kelimesi veya kategori seçin.</span>
       </div>
     `;
     return;
@@ -627,21 +654,43 @@ function renderProducts() {
 
   dom.productsGrid.innerHTML = filtered.map(p => {
     const priceNum = parseFloat(String(p.price || 0).replace(',', '.')) || 0;
-    const hasImg = p.img && p.img.trim();
+    const hasImg = p.img && typeof p.img === 'string' && p.img.trim().length > 0;
+    const catIcon = getCategoryIcon(p.category);
+
+    // Quantity of this product already in active table adisyon
+    const tableItemCount = adisyonItems
+      .filter(it => it.productId === p.id || it.name.toLowerCase() === (p.name || '').toLowerCase())
+      .reduce((sum, it) => sum + (it.quantity || 0), 0);
 
     return `
-      <div class="product-card" onclick="quickAddItem('${p.id}')">
+      <div class="product-card ${tableItemCount > 0 ? 'in-adisyon' : ''}" onclick="quickAddItem('${p.id}', '', event)">
         <div class="product-card-thumb">
           ${hasImg
-            ? `<img src="${p.img}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'material-symbols-outlined thumb-fallback\\'>fastfood</span>';"/>`
-            : `<span class="material-symbols-outlined thumb-fallback">fastfood</span>`
+            ? `<img src="${escapeHtml(p.img)}" alt="${escapeHtml(p.name)}" class="product-card-img" loading="lazy" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';" />
+               <div class="thumb-fallback" style="display:none;">
+                 <span class="material-symbols-outlined">${catIcon}</span>
+               </div>`
+            : `<div class="thumb-fallback">
+                 <span class="material-symbols-outlined">${catIcon}</span>
+               </div>`
+          }
+          ${p.badge ? `<span class="product-card-badge">${escapeHtml(p.badge)}</span>` : ''}
+          ${tableItemCount > 0 ? `
+            <span class="product-card-count-badge" title="Masa adisyonunda ${tableItemCount} adet var">
+              <span class="material-symbols-outlined" style="font-size:11px;">receipt</span>
+              <span>x${tableItemCount}</span>
+            </span>` : ''
           }
         </div>
-        <div class="product-card-name">${escapeHtml(p.name)}</div>
-        <div class="product-card-portion">${escapeHtml(p.portion || 'Standart')}</div>
+        <div class="product-card-body">
+          <div class="product-card-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div>
+          <div class="product-card-portion">${escapeHtml(p.portion || 'Standart Servis')}</div>
+        </div>
         <div class="product-card-footer">
           <span class="product-card-price">${formatMoney(priceNum)}</span>
-          <span class="product-card-add-btn">+</span>
+          <button type="button" class="product-card-add-btn" title="Adisyona Ekle">
+            <span class="material-symbols-outlined" style="font-size:18px;">add</span>
+          </button>
         </div>
       </div>
     `;
@@ -827,11 +876,20 @@ function renderCallsDrawer() {
 // ==================== ACTIONS & APIS ====================
 
 // Hızlı Ürün Ekleme (POST /api/garson/tables/:tableId/items)
-async function quickAddItem(productId, customNote = '') {
+async function quickAddItem(productId, customNote = '', event = null) {
   const product = state.products.find(p => p.id === productId);
   if (!product) return;
 
   playTapChime();
+
+  if (event) {
+    const card = event.currentTarget || (event.target && event.target.closest('.product-card'));
+    if (card) {
+      card.classList.add('item-tap-pulse');
+      setTimeout(() => card.classList.remove('item-tap-pulse'), 300);
+    }
+  }
+
   const tableId = normalizeTableId(state.selectedTableId);
 
   try {
@@ -854,6 +912,7 @@ async function quickAddItem(productId, customNote = '') {
       renderHeader();
       renderTables();
       renderAdisyon();
+      renderProducts();
       showToast(`${product.name} adisyona eklendi.`, 'success');
     }
   } catch (err) {
@@ -878,6 +937,7 @@ async function updateItemDelta(itemId, delta) {
       renderHeader();
       renderTables();
       renderAdisyon();
+      renderProducts();
     }
   } catch (err) {
     showToast('Güncelleme hatası.', 'error');
@@ -900,6 +960,7 @@ async function removeItem(itemId) {
       renderHeader();
       renderTables();
       renderAdisyon();
+      renderProducts();
       showToast('Ürün adisyondan çıkarıldı.', 'success');
     }
   } catch (err) {

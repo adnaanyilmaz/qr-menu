@@ -88,7 +88,7 @@
       "badge": "Popüler",
       "featured": true,
       "inStock": true,
-      "img": "https://lh3.googleusercontent.com/aida/AEtjO1VwElxRCsFBfXN131FflYthu02UAT5ku65VvcNhu92BofBJpvVEzAH9hjSdKCzOBLmzxB5HQq6hzBrV5XTv4PIiwE7TfX5AU2UIC1FytgdhPdru3KhF0zn-If6MztzDb2wjXQipNu2QM8cOBQFGIXggjrow486A6aUnjzoYBIe-eZ7hY7d9cRru2NA9Ui69qOwm_TobUrW5T8Cw-tA7zC_IzEoOGh8L39XUtW5TmHCPhY9y7eBC8Wh_1pQb",
+      "img": "/uploads/tavuk_durum.jpg",
       "icon": ""
     },
     {
@@ -104,7 +104,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "https://lh3.googleusercontent.com/aida/AEtjO1VI__xndxlqR5wGdoTmDrVYktGOaXyFT7gAQxn3JWZQl3siFnclzTAUB9ysTpflH9unzDr1ffTkMeryEpykwOl9xMbXR92pnnELznFRJUIRWjrEvI_cVXr9w-j1kkTFmLmCzyCivr4Wq8jbw1w-VBJ2uKybZFS8MkGv6imgbDBAljCS2VJYfG4V8Q7y7mTxEraZWZQ0glEq1w0qym6HPPXWphqj_vusVsKNRWLNFS1kw43Pm8-NT8czIsEi",
+      "img": "/uploads/et_durum.jpg",
       "icon": ""
     },
     {
@@ -120,7 +120,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "https://lh3.googleusercontent.com/aida/AEtjO1VwElxRCsFBfXN131FflYthu02UAT5ku65VvcNhu92BofBJpvVEzAH9hjSdKCzOBLmzxB5HQq6hzBrV5XTv4PIiwE7TfX5AU2UIC1FytgdhPdru3KhF0zn-If6MztzDb2wjXQipNu2QM8cOBQFGIXggjrow486A6aUnjzoYBIe-eZ7hY7d9cRru2NA9Ui69qOwm_TobUrW5T8Cw-tA7zC_IzEoOGh8L39XUtW5TmHCPhY9y7eBC8Wh_1pQb",
+      "img": "/uploads/ekmek_arasi_doner.jpg",
       "icon": ""
     },
     {
@@ -136,7 +136,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "https://lh3.googleusercontent.com/aida/AEtjO1VI__xndxlqR5wGdoTmDrVYktGOaXyFT7gAQxn3JWZQl3siFnclzTAUB9ysTpflH9unzDr1ffTkMeryEpykwOl9xMbXR92pnnELznFRJUIRWjrEvI_cVXr9w-j1kkTFmLmCzyCivr4Wq8jbw1w-VBJ2uKybZFS8MkGv6imgbDBAljCS2VJYfG4V8Q7y7mTxEraZWZQ0glEq1w0qym6HPPXWphqj_vusVsKNRWLNFS1kw43Pm8-NT8czIsEi",
+      "img": "/uploads/pilav_ustu_doner.jpg",
       "icon": ""
     },
     {
@@ -280,7 +280,7 @@
       "badge": "Avantajlı",
       "featured": false,
       "inStock": true,
-      "img": "https://lh3.googleusercontent.com/aida/AEtjO1V3aTDNSDAK0j4XsKFh4km6Tg69KkS8ItPRGu7gEA9YQxnBPSJ_gMAVBw-1GsVrByLMEV5KigJFEcw4rLcvrdWtxkRtcxGfaWWnm9B0MWQjMkERvk83oSHVPPuPFQi0t2hXQwaXdaN2DTFcqKiAtDWwE3DDJvyQ6K2-JDJyjHhOxwYXGH-7t_iPBNuTqRrA5749ODKTGTk5sgv5AXxAza2Y3GvA1AVBiut6vMFe5aw6FoR8Rz-2wmew8Js6",
+      "img": "/uploads/durum_menu.jpg",
       "icon": ""
     },
     {
@@ -344,7 +344,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/sogan_halkasi.jpg",
       "icon": "donut_small"
     },
     {
@@ -360,7 +360,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/citir_tavuk.jpg",
       "icon": "kebab_dining"
     },
     {
@@ -472,7 +472,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/sicak_cikolata.jpg",
       "icon": "mug"
     },
     {
@@ -584,7 +584,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/su.jpg",
       "icon": "water_drop"
     },
     {
@@ -664,7 +664,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/sutlac.jpg",
       "icon": "icecream"
     },
     {
@@ -680,7 +680,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/brownie.jpg",
       "icon": "cake"
     },
     {
@@ -696,56 +696,181 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/cheesecake.jpg",
       "icon": "pie_chart"
     }
   ],
-  "notifications": [],
+  "notifications": [
+    {
+      "id": "call_1793203235275_719",
+      "table": "TestMasa99",
+      "type": "Garson Çağır",
+      "note": "Peçete lütfen",
+      "items": [],
+      "time": "19:00",
+      "createdAt": 1793203235275
+    }
+  ],
   "adisyons": {
-    "07": {
-      "tableId": "07",
-      "tableName": "Masa 7",
-      "openedAt": 1793193631944,
-      "updatedAt": 1793193631944,
+    "15": {
+      "tableId": "15",
+      "tableName": "Masa 15",
+      "openedAt": 1793203235700,
+      "updatedAt": 1793203235700,
       "items": [
         {
-          "id": "item_1793193631944_3007",
-          "productId": "prod_13",
-          "name": "Tavuk Dürüm Menü",
-          "portion": "Dürüm + Patates + Ayran",
-          "note": "",
-          "price": 210,
+          "id": "item_1793203235700_9093",
+          "productId": "custom_1793203235700",
+          "name": "Sıcak gelsin",
+          "portion": "Standart",
+          "note": "Sıcak gelsin",
+          "price": 0,
           "quantity": 1,
-          "total": 210,
-          "addedAt": 1793193631944
+          "total": 0,
+          "addedAt": 1793203235700
         }
       ],
-      "totalAmount": 210,
+      "totalAmount": 0,
       "totalItems": 1
+    },
+    "99": {
+      "tableId": "99",
+      "tableName": "Masa 99",
+      "openedAt": 1793203235302,
+      "updatedAt": 1793203235307,
+      "items": [
+        {
+          "id": "item_1793203235302_8910",
+          "productId": "custom_1793203235302",
+          "name": "Tombik Döner (1 Porsiyon)",
+          "portion": "Standart",
+          "note": "Tombik Döner (1 Porsiyon)",
+          "price": 0,
+          "quantity": 1,
+          "total": 0,
+          "addedAt": 1793203235302
+        },
+        {
+          "id": "item_1793203235307_3854",
+          "productId": "prod_26",
+          "name": "Ayran",
+          "portion": "300ml Cam Şişe",
+          "note": "",
+          "price": 35,
+          "quantity": 1,
+          "total": 35,
+          "addedAt": 1793203235307
+        }
+      ],
+      "totalAmount": 35,
+      "totalItems": 2
     },
     "01": {
       "tableId": "01",
       "tableName": "Masa 1",
-      "openedAt": 1793194079293,
-      "updatedAt": 1793194298946,
+      "openedAt": 1793202358723,
+      "updatedAt": 1793202359036,
       "items": [
         {
-          "id": "item_1793194269948_9160",
+          "id": "item_1793202358723_1849",
+          "productId": "prod_11",
+          "name": "Tavuk Burger",
+          "portion": "Çıtır Fileto",
+          "note": "",
+          "price": 170,
+          "quantity": 3,
+          "total": 510,
+          "addedAt": 1793202358724
+        }
+      ],
+      "totalAmount": 510,
+      "totalItems": 3
+    }
+  },
+  "orderHistory": [
+    {
+      "tableId": "04",
+      "tableName": "Masa 4",
+      "openedAt": 1793203200296,
+      "updatedAt": 1793203200301,
+      "items": [
+        {
+          "id": "item_1793203200296_6521",
+          "productId": "prod_test_1",
+          "name": "Tombik Döner",
+          "portion": "Standart",
+          "note": "Soğansız",
+          "price": 150,
+          "quantity": 3,
+          "total": 450,
+          "addedAt": 1793203200296
+        }
+      ],
+      "totalAmount": 450,
+      "totalItems": 3,
+      "closedAt": 1793203200336,
+      "paymentMethod": "Kredi Kartı",
+      "closeNote": "Masa 4 ödeme tamamlandı"
+    },
+    {
+      "tableId": "20",
+      "tableName": "Masa 20",
+      "openedAt": 1793202254454,
+      "updatedAt": 1793202273108,
+      "items": [
+        {
+          "id": "item_1793202254454_6792",
+          "productId": "prod_1792953406798",
+          "name": "Psikopat",
+          "portion": "Duble",
+          "note": "",
+          "price": 200,
+          "quantity": 1,
+          "total": 200,
+          "addedAt": 1793202254454
+        },
+        {
+          "id": "item_1793202254454_6473",
+          "productId": "prod_26",
+          "name": "Ayran",
+          "portion": "Standart",
+          "note": "Bol Soslu",
+          "price": 35,
+          "quantity": 1,
+          "total": 35,
+          "addedAt": 1793202254454
+        }
+      ],
+      "totalAmount": 235,
+      "totalItems": 2,
+      "closedAt": 1793202403990,
+      "paymentMethod": "Nakit",
+      "closeNote": ""
+    },
+    {
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "openedAt": 1793202307515,
+      "updatedAt": 1793202308675,
+      "items": [
+        {
+          "id": "item_1793202307515_7550",
           "productId": "prod_1792953406798",
           "name": "Psikopat",
           "portion": "200",
           "note": "",
           "price": 200,
-          "quantity": 1,
-          "total": 200,
-          "addedAt": 1793194269948
+          "quantity": 2,
+          "total": 400,
+          "addedAt": 1793202307515
         }
       ],
-      "totalAmount": 200,
-      "totalItems": 1
-    }
-  },
-  "orderHistory": [
+      "totalAmount": 400,
+      "totalItems": 2,
+      "closedAt": 1793202314183,
+      "paymentMethod": "Nakit",
+      "closeNote": ""
+    },
     {
       "tableId": "01",
       "tableName": "Masa 1",

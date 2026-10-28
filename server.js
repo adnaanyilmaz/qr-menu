@@ -720,10 +720,31 @@ function isOrderType(typeStr) {
   return normalized.includes('sipar') || normalized.includes('order');
 }
 
+function isKitchenReadyNotification(notif) {
+  if (!notif) return false;
+  if (notif.isReadyAlert) return true;
+  if (typeof notif.id === 'string' && notif.id.startsWith('ready_')) return true;
+  if (notif.source === 'kitchen' || notif.source === 'kitchen_kds') return true;
+  const normalized = normalizeTurkishSearch(notif.type || '');
+  return normalized.includes('hazir') || normalized.includes('servise cikar') || normalized.includes('servis hazir');
+}
+
 function isOrderNotification(notif) {
   if (!notif) return false;
+  // 1. Kitchen ready notifications are NOT new incoming orders!
+  if (isKitchenReadyNotification(notif)) return false;
+
+  // 2. Service calls and bill requests are NOT orders
+  const normalized = normalizeTurkishSearch(notif.type || '');
+  if (normalized.includes('hesap') || normalized.includes('bill')) return false;
+  if (normalized.includes('cagir') || normalized.includes('garson')) {
+    if (!notif.id || !notif.id.startsWith('order_')) return false;
+  }
+
+  // 3. Customer QR orders
   if (typeof notif.id === 'string' && notif.id.startsWith('order_')) return true;
-  if (Array.isArray(notif.items) && notif.items.length > 0) return true;
+  if (notif.source === 'qr_menu') return true;
+  if (Array.isArray(notif.items) && notif.items.length > 0 && !notif.id?.startsWith('call_')) return true;
   return isOrderType(notif.type);
 }
 
@@ -1201,7 +1222,13 @@ function extractItemsFromOrderNote(note) {
 
 // Helper: Apply order items directly to table adisyon
 function applyOrderToAdisyon(notif) {
+  if (!notif) return null;
   const tableId = normalizeTableId(notif.table);
+  // CRITICAL SAFETY GUARD: Kitchen ready notifications or non-order calls must NEVER be applied to adisyon!
+  if (isKitchenReadyNotification(notif) || !isOrderNotification(notif)) {
+    return (db.adisyons && db.adisyons[tableId]) ? db.adisyons[tableId] : null;
+  }
+
   db.adisyons = db.adisyons || {};
   if (!db.adisyons[tableId]) {
     db.adisyons[tableId] = {
@@ -1284,7 +1311,12 @@ app.post('/api/garson/calls/:id/approve-order', requireWaiterOrAdminAuth, (req, 
 
   const notif = db.notifications[notifIndex];
   const tableId = normalizeTableId(notif.table);
-  const updatedAdisyon = applyOrderToAdisyon(notif);
+  const isOrder = isOrderNotification(notif);
+  let updatedAdisyon = (db.adisyons && db.adisyons[tableId]) ? db.adisyons[tableId] : null;
+
+  if (isOrder) {
+    updatedAdisyon = applyOrderToAdisyon(notif);
+  }
 
   db.notifications.splice(notifIndex, 1);
   saveData(db);
@@ -1292,7 +1324,9 @@ app.post('/api/garson/calls/:id/approve-order', requireWaiterOrAdminAuth, (req, 
 
   res.json({
     success: true,
-    message: `Masa ${parseInt(tableId, 10)} siparişi onaylandı, adisyona eklendi ve mutfağa iletildi.`,
+    message: isOrder
+      ? `Masa ${parseInt(tableId, 10)} siparişi onaylandı, adisyona eklendi ve mutfağa iletildi.`
+      : `Masa ${parseInt(tableId, 10)} bildirimi kapatıldı.`,
     data: { tableId, adisyon: updatedAdisyon }
   });
 });
@@ -1878,6 +1912,9 @@ app.post('/api/kds/orders/:id/complete', requireWaiterOrAdminAuth, (req, res) =>
     id: 'ready_' + now + '_' + Math.floor(Math.random() * 1000),
     table: order.tableName,
     type: 'Sipariş Hazır 🔔',
+    source: 'kitchen_kds',
+    isReadyAlert: true,
+    ticketNumber: order.ticketNumber || '',
     note: `${order.tableName} (${order.ticketNumber}) siparişi mutfakta hazırlandı, servise çıkarılabilir!`,
     items: order.items || [],
     time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
@@ -2079,4 +2116,4 @@ const server = app.listen(PORT, () => {
   console.log(`=================================================`);
 });
 
-module.exports = { app, server };
+module.exports = { app, server, db };

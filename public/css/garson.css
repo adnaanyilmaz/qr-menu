@@ -1051,6 +1051,36 @@ button:active {
   white-space: nowrap;
 }
 
+.table-call-banner.order-style {
+  background: #78350f;
+  border-bottom-color: #f59e0b;
+  animation: pulseAmber 2s infinite;
+}
+
+.table-call-banner.order-style .btn-dismiss-table-call {
+  background: #f59e0b;
+}
+
+.table-call-banner.ready-style {
+  background: #064e3b;
+  border-bottom-color: #10b981;
+  animation: pulseGreen 2s infinite;
+}
+
+.table-call-banner.ready-style .btn-dismiss-table-call {
+  background: #10b981;
+}
+
+@keyframes pulseAmber {
+  0%, 100% { background: #78350f; }
+  50% { background: #92400e; }
+}
+
+@keyframes pulseGreen {
+  0%, 100% { background: #064e3b; }
+  50% { background: #065f46; }
+}
+
 .btn-dismiss-table-call:hover {
   background: #dc2626;
 }
@@ -1481,6 +1511,14 @@ button:active {
 
 .call-card.order-type .call-card-type {
   color: var(--accent-amber);
+}
+
+.call-card.ready-type {
+  border-left-color: var(--accent-green);
+}
+
+.call-card.ready-type .call-card-type {
+  color: var(--accent-green);
 }
 
 .call-card-note {

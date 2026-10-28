@@ -725,24 +725,45 @@ function renderAdisyon() {
   const tableCalls = state.notifications.filter(n => normalizeTableId(n.table) === normId);
   if (tableCalls.length > 0) {
     const firstCall = tableCalls[0];
-    const isOrder = isOrderNotification(firstCall);
+    const isReady = isKitchenReadyNotification(firstCall);
+    const isOrder = !isReady && isOrderNotification(firstCall);
 
     dom.tableCallBanner.style.display = 'flex';
     dom.tableCallBanner.classList.toggle('order-style', isOrder);
+    dom.tableCallBanner.classList.toggle('ready-style', isReady);
 
     if (dom.tableCallIcon) {
-      dom.tableCallIcon.textContent = isOrder ? 'restaurant' : 'notifications_active';
+      if (isReady) {
+        dom.tableCallIcon.textContent = 'room_service';
+      } else if (isOrder) {
+        dom.tableCallIcon.textContent = 'restaurant';
+      } else {
+        dom.tableCallIcon.textContent = 'notifications_active';
+      }
     }
 
-    dom.tableCallTitle.textContent = isOrder
-      ? `🔔 Yeni Sipariş Geldi! (${firstCall.time || ''})`
-      : `${firstCall.type} (${firstCall.time || ''})`;
-
-    dom.tableCallNote.textContent = firstCall.note ? firstCall.note : (isOrder ? 'Müşteri menüden sipariş gönderdi.' : 'Müşteri servis bekliyor.');
+    if (isReady) {
+      dom.tableCallTitle.textContent = `🍽️ Sipariş Hazır! (${firstCall.time || ''})`;
+      dom.tableCallNote.textContent = firstCall.note ? firstCall.note : 'Sipariş mutfakta hazırlandı, servise çıkarılabilir.';
+    } else if (isOrder) {
+      dom.tableCallTitle.textContent = `🔔 Yeni Sipariş Geldi! (${firstCall.time || ''})`;
+      dom.tableCallNote.textContent = firstCall.note ? firstCall.note : 'Müşteri menüden sipariş gönderdi.';
+    } else {
+      dom.tableCallTitle.textContent = `${firstCall.type} (${firstCall.time || ''})`;
+      dom.tableCallNote.textContent = firstCall.note ? firstCall.note : 'Müşteri servis bekliyor.';
+    }
 
     if (dom.btnBannerText && dom.btnBannerIcon) {
-      dom.btnBannerIcon.textContent = isOrder ? 'check_circle' : 'done';
-      dom.btnBannerText.textContent = isOrder ? 'Siparişi Onayla & Adisyona Ekle' : 'Onayla & Kapat';
+      if (isReady) {
+        dom.btnBannerIcon.textContent = 'done_all';
+        dom.btnBannerText.textContent = 'Servis Edildi / Kapat';
+      } else if (isOrder) {
+        dom.btnBannerIcon.textContent = 'check_circle';
+        dom.btnBannerText.textContent = 'Siparişi Onayla & Adisyona Ekle';
+      } else {
+        dom.btnBannerIcon.textContent = 'done';
+        dom.btnBannerText.textContent = 'Onayla & Kapat';
+      }
     }
   } else {
     dom.tableCallBanner.style.display = 'none';
@@ -811,7 +832,8 @@ function renderCallsDrawer() {
   }
 
   dom.drawerCallsList.innerHTML = calls.map(c => {
-    const isOrder = isOrderNotification(c);
+    const isReady = isKitchenReadyNotification(c);
+    const isOrder = !isReady && isOrderNotification(c);
     const normTable = normalizeTableId(c.table);
     const tableNum = parseInt(normTable, 10);
 
@@ -829,8 +851,15 @@ function renderCallsDrawer() {
       `;
     }
 
+    let typeBadge = escapeHtml(c.type);
+    if (isReady) {
+      typeBadge = '🍽️ Mutfakta Hazır (Servise Çıkarın)';
+    } else if (isOrder) {
+      typeBadge = '📦 Yeni Müşteri Siparişi';
+    }
+
     return `
-      <div class="call-card ${isOrder ? 'order-type' : ''}">
+      <div class="call-card ${isReady ? 'ready-type' : (isOrder ? 'order-type' : '')}">
         <div class="call-card-top">
           <span class="call-card-table">
             <span class="material-symbols-outlined" style="font-size:16px;">table_restaurant</span>
@@ -838,12 +867,23 @@ function renderCallsDrawer() {
           </span>
           <span class="call-card-time">${c.time || ''}</span>
         </div>
-        <div class="call-card-type">${isOrder ? '📦 Müşteri Siparişi' : escapeHtml(c.type)}</div>
+        <div class="call-card-type">${typeBadge}</div>
         ${c.note ? `<div class="call-card-note">${escapeHtml(c.note)}</div>` : ''}
         ${itemsPreviewHtml}
 
-        <div class="call-card-actions" style="${isOrder ? 'flex-direction:column; gap:6px;' : ''}">
-          ${isOrder ? `
+        <div class="call-card-actions" style="${(isOrder || isReady) ? 'flex-direction:column; gap:6px;' : ''}">
+          ${isReady ? `
+            <button type="button" class="btn-approve-order" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%);" onclick="dismissSingleCall('${c.id}', false)">
+              <span class="material-symbols-outlined" style="font-size:16px;">done_all</span>
+              <span>Servis Edildi / Bildirimi Kapat</span>
+            </button>
+            <div style="display:flex; width:100%; gap:8px;">
+              <button type="button" class="btn-open-table-from-call" onclick="jumpToTableFromCall('${normTable}')">
+                <span class="material-symbols-outlined" style="font-size:14px;">receipt_long</span>
+                <span>Adisyonu Gör</span>
+              </button>
+            </div>
+          ` : (isOrder ? `
             <button type="button" class="btn-approve-order" onclick="approveOrder('${c.id}')">
               <span class="material-symbols-outlined" style="font-size:16px;">check_circle</span>
               <span>Siparişi Onayla & Adisyona Ekle</span>
@@ -862,11 +902,11 @@ function renderCallsDrawer() {
               <span class="material-symbols-outlined" style="font-size:14px;">receipt_long</span>
               <span>Adisyonu Aç</span>
             </button>
-            <button type="button" class="btn-dismiss-call" onclick="dismissSingleCall('${c.id}')">
+            <button type="button" class="btn-dismiss-call" onclick="dismissSingleCall('${c.id}', false)">
               <span class="material-symbols-outlined" style="font-size:14px;">check</span>
               <span>Onayla & Kapat</span>
             </button>
-          `}
+          `)}
         </div>
       </div>
     `;
@@ -1095,7 +1135,10 @@ async function handleCurrentTableCallAction() {
   if (tableCalls.length === 0) return;
 
   const firstCall = tableCalls[0];
-  if (isOrderNotification(firstCall)) {
+  const isReady = isKitchenReadyNotification(firstCall);
+  const isOrder = !isReady && isOrderNotification(firstCall);
+
+  if (isOrder) {
     await approveOrder(firstCall.id);
   } else {
     await dismissSingleCall(firstCall.id, false);
@@ -1106,7 +1149,8 @@ async function handleCurrentTableCallAction() {
 async function dismissSingleCall(callId, addToAdisyon = true) {
   playTapChime();
   const targetCall = state.notifications.find(n => n.id === callId);
-  const isOrder = isOrderNotification(targetCall);
+  const isReady = isKitchenReadyNotification(targetCall);
+  const isOrder = !isReady && isOrderNotification(targetCall);
 
   if (isOrder && addToAdisyon) {
     return await approveOrder(callId);
@@ -1409,11 +1453,29 @@ function normalizeTurkish(str) {
   return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
 
+function isKitchenReadyNotification(call) {
+  if (!call) return false;
+  if (call.isReadyAlert) return true;
+  if (typeof call.id === 'string' && call.id.startsWith('ready_')) return true;
+  if (call.source === 'kitchen' || call.source === 'kitchen_kds') return true;
+  const t = normalizeTurkish(call.type || '');
+  return t.includes('hazir') || t.includes('servise cikar') || t.includes('servis hazir');
+}
+
 function isOrderNotification(call) {
   if (!call) return false;
+  // CRITICAL: Kitchen Ready notifications are NOT incoming orders to be added to the adisyon!
+  if (isKitchenReadyNotification(call)) return false;
+
+  const t = normalizeTurkish(call.type || '');
+  if (t.includes('hesap') || t.includes('bill')) return false;
+  if (t.includes('garson') || t.includes('cagir') || t.includes('servis')) {
+    if (!call.id || !call.id.startsWith('order_')) return false;
+  }
+
   if (typeof call.id === 'string' && call.id.startsWith('order_')) return true;
-  if (Array.isArray(call.items) && call.items.length > 0) return true;
-  const t = normalizeTurkish(call.type);
+  if (call.source === 'qr_menu') return true;
+  if (Array.isArray(call.items) && call.items.length > 0 && !call.id?.startsWith('call_')) return true;
   return t.includes('sipar') || t.includes('order');
 }
 

@@ -11,7 +11,7 @@
 const http = require('http');
 
 process.env.PORT = '3006';
-const { app, server } = require('./server');
+const { app, server, db } = require('./server');
 
 const STAFF_PIN = '1234';
 
@@ -73,6 +73,20 @@ async function runCompatibilityTests() {
   const NORM_TABLE_ID = '16';
 
   try {
+    // Test öncesi Masa 16 ve Masa 17 temizliği
+    if (db) {
+      if (db.adisyons) {
+        delete db.adisyons['16'];
+        delete db.adisyons['17'];
+      }
+      if (db.notifications) {
+        db.notifications = db.notifications.filter(n => n.table !== 'Masa 16' && n.table !== 'Masa 17' && n.table !== '16' && n.table !== '17');
+      }
+      if (db.kitchenOrders) {
+        db.kitchenOrders = db.kitchenOrders.filter(o => o.tableName !== 'Masa 16' && o.tableName !== 'Masa 17' && o.tableId !== '16' && o.tableId !== '17');
+      }
+    }
+
     // ------------------------------------------------------------------------
     // ADIM 1: Tüm Arayüz Uç Noktalarının Sağlık Kontrolü (Health Checks)
     // ------------------------------------------------------------------------
@@ -218,6 +232,33 @@ async function runCompatibilityTests() {
       resKitchenComplete.json.notification && resKitchenComplete.json.notification.type.includes('Hazır'),
       '8. Mutfak Tamamlaması Garsona "Sipariş Hazır 🔔" Bildirimi Olarak Ulaştı',
       `Bildirim Metni: ${resKitchenComplete.json.notification ? resKitchenComplete.json.notification.note : 'Yok'}`
+    );
+
+    // 2.8.1 MÜKERRER ÜRÜN KONTROLÜ: Garson "Servise Hazır" bildirimini kapattığında/onayladığında adisyona tekrar ürün eklenmemeli!
+    const readyNotifId = resKitchenComplete.json.notification.id;
+    const resDismissReady = await request({
+      hostname: '127.0.0.1',
+      port: 3006,
+      path: `/api/garson/calls/${readyNotifId}/dismiss`,
+      method: 'POST',
+      headers: { 'x-staff-pin': STAFF_PIN }
+    }, { addToAdisyon: false });
+
+    const resAdisyonCheck = await request({
+      hostname: '127.0.0.1',
+      port: 3006,
+      path: `/api/garson/tables/${NORM_TABLE_ID}`,
+      method: 'GET',
+      headers: { 'x-staff-pin': STAFF_PIN }
+    });
+
+    assert(
+      resAdisyonCheck.statusCode === 200 &&
+      resAdisyonCheck.json.adisyon &&
+      resAdisyonCheck.json.adisyon.totalAmount === 460 &&
+      resAdisyonCheck.json.adisyon.items.length === 3,
+      '8.1. Servise Hazır Bildirimi Onaylandığında Mükerrer Ürün Eklenmediği Doğrulandı',
+      `Adisyon Tutarı Değişmedi: ${resAdisyonCheck.json.adisyon.totalAmount}₺ (Beklenen: 460₺), Toplam Kalem: ${resAdisyonCheck.json.adisyon.items.length}`
     );
 
     // 2.9 MASA TAŞIMA / TRANSFER TESTİ: Masa 16 bahçeden Masa 17'ye transfer edilir

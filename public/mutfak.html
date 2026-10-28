@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mutfak Ekranı (KDS) | Ali Baba Döner Kafe</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  
+  <!-- KDS Stylesheet -->
+  <link rel="stylesheet" href="css/mutfak.css">
+</head>
+<body class="kds-body">
+
+  <!-- ======================== PIN / LOGIN OVERLAY ======================== -->
+  <div class="auth-overlay active" id="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-icon-wrap">
+        <span class="material-symbols-outlined auth-icon">skillet</span>
+      </div>
+      <h2 class="auth-title">Mutfak Ekranı (KDS)</h2>
+      <p class="auth-subtitle">Ali Baba Döner Kafe Şef & Mutfak Terminali</p>
+      
+      <div class="pin-display-wrap">
+        <div class="pin-dots" id="pin-dots">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+      </div>
+
+      <div class="pin-numpad">
+        <button type="button" class="num-btn" onclick="pressPin('1')">1</button>
+        <button type="button" class="num-btn" onclick="pressPin('2')">2</button>
+        <button type="button" class="num-btn" onclick="pressPin('3')">3</button>
+        <button type="button" class="num-btn" onclick="pressPin('4')">4</button>
+        <button type="button" class="num-btn" onclick="pressPin('5')">5</button>
+        <button type="button" class="num-btn" onclick="pressPin('6')">6</button>
+        <button type="button" class="num-btn" onclick="pressPin('7')">7</button>
+        <button type="button" class="num-btn" onclick="pressPin('8')">8</button>
+        <button type="button" class="num-btn" onclick="pressPin('9')">9</button>
+        <button type="button" class="num-btn num-btn-action" onclick="clearPin()">C</button>
+        <button type="button" class="num-btn" onclick="pressPin('0')">0</button>
+        <button type="button" class="num-btn num-btn-action" onclick="backspacePin()">⌫</button>
+      </div>
+
+      <div class="auth-error-msg" id="auth-error-msg"></div>
+      <div class="auth-hint">Varsayılan Mutfak PIN: <strong>1234</strong></div>
+    </div>
+  </div>
+
+  <!-- ======================== MAIN KDS APP CONTAINER ======================== -->
+  <div class="kds-app" id="kds-app">
+
+    <!-- TOP HEADER -->
+    <header class="kds-header">
+      <div class="header-left">
+        <div class="brand-badge">
+          <span class="material-symbols-outlined brand-icon">restaurant</span>
+        </div>
+        <div class="brand-info">
+          <div class="brand-title" id="kds-restaurant-name">Ali Baba Döner Kafe</div>
+          <div class="brand-subtitle">
+            <span>Mutfak Ekranı (KDS)</span>
+            <span class="sse-pill" id="sse-pill">
+              <span class="sse-dot"></span>
+              <span id="sse-status-text">Canlı SSE</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CENTER: DIGITAL CLOCK & METRICS -->
+      <div class="header-center">
+        <div class="kds-clock-box">
+          <span class="material-symbols-outlined clock-icon">schedule</span>
+          <span class="clock-time" id="kds-clock-time">12:00:00</span>
+          <span class="clock-date" id="kds-clock-date">28.10.2026</span>
+        </div>
+
+        <div class="kds-quick-metrics">
+          <div class="metric-pill metric-pending" title="Hazırlık bekleyen yeni siparişler">
+            <span class="metric-label">⏳ Bekleyen</span>
+            <span class="metric-val" id="metric-pending-count">0</span>
+          </div>
+          <div class="metric-pill metric-prep" title="Ocakta / Hazırlanıyor olan siparişler">
+            <span class="metric-label">👨‍🍳 Hazırlanıyor</span>
+            <span class="metric-val" id="metric-prep-count">0</span>
+          </div>
+          <div class="metric-pill metric-done" title="Bugün servise çıkarılan siparişler">
+            <span class="metric-label">✅ Tamamlanan</span>
+            <span class="metric-val" id="metric-done-count">0</span>
+          </div>
+          <div class="metric-pill metric-avg" title="Bugünkü siparişlerin ortalama teslim süresi">
+            <span class="metric-label">⏱️ Ort. Süre</span>
+            <span class="metric-val" id="metric-avg-time">0 dk</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: BELL TEST, FULLSCREEN & NAVIGATION -->
+      <div class="header-right">
+        <!-- Web Audio API Kitchen Bell Test Button -->
+        <button type="button" class="btn-sound-test" id="btn-sound-test" onclick="testKitchenBell()" title="Web Audio API Mutfak Zili Çal & Hoparlörü Test Et">
+          <span class="material-symbols-outlined bell-icon">notifications_active</span>
+          <span class="btn-sound-test-text">Zil Sesini Test Et</span>
+          <span class="sound-wave-anim" id="sound-wave-anim">
+            <span></span><span></span><span></span>
+          </span>
+        </button>
+
+        <!-- Sound Toggle Button -->
+        <button type="button" class="btn-header-icon" id="btn-sound-toggle" onclick="toggleMute()" title="Zil Sesini Aç / Kapat">
+          <span class="material-symbols-outlined" id="sound-toggle-icon">volume_up</span>
+        </button>
+
+        <!-- Fullscreen Toggle -->
+        <button type="button" class="btn-header-icon" onclick="toggleFullScreen()" title="Tam Ekran (TV / Tablet Modu)">
+          <span class="material-symbols-outlined">fullscreen</span>
+        </button>
+
+        <!-- Quick Links Dropdown -->
+        <div class="header-links">
+          <a href="/garson" target="_blank" class="btn-header-subtle" title="Garson Terminali">
+            <span class="material-symbols-outlined">room_service</span>
+            <span class="nav-label">Garson</span>
+          </a>
+          <a href="/kasa" target="_blank" class="btn-header-subtle" title="Kasa & POS Ekranı">
+            <span class="material-symbols-outlined">point_of_sale</span>
+            <span class="nav-label">Kasa</span>
+          </a>
+          <a href="/admin" target="_blank" class="btn-header-subtle" title="Yönetici Paneli">
+            <span class="material-symbols-outlined">admin_panel_settings</span>
+            <span class="nav-label">Admin</span>
+          </a>
+          <button type="button" class="btn-header-subtle" onclick="lockKds()" title="Mutfak Oturumunu Kilitle">
+            <span class="material-symbols-outlined">lock</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- URGENT DELAY WARNING BANNER (Shows when any order > 10 min) -->
+    <div class="kds-urgent-banner" id="kds-urgent-banner" style="display: none;">
+      <span class="material-symbols-outlined pulse-warn-icon">error</span>
+      <span id="urgent-banner-text">DİKKAT: 10 dakikayı aşan gecikmiş siparişler var! Lütfen öncelik verin.</span>
+      <button type="button" class="btn-banner-filter" onclick="filterByUrgent()">Gecikenleri Göster</button>
+    </div>
+
+    <!-- CONTROL TOOLBAR -->
+    <nav class="kds-toolbar">
+      <div class="toolbar-left">
+        <!-- Filter Tabs -->
+        <div class="filter-tabs">
+          <button type="button" class="filter-tab active" id="tab-active" onclick="switchFilterTab('active')">
+            <span class="material-symbols-outlined tab-icon">local_fire_department</span>
+            <span>Aktif Siparişler</span>
+            <span class="tab-badge" id="tab-badge-active">0</span>
+          </button>
+          <button type="button" class="filter-tab" id="tab-pending" onclick="switchFilterTab('pending')">
+            <span class="material-symbols-outlined tab-icon">pending</span>
+            <span>Bekleyenler</span>
+            <span class="tab-badge" id="tab-badge-pending">0</span>
+          </button>
+          <button type="button" class="filter-tab" id="tab-preparing" onclick="switchFilterTab('preparing')">
+            <span class="material-symbols-outlined tab-icon">soup_kitchen</span>
+            <span>Hazırlanıyor</span>
+            <span class="tab-badge" id="tab-badge-preparing">0</span>
+          </button>
+          <button type="button" class="filter-tab" id="tab-completed" onclick="switchFilterTab('completed')">
+            <span class="material-symbols-outlined tab-icon">check_circle</span>
+            <span>Tamamlananlar</span>
+            <span class="tab-badge" id="tab-badge-completed">0</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="toolbar-right">
+        <!-- Table Filter Dropdown -->
+        <div class="select-wrap">
+          <span class="material-symbols-outlined select-icon">table_restaurant</span>
+          <select id="kds-table-filter" onchange="onTableFilterChange(this.value)">
+            <option value="all">Tüm Masalar</option>
+          </select>
+        </div>
+
+        <!-- Order Speed Guide Legend -->
+        <div class="timer-legend" title="Dakikaya Göre Renk Değiştiren Süre Sayacı Rehberi">
+          <span class="legend-chip legend-normal">● &lt; 5 dk Normal</span>
+          <span class="legend-chip legend-warning">● 5-10 dk Bekliyor</span>
+          <span class="legend-chip legend-urgent">● &gt; 10 dk Acil</span>
+        </div>
+
+        <!-- Quick Manual Ticket Button -->
+        <button type="button" class="btn-toolbar-action" onclick="openNewTicketModal()">
+          <span class="material-symbols-outlined">add_task</span>
+          <span>+ Yeni Fiş</span>
+        </button>
+
+        <!-- Clear Completed History Button (Shown in completed tab) -->
+        <button type="button" class="btn-toolbar-danger" id="btn-clear-completed" onclick="clearCompletedOrders()" style="display: none;">
+          <span class="material-symbols-outlined">delete_sweep</span>
+          <span>Tamamlananları Temizle</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- MAIN TICKETS GRID WORKSPACE -->
+    <main class="kds-workspace">
+      <!-- Empty State -->
+      <div class="kds-empty-state" id="kds-empty-state" style="display: none;">
+        <div class="empty-icon-wrap">
+          <span class="material-symbols-outlined empty-icon">check_circle</span>
+        </div>
+        <h3 class="empty-title">Tüm Siparişler Hazır!</h3>
+        <p class="empty-desc">Şu anda mutfakta bekleyen sipariş bulunmuyor. Yeni sipariş geldiğinde zil sesi ile bildirim verilecektir.</p>
+        <button type="button" class="btn-empty-test" onclick="testKitchenBell()">
+          <span class="material-symbols-outlined">notifications</span>
+          <span>Zil Sesini Dene</span>
+        </button>
+      </div>
+
+      <!-- Ticket Cards Grid Container -->
+      <div class="kds-cards-grid" id="kds-cards-grid">
+        <!-- Rendered dynamically via JavaScript -->
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ======================== NEW MANUAL TICKET MODAL ======================== -->
+  <div class="modal-backdrop" id="modal-new-ticket">
+    <div class="kds-modal">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="material-symbols-outlined modal-icon">receipt_long</span>
+          <h3>Yeni Mutfak Fişi Aç</h3>
+        </div>
+        <button type="button" class="btn-modal-close" onclick="closeNewTicketModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Masa Seçin</label>
+          <select id="modal-ticket-table" class="modal-input">
+            <!-- Populated via JS -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Ürün Seçin veya Yazın</label>
+          <div class="quick-food-chips" id="quick-food-chips">
+            <!-- Quick Chips -->
+          </div>
+          <input type="text" id="modal-ticket-item-name" class="modal-input" placeholder="Örn: 2x Tavuk Döner Dürüm" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Adet</label>
+            <input type="number" id="modal-ticket-qty" class="modal-input" value="1" min="1" max="50" />
+          </div>
+          <div class="form-group">
+            <label>Porsiyon / Ekmek</label>
+            <input type="text" id="modal-ticket-portion" class="modal-input" placeholder="Lavaş / Tombik / Standart" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Mutfak Notu / Özel İstek</label>
+          <input type="text" id="modal-ticket-note" class="modal-input" placeholder="Örn: Soğansız, bol domates, sos ayrı vb." />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-cancel" onclick="closeNewTicketModal()">İptal</button>
+        <button type="button" class="btn-modal-submit" onclick="submitManualTicket()">
+          <span class="material-symbols-outlined">send</span>
+          <span>Mutfağa İlet</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================== TOAST NOTIFICATION CONTAINER ======================== -->
+  <div class="kds-toast-container" id="kds-toast-container"></div>
+
+  <!-- JavaScript -->
+  <script src="js/mutfak.js"></script>
+</body>
+</html>

@@ -66,6 +66,7 @@ function loadData() {
         parsed.notifications = Array.isArray(parsed.notifications) ? parsed.notifications : [];
         parsed.adisyons = (parsed.adisyons && typeof parsed.adisyons === 'object') ? parsed.adisyons : {};
         parsed.orderHistory = Array.isArray(parsed.orderHistory) ? parsed.orderHistory : [];
+        parsed.kitchenOrders = Array.isArray(parsed.kitchenOrders) ? parsed.kitchenOrders : [];
         return parsed;
       }
     } catch (err) {
@@ -109,27 +110,28 @@ function loadData() {
     products: initial.products || [],
     notifications: [],
     adisyons: {},
-    orderHistory: []
+    orderHistory: [],
+    kitchenOrders: []
   };
 
   saveData(defaultData);
   return defaultData;
 }
 
-// Atomic file write to prevent data corruption
+// Safe file write with atomic/direct fallback
 function saveData(data) {
+  const jsonStr = JSON.stringify(data, null, 2);
   try {
-    const tempFile = path.join(DATA_DIR, `menu_data_${Date.now()}_tmp.json`);
-    fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), 'utf8');
-    fs.renameSync(tempFile, DATA_FILE);
+    fs.writeFileSync(DATA_FILE, jsonStr, 'utf8');
     return true;
   } catch (err) {
-    console.error('Error saving data safely:', err);
     try {
-      fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+      const tempFile = path.join(DATA_DIR, `menu_data_${Date.now()}_tmp.json`);
+      fs.writeFileSync(tempFile, jsonStr, 'utf8');
+      fs.renameSync(tempFile, DATA_FILE);
       return true;
     } catch (fallbackErr) {
-      console.error('Fallback save also failed:', fallbackErr);
+      console.error('Save failed:', fallbackErr.message);
       return false;
     }
   }
@@ -700,6 +702,58 @@ function isOrderNotification(notif) {
   return isOrderType(notif.type);
 }
 
+// Kitchen Display System (KDS) Ticket Counter & Generator
+let kitchenTicketCounter = 100;
+if (db && Array.isArray(db.kitchenOrders)) {
+  for (const ord of db.kitchenOrders) {
+    const num = parseInt(String(ord.ticketNumber || '').replace(/\D/g, ''), 10);
+    if (!isNaN(num) && num > kitchenTicketCounter) {
+      kitchenTicketCounter = num;
+    }
+  }
+}
+
+function createKitchenTicket({ table, items, note, source }) {
+  db.kitchenOrders = db.kitchenOrders || [];
+  kitchenTicketCounter += 1;
+  const now = Date.now();
+  const tableId = normalizeTableId(table);
+  const ticketNumber = `#${kitchenTicketCounter}`;
+
+  const cleanItems = (Array.isArray(items) ? items : []).map(it => ({
+    id: it.id || ('k_item_' + Date.now() + '_' + Math.floor(Math.random() * 10000)),
+    productId: it.productId || '',
+    name: sanitizeString(it.name || 'Sipariş Ürünü'),
+    portion: sanitizeString(it.portion || 'Standart'),
+    quantity: Math.max(1, parseInt(it.quantity, 10) || 1),
+    note: sanitizeString(it.note || ''),
+    completed: false
+  }));
+
+  const ticket = {
+    id: 'kds_' + now + '_' + Math.floor(Math.random() * 10000),
+    ticketNumber,
+    tableId,
+    tableName: `Masa ${parseInt(tableId, 10)}`,
+    source: source || 'qr_menu',
+    items: cleanItems,
+    note: sanitizeString(note || ''),
+    status: 'pending', // 'pending' | 'preparing' | 'completed' | 'cancelled'
+    createdAt: now,
+    startedAt: null,
+    completedAt: null
+  };
+
+  db.kitchenOrders.unshift(ticket);
+  if (db.kitchenOrders.length > 200) {
+    db.kitchenOrders = db.kitchenOrders.slice(0, 200);
+  }
+
+  saveData(db);
+  broadcastNotificationEvent('kds_order_created', ticket);
+  return ticket;
+}
+
 // 8. Waiter Call & Notifications (Spam & Cooldown Protected)
 app.post('/api/call-waiter', (req, res) => {
   const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
@@ -752,13 +806,28 @@ app.post('/api/call-waiter', (req, res) => {
     db.notifications = db.notifications.slice(0, 50);
   }
 
+  // If this is a food order, also create a kitchen display system (KDS) ticket!
+  let kitchenTicket = null;
+  if (isOrder) {
+    const orderItems = Array.isArray(req.body.items) && req.body.items.length > 0
+      ? req.body.items
+      : extractItemsFromOrderNote(cleanNote);
+    kitchenTicket = createKitchenTicket({
+      table: cleanTable,
+      items: orderItems,
+      note: cleanNote,
+      source: 'qr_menu'
+    });
+  }
+
   saveData(db);
   broadcastNotificationEvent('notification_created', notification);
 
   res.json({
     success: true,
     message: isOrder ? 'Siparişiniz başarıyla alındı!' : 'Talebiniz servis personeline iletildi!',
-    data: notification
+    data: notification,
+    kitchenTicket: kitchenTicket
   });
 });
 
@@ -933,10 +1002,28 @@ app.post('/api/garson/tables/:tableId/items', requireWaiterOrAdminAuth, (req, re
   saveData(db);
   broadcastNotificationEvent('adisyon_updated', { tableId, adisyon: tableAdisyon });
 
+  // Automatically dispatch kitchen ticket for newly added item
+  let kitchenTicket = null;
+  if (!req.body || req.body.sendToKitchen !== false) {
+    kitchenTicket = createKitchenTicket({
+      table: tableId,
+      items: [{
+        name: cleanName,
+        portion: cleanPortion,
+        quantity: cleanQuantity,
+        note: cleanNote,
+        price: cleanPrice
+      }],
+      note: cleanNote,
+      source: 'garson'
+    });
+  }
+
   res.json({
     success: true,
     message: `${cleanName} adisyona eklendi.`,
-    data: tableAdisyon
+    data: tableAdisyon,
+    kitchenTicket: kitchenTicket
   });
 });
 
@@ -1508,6 +1595,233 @@ app.get('/api/kasa/receipt/:id', requireWaiterOrAdminAuth, (req, res) => {
   res.json({ success: true, data: order });
 });
 
+// ======================== KDS (KITCHEN DISPLAY SYSTEM) APIS ========================
+
+// 1. Full State for Kitchen Display (Active Orders, Preparation History, Summary Stats)
+app.get('/api/kds/state', requireWaiterOrAdminAuth, (req, res) => {
+  db.kitchenOrders = db.kitchenOrders || [];
+  const startOfToday = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
+
+  const orders = db.kitchenOrders;
+  const pending = orders.filter(o => o.status === 'pending');
+  const preparing = orders.filter(o => o.status === 'preparing');
+  const active = orders.filter(o => o.status === 'pending' || o.status === 'preparing');
+  const completedToday = orders.filter(o => o.status === 'completed' && (o.completedAt || o.createdAt) >= startOfToday);
+
+  // Calculate average prep time in minutes for today's completed orders
+  let totalPrepTimeMs = 0;
+  let countWithDuration = 0;
+  for (const ord of completedToday) {
+    if (ord.completedAt && ord.createdAt) {
+      totalPrepTimeMs += (ord.completedAt - ord.createdAt);
+      countWithDuration++;
+    }
+  }
+  const avgPrepMinutes = countWithDuration > 0
+    ? Math.round((totalPrepTimeMs / countWithDuration / 60000) * 10) / 10
+    : 0;
+
+  res.json({
+    success: true,
+    data: {
+      restaurantName: db.settings.restaurantName || 'Ali Baba Döner Kafe',
+      orders: orders,
+      summary: {
+        pendingCount: pending.length,
+        preparingCount: preparing.length,
+        activeCount: active.length,
+        completedTodayCount: completedToday.length,
+        avgPrepMinutes: avgPrepMinutes
+      },
+      tableCount: db.settings.tableCount || 20
+    }
+  });
+});
+
+// 2. Start Preparing Order (Pending -> Preparing)
+app.post('/api/kds/orders/:id/start', requireWaiterOrAdminAuth, (req, res) => {
+  const { id } = req.params;
+  db.kitchenOrders = db.kitchenOrders || [];
+  const order = db.kitchenOrders.find(o => o.id === id);
+
+  if (!order) {
+    return res.status(404).json({ success: false, message: 'Mutfak siparişi bulunamadı.' });
+  }
+
+  order.status = 'preparing';
+  order.startedAt = Date.now();
+  saveData(db);
+
+  broadcastNotificationEvent('kds_order_updated', order);
+
+  res.json({
+    success: true,
+    message: `${order.tableName} ${order.ticketNumber} hazırlanmaya başlandı.`,
+    data: order
+  });
+});
+
+// 3. Complete Order (Preparing -> Completed) & Dispatch Ready Notification to Waiter
+app.post('/api/kds/orders/:id/complete', requireWaiterOrAdminAuth, (req, res) => {
+  const { id } = req.params;
+  db.kitchenOrders = db.kitchenOrders || [];
+  const order = db.kitchenOrders.find(o => o.id === id);
+
+  if (!order) {
+    return res.status(404).json({ success: false, message: 'Mutfak siparişi bulunamadı.' });
+  }
+
+  const now = Date.now();
+  order.status = 'completed';
+  order.completedAt = now;
+  if (!order.startedAt) order.startedAt = now;
+
+  // Mark all items inside as completed
+  if (Array.isArray(order.items)) {
+    order.items.forEach(it => { it.completed = true; });
+  }
+
+  // Create real-time notification for waiter and cash terminal
+  const readyNotif = {
+    id: 'ready_' + now + '_' + Math.floor(Math.random() * 1000),
+    table: order.tableName,
+    type: 'Sipariş Hazır 🔔',
+    note: `${order.tableName} (${order.ticketNumber}) siparişi mutfakta hazırlandı, servise çıkarılabilir!`,
+    items: order.items || [],
+    time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+    createdAt: now
+  };
+
+  db.notifications = db.notifications || [];
+  db.notifications.unshift(readyNotif);
+  if (db.notifications.length > 50) {
+    db.notifications = db.notifications.slice(0, 50);
+  }
+
+  saveData(db);
+
+  broadcastNotificationEvent('kds_order_updated', order);
+  broadcastNotificationEvent('notification_created', readyNotif);
+
+  res.json({
+    success: true,
+    message: `${order.tableName} ${order.ticketNumber} hazırlandı ve servise bildirildi!`,
+    data: order,
+    notification: readyNotif
+  });
+});
+
+// 4. Revert Order Status (Undo: Completed -> Preparing, or Preparing -> Pending)
+app.post('/api/kds/orders/:id/revert', requireWaiterOrAdminAuth, (req, res) => {
+  const { id } = req.params;
+  db.kitchenOrders = db.kitchenOrders || [];
+  const order = db.kitchenOrders.find(o => o.id === id);
+
+  if (!order) {
+    return res.status(404).json({ success: false, message: 'Mutfak siparişi bulunamadı.' });
+  }
+
+  if (order.status === 'completed') {
+    order.status = 'preparing';
+    order.completedAt = null;
+  } else if (order.status === 'preparing') {
+    order.status = 'pending';
+    order.startedAt = null;
+  }
+
+  saveData(db);
+  broadcastNotificationEvent('kds_order_updated', order);
+
+  res.json({
+    success: true,
+    message: `${order.tableName} ${order.ticketNumber} durumu '${order.status}' olarak geri alındı.`,
+    data: order
+  });
+});
+
+// 5. Toggle Individual Item Completed in Kitchen Ticket
+app.post('/api/kds/orders/:id/items/:itemId/toggle', requireWaiterOrAdminAuth, (req, res) => {
+  const { id, itemId } = req.params;
+  db.kitchenOrders = db.kitchenOrders || [];
+  const order = db.kitchenOrders.find(o => o.id === id);
+
+  if (!order) {
+    return res.status(404).json({ success: false, message: 'Mutfak siparişi bulunamadı.' });
+  }
+
+  const item = (order.items || []).find(it => it.id === itemId);
+  if (!item) {
+    return res.status(404).json({ success: false, message: 'Ürün kalemi bulunamadı.' });
+  }
+
+  item.completed = !item.completed;
+  saveData(db);
+  broadcastNotificationEvent('kds_order_updated', order);
+
+  res.json({ success: true, data: order });
+});
+
+// 6. Cancel / Void Kitchen Order
+app.post('/api/kds/orders/:id/cancel', requireWaiterOrAdminAuth, (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body || {};
+  db.kitchenOrders = db.kitchenOrders || [];
+  const order = db.kitchenOrders.find(o => o.id === id);
+
+  if (!order) {
+    return res.status(404).json({ success: false, message: 'Mutfak siparişi bulunamadı.' });
+  }
+
+  order.status = 'cancelled';
+  order.cancelledAt = Date.now();
+  order.cancelReason = sanitizeString(reason || 'Mutfaktan iptal edildi');
+
+  saveData(db);
+  broadcastNotificationEvent('kds_order_updated', order);
+
+  res.json({
+    success: true,
+    message: `${order.tableName} ${order.ticketNumber} siparişi iptal edildi.`,
+    data: order
+  });
+});
+
+// 7. Create New Manual Kitchen Order
+app.post('/api/kds/orders', requireWaiterOrAdminAuth, (req, res) => {
+  const { table, items, note, source } = req.body || {};
+  if (!table || !items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ success: false, message: 'Masa ve en az bir ürün bilgisi gereklidir.' });
+  }
+
+  const ticket = createKitchenTicket({
+    table,
+    items,
+    note,
+    source: source || 'manual'
+  });
+
+  res.status(201).json({
+    success: true,
+    message: `${ticket.tableName} için mutfak fişi oluşturuldu.`,
+    data: ticket
+  });
+});
+
+// 8. Clear Completed Kitchen Orders (Older than 2 hours or all)
+app.post('/api/kds/clear-completed', requireWaiterOrAdminAuth, (req, res) => {
+  db.kitchenOrders = db.kitchenOrders || [];
+  const initialLen = db.kitchenOrders.length;
+  db.kitchenOrders = db.kitchenOrders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
+  saveData(db);
+
+  broadcastNotificationEvent('kds_orders_cleared', {});
+
+  res.json({
+    success: true,
+    message: `${initialLen - db.kitchenOrders.length} adet tamamlanan mutfak fişi temizlendi.`
+  });
+});
+
 // 9. Reset Demo Data (Protected)
 app.post('/api/reset-demo', requireAdminAuth, (req, res) => {
   if (fs.existsSync(INITIAL_DATA_FILE)) {
@@ -1519,6 +1833,7 @@ app.post('/api/reset-demo', requireAdminAuth, (req, res) => {
       db.notifications = [];
       db.adisyons = {};
       db.orderHistory = [];
+      db.kitchenOrders = [];
       saveData(db);
       broadcastNotificationEvent('notifications_reset', []);
       return res.json({ success: true, message: 'Menü demo verilerine başarıyla sıfırlandı!' });
@@ -1544,6 +1859,11 @@ app.get('/kasa', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'kasa.html'));
 });
 
+// Mutfak Ekranı (KDS) Route
+app.get('/mutfak', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'mutfak.html'));
+});
+
 // Fallback all other routes to customer menu index.html (Express 5 compatible)
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -1558,10 +1878,11 @@ app.use((err, req, res, next) => {
 // Start Server
 const server = app.listen(PORT, () => {
   console.log(`=================================================`);
-  console.log(`Ali Baba Döner Kafe Web Sitesi, Kasa & POS Yayında!`);
+  console.log(`Ali Baba Döner Kafe KDS, POS & Restoran Sistemi Yayında!`);
   console.log(`Müşteri QR Menü: http://localhost:${PORT}`);
-  console.log(`Kasa / POS Ekranı: http://localhost:${PORT}/kasa`);
+  console.log(`Mutfak Ekranı (KDS): http://localhost:${PORT}/mutfak`);
   console.log(`Garson Terminali: http://localhost:${PORT}/garson`);
+  console.log(`Kasa / POS Ekranı: http://localhost:${PORT}/kasa`);
   console.log(`Yönetici Admin Paneli: http://localhost:${PORT}/admin`);
   console.log(`=================================================`);
 });

@@ -705,25 +705,350 @@
     "15": {
       "tableId": "15",
       "tableName": "Masa 15",
-      "openedAt": 1793203235700,
-      "updatedAt": 1793205047925,
+      "openedAt": 1793206773135,
+      "updatedAt": 1793206773135,
       "items": [
         {
-          "id": "item_1793204931028_8652",
-          "productId": "custom_1793204931028",
+          "id": "item_1793206773135_1421",
+          "productId": "custom_1793206773135",
           "name": "Sıcak gelsin",
           "portion": "Standart",
           "note": "Sıcak gelsin",
           "price": 0,
-          "quantity": 2,
+          "quantity": 1,
           "total": 0,
-          "addedAt": 1793204931028
+          "addedAt": 1793206773135
         }
       ],
       "totalAmount": 0,
-      "totalItems": 2
+      "totalItems": 1
     },
-    "18": {
+    "20": {
+      "tableId": "20",
+      "tableName": "Masa 20",
+      "openedAt": 1793205563727,
+      "updatedAt": 1793205566238,
+      "items": [],
+      "totalAmount": 0,
+      "totalItems": 0
+    }
+  },
+  "orderHistory": [
+    {
+      "tableId": "04",
+      "tableName": "Masa 4",
+      "openedAt": 1793206759868,
+      "updatedAt": 1793206759872,
+      "items": [
+        {
+          "id": "item_1793206759868_5050",
+          "productId": "prod_test_1",
+          "name": "Tombik Döner",
+          "portion": "Standart",
+          "note": "Soğansız",
+          "price": 150,
+          "quantity": 3,
+          "total": 450,
+          "addedAt": 1793206759868
+        }
+      ],
+      "totalAmount": 450,
+      "totalItems": 3,
+      "closedAt": 1793206759897,
+      "paymentMethod": "Kredi Kartı",
+      "closeNote": "Masa 4 ödeme tamamlandı"
+    },
+    {
+      "tableId": "09",
+      "tableName": "Masa 9",
+      "openedAt": 1793206749385,
+      "updatedAt": 1793206749385,
+      "items": [
+        {
+          "id": "item_1793206749385_7492",
+          "productId": "prod_2",
+          "name": "Et Döner Dürüm",
+          "portion": "Lavaş",
+          "note": "",
+          "price": 240,
+          "quantity": 1,
+          "total": 240,
+          "addedAt": 1793206749385
+        }
+      ],
+      "totalAmount": 220,
+      "totalItems": 1,
+      "receiptNumber": "AB-20261028-4073",
+      "subtotal": 240,
+      "discount": 20,
+      "receivedAmount": 220,
+      "changeAmount": 0,
+      "paymentMethod": "Kredi Kartı",
+      "closeNote": "POS slip onaylı",
+      "cashier": "Kasa Görevlisi",
+      "closedAt": 1793206749388,
+      "taxRate": 10,
+      "taxAmount": 20
+    },
+    {
+      "tableId": "08",
+      "tableName": "Masa 8",
+      "openedAt": 1793206749366,
+      "updatedAt": 1793206749366,
+      "items": [
+        {
+          "id": "item_1793206749366_6507",
+          "productId": "prod_1",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "Lavaş",
+          "note": "",
+          "price": 150,
+          "quantity": 2,
+          "total": 300,
+          "addedAt": 1793206749366
+        }
+      ],
+      "totalAmount": 300,
+      "totalItems": 2,
+      "receiptNumber": "AB-20261028-1683",
+      "subtotal": 300,
+      "discount": 0,
+      "receivedAmount": 350,
+      "changeAmount": 50,
+      "paymentMethod": "Nakit",
+      "closeNote": "Nakit tahsilat yapıldı",
+      "cashier": "Kasa Görevlisi",
+      "closedAt": 1793206749379,
+      "taxRate": 10,
+      "taxAmount": 27.27
+    },
+    {
+      "tableId": "09",
+      "tableName": "Masa 9",
+      "openedAt": 1793206701800,
+      "updatedAt": 1793206701800,
+      "items": [
+        {
+          "id": "item_1793206701800_7451",
+          "productId": "prod_2",
+          "name": "Et Döner Dürüm",
+          "portion": "Lavaş",
+          "note": "",
+          "price": 240,
+          "quantity": 1,
+          "total": 240,
+          "addedAt": 1793206701800
+        }
+      ],
+      "totalAmount": 220,
+      "totalItems": 1,
+      "receiptNumber": "AB-20261028-3084",
+      "subtotal": 240,
+      "discount": 20,
+      "receivedAmount": 220,
+      "changeAmount": 0,
+      "paymentMethod": "Kredi Kartı",
+      "closeNote": "POS slip onaylı",
+      "cashier": "Kasa Görevlisi",
+      "closedAt": 1793206701806,
+      "taxRate": 10,
+      "taxAmount": 20
+    },
+    {
+      "tableId": "08",
+      "tableName": "Masa 8",
+      "openedAt": 1793206701768,
+      "updatedAt": 1793206701768,
+      "items": [
+        {
+          "id": "item_1793206701768_3070",
+          "productId": "prod_1",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "Lavaş",
+          "note": "",
+          "price": 150,
+          "quantity": 2,
+          "total": 300,
+          "addedAt": 1793206701768
+        }
+      ],
+      "totalAmount": 300,
+      "totalItems": 2,
+      "receiptNumber": "AB-20261028-5783",
+      "subtotal": 300,
+      "discount": 0,
+      "receivedAmount": 350,
+      "changeAmount": 50,
+      "paymentMethod": "Nakit",
+      "closeNote": "Nakit tahsilat yapıldı",
+      "cashier": "Kasa Görevlisi",
+      "closedAt": 1793206701787,
+      "taxRate": 10,
+      "taxAmount": 27.27
+    },
+    {
+      "tableId": "15",
+      "tableName": "Masa 15",
+      "openedAt": 1793203235700,
+      "updatedAt": 1793205514530,
+      "items": [
+        {
+          "id": "item_1793205506018_9274",
+          "productId": "prod_29",
+          "name": "Ice Americano",
+          "portion": "350ml Buzlu Bardak",
+          "note": "",
+          "price": 90,
+          "quantity": 2,
+          "total": 180,
+          "addedAt": 1793205506018
+        },
+        {
+          "id": "item_1793205508466_9839",
+          "productId": "prod_21",
+          "name": "Espresso",
+          "portion": "Tek Shot (Single)",
+          "note": "",
+          "price": 65,
+          "quantity": 1,
+          "total": 65,
+          "addedAt": 1793205508466
+        },
+        {
+          "id": "item_1793205514530_6745",
+          "productId": "prod_18",
+          "name": "Çıtır Tavuk",
+          "portion": "5 Parça Fileto",
+          "note": "",
+          "price": 140,
+          "quantity": 1,
+          "total": 140,
+          "addedAt": 1793205514530
+        }
+      ],
+      "totalAmount": 385,
+      "totalItems": 4,
+      "receiptNumber": "AB-20261028-3571",
+      "subtotal": 385,
+      "discount": 0,
+      "receivedAmount": 385,
+      "changeAmount": 0,
+      "paymentMethod": "Yemek Kartı",
+      "closeNote": "Kasa Tahsilat (Yemek Kartı)",
+      "cashier": "Kasa Görevlisi",
+      "closedAt": 1793205609990,
+      "taxRate": 10,
+      "taxAmount": 35
+    },
+    {
+      "tableId": "04",
+      "tableName": "Masa 4",
+      "openedAt": 1793205490355,
+      "updatedAt": 1793205490355,
+      "items": [
+        {
+          "id": "item_1793205490355_7741",
+          "productId": "prod_1",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "Standart",
+          "note": "",
+          "price": 150,
+          "quantity": 1,
+          "total": 150,
+          "addedAt": 1793205490355
+        },
+        {
+          "id": "item_1793205490355_1820",
+          "productId": "prod_27",
+          "name": "Kola",
+          "portion": "Standart",
+          "note": "",
+          "price": 50,
+          "quantity": 1,
+          "total": 50,
+          "addedAt": 1793205490355
+        }
+      ],
+      "totalAmount": 200,
+      "totalItems": 2,
+      "receiptNumber": "AB-20261028-2100",
+      "subtotal": 200,
+      "discount": 0,
+      "receivedAmount": 200,
+      "changeAmount": 0,
+      "paymentMethod": "Nakit",
+      "closeNote": "Kasa Tahsilat (Nakit)",
+      "cashier": "Kasa Görevlisi",
+      "closedAt": 1793205581805,
+      "taxRate": 10,
+      "taxAmount": 18.18
+    },
+    {
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "openedAt": 1793205487438,
+      "updatedAt": 1793205493048,
+      "items": [
+        {
+          "id": "item_1793205487438_8072",
+          "productId": "prod_8",
+          "name": "Ayvalık Tostu",
+          "portion": "1.5 Porsiyon",
+          "note": "",
+          "price": 170,
+          "quantity": 1,
+          "total": 170,
+          "addedAt": 1793205487438
+        },
+        {
+          "id": "item_1793205487438_5618",
+          "productId": "prod_19",
+          "name": "Çay",
+          "portion": "Standart",
+          "note": "",
+          "price": 25,
+          "quantity": 1,
+          "total": 25,
+          "addedAt": 1793205487438
+        },
+        {
+          "id": "item_1793205493048_1559",
+          "productId": "prod_1",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "Standart",
+          "note": "",
+          "price": 150,
+          "quantity": 1,
+          "total": 150,
+          "addedAt": 1793205493048
+        },
+        {
+          "id": "item_1793205493048_1125",
+          "productId": "prod_26",
+          "name": "Ayran",
+          "portion": "Standart",
+          "note": "",
+          "price": 35,
+          "quantity": 1,
+          "total": 35,
+          "addedAt": 1793205493048
+        }
+      ],
+      "totalAmount": 380,
+      "totalItems": 4,
+      "receiptNumber": "AB-20261028-4304",
+      "subtotal": 380,
+      "discount": 0,
+      "receivedAmount": 380,
+      "changeAmount": 0,
+      "paymentMethod": "Nakit",
+      "closeNote": "Kasa Tahsilat (Nakit)",
+      "cashier": "Kasa Görevlisi",
+      "closedAt": 1793205574954,
+      "taxRate": 10,
+      "taxAmount": 34.55
+    },
+    {
       "tableId": "18",
       "tableName": "Masa 18",
       "openedAt": 1793203773459,
@@ -741,10 +1066,21 @@
           "addedAt": 1793203773459
         }
       ],
-      "totalAmount": 50,
-      "totalItems": 1
+      "totalAmount": 45,
+      "totalItems": 1,
+      "receiptNumber": "AB-20261028-1628",
+      "subtotal": 50,
+      "discount": 5,
+      "receivedAmount": 45,
+      "changeAmount": 0,
+      "paymentMethod": "Kredi Kartı",
+      "closeNote": "Kasa Tahsilat (Kredi Kartı)",
+      "cashier": "Kasa Görevlisi",
+      "closedAt": 1793205336102,
+      "taxRate": 10,
+      "taxAmount": 4.09
     },
-    "20": {
+    {
       "tableId": "20",
       "tableName": "Masa 20",
       "openedAt": 1793204427742,
@@ -763,10 +1099,19 @@
         }
       ],
       "totalAmount": 200,
-      "totalItems": 1
-    }
-  },
-  "orderHistory": [
+      "totalItems": 1,
+      "receiptNumber": "AB-20261028-7426",
+      "subtotal": 200,
+      "discount": 0,
+      "receivedAmount": 200,
+      "changeAmount": 0,
+      "paymentMethod": "Nakit",
+      "closeNote": "Kasa Tahsilat (Nakit)",
+      "cashier": "Kasa Görevlisi",
+      "closedAt": 1793205206492,
+      "taxRate": 10,
+      "taxAmount": 18.18
+    },
     {
       "tableId": "04",
       "tableName": "Masa 4",
@@ -1191,6 +1536,224 @@
       "closedAt": 1793192900225,
       "paymentMethod": "Kredi Kartı",
       "closeNote": "Masa 4 ödeme tamamlandı"
+    }
+  ],
+  "kitchenOrders": [
+    {
+      "id": "kds_1793206772980_7341",
+      "ticketNumber": "#117",
+      "tableId": "15",
+      "tableName": "Masa 15",
+      "source": "qr_menu",
+      "items": [
+        {
+          "id": "k_item_1793206772980_9459",
+          "productId": "custom_1793206772980",
+          "name": "Sıcak gelsin",
+          "portion": "Standart",
+          "quantity": 1,
+          "note": "Sıcak gelsin",
+          "completed": false
+        }
+      ],
+      "note": "Sıcak gelsin",
+      "status": "pending",
+      "createdAt": 1793206772980,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793206759906_4843",
+      "ticketNumber": "#114",
+      "tableId": "07",
+      "tableName": "Masa 7",
+      "source": "qr_menu",
+      "items": [
+        {
+          "id": "k_item_1793206759906_8597",
+          "productId": "prod_durum_1",
+          "name": "Ali Baba Dürüm",
+          "portion": "Standart",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        },
+        {
+          "id": "k_item_1793206759906_8523",
+          "productId": "prod_ayran_1",
+          "name": "Ayran",
+          "portion": "Standart",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "1x Ali Baba Dürüm (Standart) + İçecek: Ayran - Toplam: 190 ₺",
+      "status": "pending",
+      "createdAt": 1793206759906,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793206759869_7618",
+      "ticketNumber": "#113",
+      "tableId": "04",
+      "tableName": "Masa 4",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793206759869_1654",
+          "productId": "",
+          "name": "Tombik Döner",
+          "portion": "Standart",
+          "quantity": 2,
+          "note": "Soğansız",
+          "completed": false
+        }
+      ],
+      "note": "Soğansız",
+      "status": "pending",
+      "createdAt": 1793206759869,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793206749391_1179",
+      "ticketNumber": "#112",
+      "tableId": "10",
+      "tableName": "Masa 10",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793206749391_7218",
+          "productId": "",
+          "name": "Çay",
+          "portion": "Standart",
+          "quantity": 2,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793206749391,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793206749386_2741",
+      "ticketNumber": "#111",
+      "tableId": "09",
+      "tableName": "Masa 9",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793206749386_5099",
+          "productId": "",
+          "name": "Et Döner Dürüm",
+          "portion": "Lavaş",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793206749386,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793206749367_1441",
+      "ticketNumber": "#110",
+      "tableId": "08",
+      "tableName": "Masa 8",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793206749367_6494",
+          "productId": "",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "Lavaş",
+          "quantity": 2,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793206749367,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793206701813_1437",
+      "ticketNumber": "#106",
+      "tableId": "10",
+      "tableName": "Masa 10",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793206701813_6055",
+          "productId": "",
+          "name": "Çay",
+          "portion": "Standart",
+          "quantity": 2,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793206701813,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793206701801_8843",
+      "ticketNumber": "#105",
+      "tableId": "09",
+      "tableName": "Masa 9",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793206701801_3222",
+          "productId": "",
+          "name": "Et Döner Dürüm",
+          "portion": "Lavaş",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793206701801,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793206701770_9045",
+      "ticketNumber": "#104",
+      "tableId": "08",
+      "tableName": "Masa 8",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793206701770_7228",
+          "productId": "",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "Lavaş",
+          "quantity": 2,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793206701770,
+      "startedAt": null,
+      "completedAt": null
     }
   ]
 }

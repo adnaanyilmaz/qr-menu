@@ -1220,6 +1220,83 @@ function closePaymentModal() {
   dom.paymentModal.classList.remove('active');
 }
 
+// ==================== MASA TAŞIMA / BİRLEŞTİRME ====================
+function openTableTransferModal() {
+  const normId = normalizeTableId(state.selectedTableId);
+  const adisyon = state.adisyons[normId];
+  if (!adisyon || !adisyon.items || adisyon.items.length === 0) {
+    showToast('Aktarılacak açık bir adisyon bulunmuyor.', 'error');
+    return;
+  }
+
+  const modal = document.getElementById('transfer-modal');
+  const sel = document.getElementById('transfer-target-select');
+  const title = document.getElementById('transfer-modal-title');
+  if (title) title.textContent = `Masa ${parseInt(normId, 10)} ➔ Taşı / Birleştir`;
+
+  if (sel) {
+    let opts = '';
+    const tableCount = state.tableCount || 20;
+    for (let i = 1; i <= tableCount; i++) {
+      const id = i < 10 ? '0' + i : String(i);
+      if (id !== normId) {
+        const destAdisyon = state.adisyons[id];
+        const statusText = destAdisyon && destAdisyon.items && destAdisyon.items.length > 0
+          ? ` (Dolu - ${formatMoney(destAdisyon.totalAmount)} ile BİRLEŞECEK)`
+          : ' (Boş Masa)';
+        opts += `<option value="${id}">Masa ${i}${statusText}</option>`;
+      }
+    }
+    sel.innerHTML = opts;
+  }
+
+  if (modal) modal.classList.add('active');
+}
+
+function closeTableTransferModal() {
+  const modal = document.getElementById('transfer-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+async function submitTableTransfer() {
+  const fromId = normalizeTableId(state.selectedTableId);
+  const sel = document.getElementById('transfer-target-select');
+  const toId = sel ? sel.value : null;
+
+  if (!toId || fromId === toId) {
+    showToast('Lütfen geçerli bir hedef masa seçin.', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/garson/tables/${fromId}/transfer`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-staff-pin': state.pin || '1234',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify({ toTableId: toId })
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Masa aktarılamadı');
+    }
+
+    closeTableTransferModal();
+    showToast(json.message || `Masa ${fromId} ➔ Masa ${toId} aktarıldı!`, 'success');
+    selectTable(toId);
+    loadFullState();
+  } catch (err) {
+    showToast('Aktarım hatası: ' + err.message, 'error');
+  }
+}
+
+window.openTableTransferModal = openTableTransferModal;
+window.closeTableTransferModal = closeTableTransferModal;
+window.submitTableTransfer = submitTableTransfer;
+
 function selectPaymentMethod(method) {
   state.selectedPaymentMethod = method;
   document.querySelectorAll('.pay-method-btn').forEach(btn => {

@@ -115,16 +115,32 @@ async function runTests() {
       method: 'POST'
     }, qrOrderData);
     assert(
-      resQrOrder.statusCode === 200 && resQrOrder.json.success && resQrOrder.json.kitchenTicket,
-      'Müşteri QR Siparişi - Otomatik KDS mutfak fişi oluşturulmalı'
+      resQrOrder.statusCode === 200 && resQrOrder.json.success,
+      'Müşteri QR Siparişi - Garson onayına iletilmeli (mutfağa henüz düşmemeli)'
     );
 
-    const testTicket = resQrOrder.json.kitchenTicket;
+    // Garson terminali siparişi onaylar
+    const resApprove = await request({
+      hostname: '127.0.0.1',
+      port: 3005,
+      path: `/api/garson/calls/${resQrOrder.json.data.id}/approve-order`,
+      method: 'POST',
+      headers: { 'x-staff-pin': STAFF_PIN }
+    });
 
-    // 5. Bilet veri modeli doğrulaması
+    // 5. Garson onayından sonra KDS mutfak fişi oluşmalı ve veri modeli doğrulanmalı
+    const resKds = await request({
+      hostname: '127.0.0.1',
+      port: 3005,
+      path: '/api/kds/state',
+      method: 'GET',
+      headers: { 'x-staff-pin': STAFF_PIN }
+    });
+    const testTicket = (resKds.json.data.orders || []).find(o => o.tableId === '11');
+
     assert(
       testTicket && testTicket.id && testTicket.ticketNumber && testTicket.tableId === '11' && testTicket.status === 'pending' && testTicket.items.length === 2,
-      'Bilet Veri Modeli - Fiş numarası (#10x), masa ID (11), status: "pending" ve kalemler doğrulanmalı'
+      'Bilet Veri Modeli - Garson onayından sonra mutfak fişi (#10x), masa ID (11), status: "pending" doğrulanmalı'
     );
 
     // 6. "Hazırlamaya Başla" iş akışı (Pending -> Preparing)

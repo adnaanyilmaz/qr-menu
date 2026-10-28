@@ -130,6 +130,18 @@ const dom = {
   cancelModalTitle: document.getElementById('cancel-modal-title'),
   cancelReasonSelect: document.getElementById('cancel-reason-select'),
   
+  // Split Modal
+  splitModal: document.getElementById('split-modal'),
+  splitModalTitle: document.getElementById('split-modal-title'),
+  splitTableDesc: document.getElementById('split-table-desc'),
+  splitGrandTotalVal: document.getElementById('split-grand-total-val'),
+  splitCashInput: document.getElementById('split-cash-input'),
+  splitCardInput: document.getElementById('split-card-input'),
+  splitEnteredVal: document.getElementById('split-entered-val'),
+  splitBalanceLabel: document.getElementById('split-balance-label'),
+  splitBalanceVal: document.getElementById('split-balance-val'),
+  btnSubmitSplit: document.getElementById('btn-submit-split'),
+  
   // Toasts
   toastContainer: document.getElementById('toast-container')
 };
@@ -692,7 +704,7 @@ function resetDiscount() {
 // ==================== SETTLEMENT & CASHIER APIS ====================
 
 // Settle & Close Table with Payment (Nakit ve Kredi Kartı ile hesap kapatma)
-async function submitCloseTable(paymentMethod) {
+async function submitCloseTable(paymentMethod, extraOptions = {}) {
   const normId = normalizeTableId(state.selectedTableId);
   const tableNum = parseInt(normId, 10);
   const adisyon = state.adisyons[normId];
@@ -710,16 +722,19 @@ async function submitCloseTable(paymentMethod) {
 
   playCashChime();
 
+  const payload = {
+    paymentMethod: paymentMethod,
+    discountAmount: discount,
+    receivedAmount: state.receivedCash || grandTotal,
+    note: `Kasa Tahsilat (${paymentMethod})`,
+    ...extraOptions
+  };
+
   try {
     const res = await fetch(`/api/kasa/tables/${normId}/close`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({
-        paymentMethod: paymentMethod,
-        discountAmount: discount,
-        receivedAmount: state.receivedCash || grandTotal,
-        note: `Kasa Tahsilat (${paymentMethod})`
-      })
+      body: JSON.stringify(payload)
     });
 
     const json = await res.json();
@@ -798,6 +813,116 @@ async function submitCancelTable() {
   } catch (err) {
     showToast('İptal işlemi başarısız.', 'error');
   }
+}
+
+// ==================== SPLIT PAYMENT MODAL ====================
+
+function openSplitPaymentModal() {
+  const normId = normalizeTableId(state.selectedTableId);
+  const tableNum = parseInt(normId, 10);
+  const adisyon = state.adisyons[normId];
+
+  if (!adisyon || !Array.isArray(adisyon.items) || adisyon.items.length === 0) {
+    showToast(`Masa ${tableNum} adisyonunda ürün bulunmuyor.`, 'error');
+    return;
+  }
+
+  const subtotal = adisyon.totalAmount || 0;
+  let discount = 0;
+  if (state.discountRate > 0) discount = Math.round(subtotal * state.discountRate * 100) / 100;
+  else if (state.discountFixed > 0) discount = Math.min(subtotal, state.discountFixed);
+  const grandTotal = Math.max(0, Math.round((subtotal - discount) * 100) / 100);
+
+  state.splitGrandTotal = grandTotal;
+  
+  // Default split: half cash, half card (rounded)
+  const halfCash = Math.floor(grandTotal / 2);
+  const halfCard = Math.round((grandTotal - halfCash) * 100) / 100;
+  state.splitCash = halfCash;
+  state.splitCard = halfCard;
+
+  dom.splitModalTitle.textContent = `Masa ${tableNum} Parçalı Ödeme`;
+  dom.splitTableDesc.textContent = `Masa ${tableNum} • Toplam Adisyon: ${formatMoney(grandTotal)}`;
+  dom.splitGrandTotalVal.textContent = formatMoney(grandTotal);
+
+  dom.splitCashInput.value = state.splitCash || '';
+  dom.splitCardInput.value = state.splitCard || '';
+
+  updateSplitCalculation();
+  dom.splitModal.classList.add('active');
+}
+
+function closeSplitPaymentModal() {
+  dom.splitModal.classList.remove('active');
+}
+
+function onSplitCashInput(val) {
+  state.splitCash = Math.max(0, parseFloat(val) || 0);
+  updateSplitCalculation();
+}
+
+function onSplitCardInput(val) {
+  state.splitCard = Math.max(0, parseFloat(val) || 0);
+  updateSplitCalculation();
+}
+
+function fillSplitAll(type) {
+  playTapChime();
+  if (type === 'cash') {
+    state.splitCash = state.splitGrandTotal;
+    state.splitCard = 0;
+  } else {
+    state.splitCard = state.splitGrandTotal;
+    state.splitCash = 0;
+  }
+  dom.splitCashInput.value = state.splitCash || '';
+  dom.splitCardInput.value = state.splitCard || '';
+  updateSplitCalculation();
+}
+
+function updateSplitCalculation() {
+  const cash = Math.round(state.splitCash * 100) / 100;
+  const card = Math.round(state.splitCard * 100) / 100;
+  const totalEntered = Math.round((cash + card) * 100) / 100;
+  const diff = Math.round((state.splitGrandTotal - totalEntered) * 100) / 100;
+
+  dom.splitEnteredVal.textContent = formatMoney(totalEntered);
+
+  if (Math.abs(diff) < 0.01) {
+    dom.splitBalanceLabel.textContent = 'Durum:';
+    dom.splitBalanceVal.textContent = '✓ Tutar Eşleşti';
+    dom.splitBalanceVal.style.color = 'var(--accent-green)';
+    dom.btnSubmitSplit.disabled = false;
+  } else if (diff > 0) {
+    dom.splitBalanceLabel.textContent = 'Kalan Bakiye:';
+    dom.splitBalanceVal.textContent = formatMoney(diff);
+    dom.splitBalanceVal.style.color = 'var(--accent-amber)';
+    dom.btnSubmitSplit.disabled = true;
+  } else {
+    dom.splitBalanceLabel.textContent = 'Fazla Tutar:';
+    dom.splitBalanceVal.textContent = `+${formatMoney(Math.abs(diff))}`;
+    dom.splitBalanceVal.style.color = 'var(--accent-red)';
+    dom.btnSubmitSplit.disabled = true;
+  }
+}
+
+async function submitSplitPayment() {
+  const cash = Math.round(state.splitCash * 100) / 100;
+  const card = Math.round(state.splitCard * 100) / 100;
+  const totalEntered = Math.round((cash + card) * 100) / 100;
+
+  if (Math.abs(state.splitGrandTotal - totalEntered) >= 0.01) {
+    showToast('Nakit ve kart toplamı ödenecek tutara eşit olmalıdır.', 'error');
+    return;
+  }
+
+  closeSplitPaymentModal();
+  await submitCloseTable('Parçalı Ödeme', {
+    splitDetails: {
+      cash: cash,
+      card: card
+    }
+  });
 }
 
 // ==================== VIEW 2: REPORTS & HISTORY ====================

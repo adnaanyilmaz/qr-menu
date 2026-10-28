@@ -54,6 +54,10 @@
           <span>Genel Bakış</span>
           <span class="nav-badge" id="notif-nav-badge" style="display:none;">0</span>
         </button>
+        <button type="button" class="nav-item-btn" data-tab="reports">
+          <span class="material-symbols-outlined">payments</span>
+          <span>Ciro & Raporlar</span>
+        </button>
         <button type="button" class="nav-item-btn" data-tab="products">
           <span class="material-symbols-outlined">restaurant_menu</span>
           <span>Ürünler & Fiyatlar</span>
@@ -129,7 +133,51 @@
 
         <!-- ==================== TAB 1: DASHBOARD ==================== -->
         <section class="tab-content active" id="tab-dashboard">
-          <!-- Stat Counters -->
+          <!-- Live Financial & Revenue Overview Cards -->
+          <div class="stats-grid" style="margin-bottom:14px;">
+            <div class="stat-card" style="border-left:4px solid #10b981;">
+              <div class="stat-info">
+                <span class="stat-label">Bugünkü Ciro</span>
+                <span class="stat-val" id="stat-today-revenue" style="color:#059669;">0 ₺</span>
+                <span style="font-size:11px; color:#64748b; margin-top:2px;" id="stat-revenue-breakdown">0 ₺ Nakit • 0 ₺ Kart</span>
+              </div>
+              <div class="stat-icon icon-emerald">
+                <span class="material-symbols-outlined">payments</span>
+              </div>
+            </div>
+            <div class="stat-card" style="border-left:4px solid #3b82f6;">
+              <div class="stat-info">
+                <span class="stat-label">Kapanan Sipariş</span>
+                <span class="stat-val" id="stat-closed-orders" style="color:#2563eb;">0</span>
+                <span style="font-size:11px; color:#64748b; margin-top:2px;" id="stat-avg-ticket">Ortalama Masa Tutarı: 0 ₺</span>
+              </div>
+              <div class="stat-icon icon-blue">
+                <span class="material-symbols-outlined">receipt_long</span>
+              </div>
+            </div>
+            <div class="stat-card" style="border-left:4px solid #f59e0b;">
+              <div class="stat-info">
+                <span class="stat-label">Masalardaki Açık Tutar</span>
+                <span class="stat-val" id="stat-open-revenue" style="color:#d97706;">0 ₺</span>
+                <span style="font-size:11px; color:#64748b; margin-top:2px;" id="stat-open-tables">0 Masa Dolu</span>
+              </div>
+              <div class="stat-icon icon-amber">
+                <span class="material-symbols-outlined">table_restaurant</span>
+              </div>
+            </div>
+            <div class="stat-card" style="border-left:4px solid #8b5cf6;">
+              <div class="stat-info">
+                <span class="stat-label">Ort. Mutfak Süresi</span>
+                <span class="stat-val" id="stat-avg-prep" style="color:#7c3aed;">0 dk</span>
+                <span style="font-size:11px; color:#64748b; margin-top:2px;" id="stat-kitchen-active">0 Sipariş Ocakta</span>
+              </div>
+              <div class="stat-icon" style="background:#ede9fe; color:#8b5cf6;">
+                <span class="material-symbols-outlined">skillet</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Product & Category Catalog Counts -->
           <div class="stats-grid">
             <div class="stat-card">
               <div class="stat-info">
@@ -189,33 +237,111 @@
               </div>
             </div>
 
-            <!-- Right: Quick Actions Card -->
-            <div class="widget-card">
-              <div class="widget-head">
-                <div class="widget-title">
-                  <span class="material-symbols-outlined">bolt</span>
-                  <span>Hızlı Eylemler</span>
+            <!-- Right: Best Sellers & Quick Actions -->
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <!-- Top Selling Products Widget -->
+              <div class="widget-card">
+                <div class="widget-head">
+                  <div class="widget-title">
+                    <span class="material-symbols-outlined" style="color:#d97706;">emoji_events</span>
+                    <span>En Çok Satan 5 Lezzet</span>
+                  </div>
+                </div>
+                <div class="widget-body">
+                  <div id="top-products-list" style="display:flex; flex-direction:column; gap:8px;">
+                    <span style="font-size:12px; color:#94a3b8;">Henüz satış verisi bulunmuyor.</span>
+                  </div>
                 </div>
               </div>
-              <div class="widget-body" style="display:flex; flex-direction:column; gap:10px;">
-                <button type="button" class="btn-primary" onclick="openAddProductModal()" style="width:100%; justify-content:center;">
-                  <span class="material-symbols-outlined">add_circle</span>
-                  <span>Yeni Ürün Ekle</span>
-                </button>
-                <button type="button" class="btn-secondary" onclick="openAddCategoryModal()" style="width:100%; justify-content:center;">
-                  <span class="material-symbols-outlined">create_new_folder</span>
-                  <span>Yeni Kategori Ekle</span>
-                </button>
-                <button type="button" class="btn-secondary" onclick="switchTab('qr-studio')" style="width:100%; justify-content:center;">
-                  <span class="material-symbols-outlined">qr_code</span>
-                  <span>Masa QR Kartı Yazdır</span>
-                </button>
-                <button type="button" class="btn-secondary" onclick="switchTab('settings')" style="width:100%; justify-content:center;">
-                  <span class="material-symbols-outlined">tune</span>
-                  <span>Kafe & Wi-Fi Bilgilerini Güncelle</span>
-                </button>
+
+              <!-- Quick Actions Card -->
+              <div class="widget-card">
+                <div class="widget-head">
+                  <div class="widget-title">
+                    <span class="material-symbols-outlined">bolt</span>
+                    <span>Hızlı Eylemler</span>
+                  </div>
+                </div>
+                <div class="widget-body" style="display:flex; flex-direction:column; gap:10px;">
+                  <button type="button" class="btn-primary" onclick="openAddProductModal()" style="width:100%; justify-content:center;">
+                    <span class="material-symbols-outlined">add_circle</span>
+                    <span>Yeni Ürün Ekle</span>
+                  </button>
+                  <button type="button" class="btn-secondary" onclick="switchTab('reports')" style="width:100%; justify-content:center;">
+                    <span class="material-symbols-outlined">receipt_long</span>
+                    <span>Günlük Ciro & Satış Raporu</span>
+                  </button>
+                  <button type="button" class="btn-secondary" onclick="exportSalesCsv()" style="width:100%; justify-content:center; color:#059669; border-color:#a7f3d0;">
+                    <span class="material-symbols-outlined">download</span>
+                    <span>Excel / CSV Olarak İndir</span>
+                  </button>
+                  <button type="button" class="btn-secondary" onclick="switchTab('qr-studio')" style="width:100%; justify-content:center;">
+                    <span class="material-symbols-outlined">qr_code</span>
+                    <span>Masa QR Kartı Yazdır</span>
+                  </button>
+                </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB: REPORTS & FINANCE ==================== -->
+        <section class="tab-content" id="tab-reports">
+          <div class="section-toolbar" style="flex-wrap:wrap; gap:12px;">
+            <div class="toolbar-filters">
+              <button type="button" class="btn-secondary report-range-btn active" data-range="today" onclick="setAdminReportRange('today')">Bugün</button>
+              <button type="button" class="btn-secondary report-range-btn" data-range="yesterday" onclick="setAdminReportRange('yesterday')">Dün</button>
+              <button type="button" class="btn-secondary report-range-btn" data-range="all" onclick="setAdminReportRange('all')">Tüm Geçmiş</button>
+              <input type="text" id="admin-report-search" class="admin-search-input" placeholder="Masa veya Fiş No ile filtrele..." oninput="filterAdminReports(this.value)"/>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <button type="button" class="btn-primary" onclick="exportSalesCsv()" style="background:#059669; border-color:#059669;">
+                <span class="material-symbols-outlined">download</span>
+                <span>Excel / CSV İndir</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Reports Summary Bar -->
+          <div class="stats-grid" style="margin-bottom:16px;">
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Filtrelenen Ciro</span>
+                <span class="stat-val" id="rep-total-revenue" style="color:#059669;">0 ₺</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Fiş Adedi</span>
+                <span class="stat-val" id="rep-order-count">0</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-info">
+                <span class="stat-label">Ortalama Fiş</span>
+                <span class="stat-val" id="rep-avg-ticket">0 ₺</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reports Table -->
+          <div class="table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Fiş No</th>
+                  <th>Masa</th>
+                  <th>Tarih & Saat</th>
+                  <th>Ödeme Yöntemi</th>
+                  <th>Kalemler</th>
+                  <th>Tutar</th>
+                  <th>Kasiyer</th>
+                </tr>
+              </thead>
+              <tbody id="admin-reports-table-body">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
           </div>
         </section>
 
@@ -465,11 +591,25 @@
               <!-- Admin Security & System -->
               <div class="widget-card">
                 <div class="widget-head">
-                  <span class="widget-title">Güvenlik & Sıfırlama</span>
+                  <span class="widget-title">Personel PIN & Yönetici Güvenliği</span>
                 </div>
                 <div class="widget-body">
-                  <div class="form-group">
-                    <label class="form-label">Yeni Yönetici PIN Kodu</label>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div class="form-group">
+                      <label class="form-label">Garson PIN'i</label>
+                      <input type="text" id="set-waiter-pin" class="form-control" placeholder="Varsayılan: 1234"/>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Kasa PIN'i</label>
+                      <input type="text" id="set-cashier-pin" class="form-control" placeholder="Varsayılan: 1234"/>
+                    </div>
+                  </div>
+                  <div class="form-group" style="margin-top:10px;">
+                    <label class="form-label">Mutfak (KDS) PIN'i</label>
+                    <input type="text" id="set-kitchen-pin" class="form-control" placeholder="Varsayılan: 1234"/>
+                  </div>
+                  <div class="form-group" style="margin-top:10px;">
+                    <label class="form-label">Yeni Yönetici PIN Kodu (Master)</label>
                     <input type="password" id="set-admin-pin" class="form-control" placeholder="Değiştirmek istemiyorsanız boş bırakın"/>
                   </div>
                   <div class="form-group" style="margin-top:10px;">

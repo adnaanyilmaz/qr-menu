@@ -243,16 +243,23 @@ function requireWaiterOrAdminAuth(req, res, next) {
     }
   }
 
-  // Waiter staff PIN check via header, query or body
+  // Staff PIN check via header, query or body (checks master PIN, waiter PIN, cashier PIN, kitchen PIN)
   const pinHeader = req.headers['x-staff-pin'] || (req.query && req.query.pin) || (req.body && req.body.staffPin);
   const currentPin = (db.admin && db.admin.pin) ? String(db.admin.pin).trim() : '1234';
-  if (pinHeader && (String(pinHeader).trim() === currentPin || String(pinHeader).trim() === '1234')) {
-    return next();
+  const waiterPin = (db.admin && db.admin.waiterPin) ? String(db.admin.waiterPin).trim() : currentPin;
+  const cashierPin = (db.admin && db.admin.cashierPin) ? String(db.admin.cashierPin).trim() : currentPin;
+  const kitchenPin = (db.admin && db.admin.kitchenPin) ? String(db.admin.kitchenPin).trim() : currentPin;
+
+  if (pinHeader) {
+    const entered = String(pinHeader).trim();
+    if (entered === currentPin || entered === waiterPin || entered === cashierPin || entered === kitchenPin || entered === '1234') {
+      return next();
+    }
   }
 
   return res.status(401).json({
     success: false,
-    message: 'Garson terminali yetkilendirmesi gerekli. Lütfen PIN girin.'
+    message: 'Personel yetkilendirmesi gerekli. Lütfen geçerli bir PIN girin.'
   });
 }
 
@@ -367,7 +374,14 @@ app.post('/api/logout', (req, res) => {
 
 // 3. Settings Management (Protected)
 app.get('/api/settings', requireAdminAuth, (req, res) => {
-  res.json({ success: true, data: db.settings });
+  const settingsData = {
+    ...db.settings,
+    adminPin: (db.admin && db.admin.pin) || '1234',
+    waiterPin: (db.admin && db.admin.waiterPin) || '1234',
+    cashierPin: (db.admin && db.admin.cashierPin) || '1234',
+    kitchenPin: (db.admin && db.admin.kitchenPin) || '1234'
+  };
+  res.json({ success: true, data: settingsData });
 });
 
 app.put('/api/settings', requireAdminAuth, (req, res) => {
@@ -377,13 +391,24 @@ app.put('/api/settings', requireAdminAuth, (req, res) => {
   }
 
   // PIN / Password updates
+  db.admin = db.admin || {};
   if (newSettings.adminPin && String(newSettings.adminPin).trim()) {
-    db.admin = db.admin || {};
     db.admin.pin = String(newSettings.adminPin).trim();
     delete newSettings.adminPin;
   }
+  if (newSettings.waiterPin !== undefined && String(newSettings.waiterPin).trim()) {
+    db.admin.waiterPin = String(newSettings.waiterPin).trim();
+    delete newSettings.waiterPin;
+  }
+  if (newSettings.cashierPin !== undefined && String(newSettings.cashierPin).trim()) {
+    db.admin.cashierPin = String(newSettings.cashierPin).trim();
+    delete newSettings.cashierPin;
+  }
+  if (newSettings.kitchenPin !== undefined && String(newSettings.kitchenPin).trim()) {
+    db.admin.kitchenPin = String(newSettings.kitchenPin).trim();
+    delete newSettings.kitchenPin;
+  }
   if (newSettings.adminPassword && String(newSettings.adminPassword).trim()) {
-    db.admin = db.admin || {};
     db.admin.password = String(newSettings.adminPassword).trim();
     delete newSettings.adminPassword;
   }
@@ -806,28 +831,17 @@ app.post('/api/call-waiter', (req, res) => {
     db.notifications = db.notifications.slice(0, 50);
   }
 
-  // If this is a food order, also create a kitchen display system (KDS) ticket!
-  let kitchenTicket = null;
-  if (isOrder) {
-    const orderItems = Array.isArray(req.body.items) && req.body.items.length > 0
-      ? req.body.items
-      : extractItemsFromOrderNote(cleanNote);
-    kitchenTicket = createKitchenTicket({
-      table: cleanTable,
-      items: orderItems,
-      note: cleanNote,
-      source: 'qr_menu'
-    });
-  }
-
+  // Note: Customer QR orders are sent to the waiter for approval first.
+  // They will ONLY be dispatched to the kitchen (KDS) after the waiter reviews & approves the order!
   saveData(db);
   broadcastNotificationEvent('notification_created', notification);
 
   res.json({
     success: true,
-    message: isOrder ? 'Siparişiniz başarıyla alındı!' : 'Talebiniz servis personeline iletildi!',
-    data: notification,
-    kitchenTicket: kitchenTicket
+    message: isOrder
+      ? 'Siparişiniz alındı! Garson kontrolü ve onayının ardından mutfakta hazırlanmaya başlanacaktır.'
+      : 'Talebiniz servis personeline iletildi!',
+    data: notification
   });
 });
 
@@ -1244,6 +1258,18 @@ function applyOrderToAdisyon(notif) {
   tableAdisyon.totalItems = tableAdisyon.items.reduce((sum, it) => sum + (it.quantity || 0), 0);
   tableAdisyon.updatedAt = Date.now();
 
+  // CRITICAL BUSINESS RULE: Customer QR orders only drop to Kitchen (KDS) after Waiter Approval!
+  let kitchenTicket = null;
+  if (itemsToAdd && itemsToAdd.length > 0) {
+    kitchenTicket = createKitchenTicket({
+      table: tableId,
+      items: itemsToAdd,
+      note: sanitizeString(notif.note || ''),
+      source: 'qr_menu'
+    });
+  }
+
+  saveData(db);
   broadcastNotificationEvent('adisyon_updated', { tableId, adisyon: tableAdisyon });
   return tableAdisyon;
 }
@@ -1266,7 +1292,7 @@ app.post('/api/garson/calls/:id/approve-order', requireWaiterOrAdminAuth, (req, 
 
   res.json({
     success: true,
-    message: `Masa ${parseInt(tableId, 10)} siparişi onaylandı ve adisyona eklendi.`,
+    message: `Masa ${parseInt(tableId, 10)} siparişi onaylandı, adisyona eklendi ve mutfağa iletildi.`,
     data: { tableId, adisyon: updatedAdisyon }
   });
 });
@@ -1318,6 +1344,86 @@ app.post('/api/garson/calls/dismiss-table', requireWaiterOrAdminAuth, (req, res)
   res.json({ success: true, message: `Masa ${parseInt(normId, 10)} çağrı ve siparişleri onaylandı, adisyona eklendi.` });
 });
 
+// 11. Table Transfer & Merge (Masa Taşıma ve Adisyon Birleştirme)
+app.post('/api/garson/tables/:fromTableId/transfer', requireWaiterOrAdminAuth, (req, res) => {
+  const fromId = normalizeTableId(req.params.fromTableId);
+  const { toTableId, note } = req.body || {};
+  const toId = normalizeTableId(toTableId);
+
+  if (!toId || fromId === toId) {
+    return res.status(400).json({ success: false, message: 'Lütfen geçerli ve farklı bir hedef masa seçin.' });
+  }
+
+  db.adisyons = db.adisyons || {};
+  const fromAdisyon = db.adisyons[fromId];
+
+  if (!fromAdisyon || !Array.isArray(fromAdisyon.items) || fromAdisyon.items.length === 0) {
+    return res.status(400).json({ success: false, message: `Masa ${parseInt(fromId, 10)} üzerinde aktarılacak açık adisyon bulunmuyor.` });
+  }
+
+  if (!db.adisyons[toId]) {
+    db.adisyons[toId] = {
+      tableId: toId,
+      tableName: `Masa ${parseInt(toId, 10)}`,
+      openedAt: fromAdisyon.openedAt || Date.now(),
+      updatedAt: Date.now(),
+      items: [],
+      totalAmount: 0,
+      totalItems: 0
+    };
+  }
+
+  const toAdisyon = db.adisyons[toId];
+
+  // Transfer and merge items
+  for (const item of fromAdisyon.items) {
+    const existing = toAdisyon.items.find(it =>
+      (item.productId && it.productId && it.productId === item.productId && (it.portion || '') === (item.portion || '') && (it.note || '') === (item.note || '')) ||
+      (it.name.toLowerCase() === (item.name || '').toLowerCase() && (it.portion || '') === (item.portion || '') && (it.note || '') === (item.note || ''))
+    );
+
+    if (existing) {
+      existing.quantity += item.quantity;
+      existing.total = Math.round(existing.quantity * existing.price * 100) / 100;
+    } else {
+      toAdisyon.items.push({
+        ...item,
+        id: 'item_' + Date.now() + '_' + Math.floor(Math.random() * 10000)
+      });
+    }
+  }
+
+  toAdisyon.totalAmount = Math.round(toAdisyon.items.reduce((sum, it) => sum + (it.total || 0), 0) * 100) / 100;
+  toAdisyon.totalItems = toAdisyon.items.reduce((sum, it) => sum + (it.quantity || 0), 0);
+  toAdisyon.updatedAt = Date.now();
+
+  delete db.adisyons[fromId];
+
+  // Transfer any notifications for this table
+  if (Array.isArray(db.notifications)) {
+    db.notifications.forEach(n => {
+      if (normalizeTableId(n.table) === fromId) {
+        n.table = `Masa ${parseInt(toId, 10)}`;
+      }
+    });
+  }
+
+  saveData(db);
+  broadcastNotificationEvent('adisyon_closed', { tableId: fromId });
+  broadcastNotificationEvent('adisyon_updated', { tableId: toId, adisyon: toAdisyon });
+  broadcastNotificationEvent('notifications_updated', db.notifications);
+
+  res.json({
+    success: true,
+    message: `Masa ${parseInt(fromId, 10)} adisyonu başarıyla Masa ${parseInt(toId, 10)} masasına aktarıldı.`,
+    data: {
+      fromTableId: fromId,
+      toTableId: toId,
+      adisyon: toAdisyon
+    }
+  });
+});
+
 // ======================== KASA (POS & CASHIER) APIS ========================
 
 // Helper to compute today's summary metrics
@@ -1330,13 +1436,24 @@ function computeDailySummary(orderHistory, adisyons, tableCount) {
   const totalRevenue = Math.round(todayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0) * 100) / 100;
   const totalOrders = todayOrders.length;
 
-  const cashOrders = todayOrders.filter(o => (o.paymentMethod || '').toLowerCase().includes('nakit'));
-  const cardOrders = todayOrders.filter(o => (o.paymentMethod || '').toLowerCase().includes('kart') || (o.paymentMethod || '').toLowerCase().includes('pos'));
-  const otherOrders = todayOrders.filter(o => !cashOrders.includes(o) && !cardOrders.includes(o));
+  let cashTotal = 0;
+  let cardTotal = 0;
+  let otherTotal = 0;
 
-  const cashTotal = Math.round(cashOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0) * 100) / 100;
-  const cardTotal = Math.round(cardOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0) * 100) / 100;
-  const otherTotal = Math.round(otherOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0) * 100) / 100;
+  for (const o of todayOrders) {
+    if (o.splitDetails) {
+      cashTotal += (parseFloat(o.splitDetails.cash) || 0);
+      cardTotal += (parseFloat(o.splitDetails.card) || 0);
+    } else {
+      const pm = (o.paymentMethod || '').toLowerCase();
+      if (pm.includes('nakit')) cashTotal += (o.totalAmount || 0);
+      else if (pm.includes('kart') || pm.includes('pos')) cardTotal += (o.totalAmount || 0);
+      else otherTotal += (o.totalAmount || 0);
+    }
+  }
+  cashTotal = Math.round(cashTotal * 100) / 100;
+  cardTotal = Math.round(cardTotal * 100) / 100;
+  otherTotal = Math.round(otherTotal * 100) / 100;
 
   // Active / open adisyons
   const activeAdisyonsList = Object.values(adisyons || {}).filter(a => a && Array.isArray(a.items) && a.items.length > 0);
@@ -1453,7 +1570,14 @@ app.post('/api/kasa/tables/:tableId/close', requireWaiterOrAdminAuth, (req, res)
   const received = parseFloat(receivedAmount) || finalTotal;
   const change = Math.max(0, Math.round((received - finalTotal) * 100) / 100);
 
-  const cleanPaymentMethod = sanitizeString(paymentMethod || 'Nakit');
+  const splitDetails = req.body && req.body.splitDetails ? req.body.splitDetails : null;
+  let cleanPaymentMethod = sanitizeString(paymentMethod || 'Nakit');
+  if (splitDetails && (splitDetails.cash !== undefined || splitDetails.card !== undefined)) {
+    const cVal = Math.round(parseFloat(splitDetails.cash || 0) * 100) / 100;
+    const kVal = Math.round(parseFloat(splitDetails.card || 0) * 100) / 100;
+    cleanPaymentMethod = `Parçalı (${cVal} ₺ Nakit + ${kVal} ₺ Kart)`;
+  }
+
   const cleanNote = sanitizeString(note || '');
   const cleanCashier = sanitizeString(cashier || 'Kasa Görevlisi');
   const receiptNumber = `AB-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -1467,6 +1591,10 @@ app.post('/api/kasa/tables/:tableId/close', requireWaiterOrAdminAuth, (req, res)
     receivedAmount: received,
     changeAmount: change,
     paymentMethod: cleanPaymentMethod,
+    splitDetails: splitDetails ? {
+      cash: Math.round(parseFloat(splitDetails.cash || 0) * 100) / 100,
+      card: Math.round(parseFloat(splitDetails.card || 0) * 100) / 100
+    } : null,
     closeNote: cleanNote,
     cashier: cleanCashier,
     closedAt: now,
@@ -1593,6 +1721,70 @@ app.get('/api/kasa/receipt/:id', requireWaiterOrAdminAuth, (req, res) => {
   }
 
   res.json({ success: true, data: order });
+});
+
+// ======================== ADMIN FINANCIAL & REPORTING APIS ========================
+
+// 1. Live Admin Financial & Dashboard Stats
+app.get('/api/admin/dashboard-stats', requireAdminAuth, (req, res) => {
+  const tableCount = Math.max(1, parseInt(db.settings.tableCount, 10) || 20);
+  const dailySummary = computeDailySummary(db.orderHistory, db.adisyons, tableCount);
+
+  // Kitchen stats
+  const activeKitchen = (db.kitchenOrders || []).filter(o => o.status === 'pending' || o.status === 'preparing');
+
+  res.json({
+    success: true,
+    data: {
+      dailySummary,
+      activeKitchenCount: activeKitchen.length,
+      totalProductsCount: (db.products || []).length,
+      inStockCount: (db.products || []).filter(p => p.inStock !== false).length,
+      outOfStockCount: (db.products || []).filter(p => p.inStock === false).length,
+      categoriesCount: (db.categories || []).length
+    }
+  });
+});
+
+// 2. Export Order History as Excel/CSV with Turkish UTF-8 BOM
+app.get('/api/admin/reports/export-csv', requireAdminAuth, (req, res) => {
+  const orders = db.orderHistory || [];
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const filename = `alibaba_satis_raporu_${dateStr}.csv`;
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+  // UTF-8 BOM for Microsoft Excel
+  res.write('\uFEFF');
+
+  const headers = ['Fiş No', 'Masa', 'Tarih', 'Saat', 'Ödeme Yöntemi', 'Ürün Adedi', 'Ara Toplam (₺)', 'İndirim (₺)', 'Toplam Tutar (₺)', 'KDV (₺)', 'Kasiyer', 'Not'];
+  res.write(headers.join(';') + '\r\n');
+
+  for (const o of orders) {
+    const d = o.closedAt ? new Date(o.closedAt) : new Date();
+    const datePart = d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const timePart = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+    const row = [
+      `"${o.receiptNumber || ''}"`,
+      `"${o.tableName || ''}"`,
+      `"${datePart}"`,
+      `"${timePart}"`,
+      `"${o.paymentMethod || 'Nakit'}"`,
+      o.totalItems || 0,
+      (o.subtotal || o.totalAmount || 0).toFixed(2).replace('.', ','),
+      (o.discount || 0).toFixed(2).replace('.', ','),
+      (o.totalAmount || 0).toFixed(2).replace('.', ','),
+      (o.taxAmount || 0).toFixed(2).replace('.', ','),
+      `"${o.cashier || ''}"`,
+      `"${(o.closeNote || '').replace(/"/g, '""')}"`
+    ];
+
+    res.write(row.join(';') + '\r\n');
+  }
+
+  res.end();
 });
 
 // ======================== KDS (KITCHEN DISPLAY SYSTEM) APIS ========================

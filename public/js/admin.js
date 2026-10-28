@@ -179,6 +179,7 @@ function switchTab(tabId) {
   // Update page title
   const titles = {
     'dashboard': 'Genel Bakış & Masalar',
+    'reports': 'Finans, Ciro & Satış Raporları',
     'products': 'Ürün ve Fiyat Yönetimi',
     'categories': 'Kategori Yönetimi',
     'qr-studio': 'Masa QR Kod Stüdyosu',
@@ -191,7 +192,13 @@ function switchTab(tabId) {
   const sidebar = document.getElementById('admin-sidebar');
   if (sidebar) sidebar.classList.remove('open');
 
-  if (tabId === 'dashboard') renderDashboard();
+  if (tabId === 'dashboard') {
+    renderDashboard();
+    fetchDashboardStats();
+  }
+  if (tabId === 'reports') {
+    loadAdminReports();
+  }
   if (tabId === 'products') renderProductsTable();
   if (tabId === 'categories') renderCategoriesList();
   if (tabId === 'qr-studio') updateTableQRPreview(document.getElementById('qr-table-select')?.value || '04');
@@ -227,6 +234,7 @@ function renderDashboard() {
   if (statCats) statCats.textContent = totalCats;
 
   fetchNotifications();
+  fetchDashboardStats();
 }
 
 // ==========================================================================
@@ -1351,6 +1359,9 @@ function populateSettingsForm() {
   getSet('set-table-count', s.tableCount || 20);
   getSet('set-base-url', s.baseUrl || '');
   getSet('qr-base-url-input', s.baseUrl || '');
+  getSet('set-waiter-pin', s.waiterPin || '1234');
+  getSet('set-cashier-pin', s.cashierPin || '1234');
+  getSet('set-kitchen-pin', s.kitchenPin || '1234');
 
   const pinEl = document.getElementById('set-admin-pin');
   if (pinEl) pinEl.value = '';
@@ -1378,6 +1389,15 @@ async function saveSettings(e) {
     tableCount: parseInt(document.getElementById('set-table-count')?.value, 10) || 20,
     baseUrl: document.getElementById('set-base-url')?.value.trim().replace(/\/+$/, '') || ''
   };
+
+  const waiterPin = document.getElementById('set-waiter-pin')?.value.trim();
+  if (waiterPin) payload.waiterPin = waiterPin;
+
+  const cashierPin = document.getElementById('set-cashier-pin')?.value.trim();
+  if (cashierPin) payload.cashierPin = cashierPin;
+
+  const kitchenPin = document.getElementById('set-kitchen-pin')?.value.trim();
+  if (kitchenPin) payload.kitchenPin = kitchenPin;
 
   const newPin = document.getElementById('set-admin-pin')?.value.trim();
   if (newPin) payload.adminPin = newPin;
@@ -1495,3 +1515,176 @@ window.addEventListener('beforeunload', () => {
 });
 window.fetchNotifications = (isManual = true) => fetchNotifications(isManual);
 window.dismissNotification = dismissNotification;
+
+// ==========================================================================
+// Admin Financial Dashboard & Sales Reports Logic
+// ==========================================================================
+let adminReportsState = {
+  range: 'today',
+  search: '',
+  orders: []
+};
+
+async function fetchDashboardStats() {
+  try {
+    const res = await fetchWithAuth('/api/admin/dashboard-stats');
+    if (!res.ok) return;
+    const json = await res.json();
+    if (!json.success || !json.data) return;
+
+    const summary = json.data.dailySummary || {};
+
+    const elRev = document.getElementById('stat-today-revenue');
+    if (elRev) elRev.textContent = (summary.totalRevenue || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+
+    const elBreakdown = document.getElementById('stat-revenue-breakdown');
+    if (elBreakdown) elBreakdown.textContent = `${(summary.cashTotal || 0).toFixed(0)} ₺ Nakit • ${(summary.cardTotal || 0).toFixed(0)} ₺ Kart`;
+
+    const elClosed = document.getElementById('stat-closed-orders');
+    if (elClosed) elClosed.textContent = summary.totalOrders || 0;
+
+    const elAvg = document.getElementById('stat-avg-ticket');
+    if (elAvg) {
+      const avg = summary.totalOrders > 0 ? (summary.totalRevenue / summary.totalOrders) : 0;
+      elAvg.textContent = `Ortalama Masa Tutarı: ${avg.toFixed(1)} ₺`;
+    }
+
+    const elOpen = document.getElementById('stat-open-revenue');
+    if (elOpen) elOpen.textContent = (summary.activeRevenue || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+
+    const elOpenTables = document.getElementById('stat-open-tables');
+    if (elOpenTables) elOpenTables.textContent = `${summary.activeTablesCount || 0} Masa Dolu`;
+
+    const elPrep = document.getElementById('stat-avg-prep');
+    if (elPrep) elPrep.textContent = `${summary.avgPrepMinutes || 0} dk`;
+
+    const elKitchenAct = document.getElementById('stat-kitchen-active');
+    if (elKitchenAct) elKitchenAct.textContent = `${json.data.activeKitchenCount || 0} Sipariş Ocakta`;
+
+    // Render Top 5 Best Sellers
+    renderTopProducts(summary.topProducts || []);
+  } catch (err) {
+    console.error('Error fetching dashboard stats:', err);
+  }
+}
+
+function renderTopProducts(items) {
+  const container = document.getElementById('top-products-list');
+  if (!container) return;
+
+  if (!items || items.length === 0) {
+    container.innerHTML = '<span style="font-size:12px; color:#94a3b8;">Henüz satış verisi bulunmuyor.</span>';
+    return;
+  }
+
+  container.innerHTML = items.map((it, idx) => `
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:7px 12px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:11px; font-weight:800; color:#fff; background:#d97706; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center;">${idx + 1}</span>
+        <strong style="font-size:13px; color:#1e293b;">${escapeHtml(it.name)}</strong>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:12px; font-weight:800; color:#2563eb; background:#eff6ff; padding:2px 8px; border-radius:4px;">${it.count} Adet</span>
+        <strong style="font-size:13px; color:#059669;">${(it.revenue || 0).toFixed(0)} ₺</strong>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function loadAdminReports() {
+  try {
+    const res = await fetchWithAuth(`/api/kasa/history?range=${adminReportsState.range}`);
+    if (!res.ok) return;
+    const json = await res.json();
+    if (!json.success || !json.data) return;
+
+    adminReportsState.orders = json.data.orders || [];
+
+    const summary = json.data.summary || {};
+    const revEl = document.getElementById('rep-total-revenue');
+    if (revEl) revEl.textContent = (summary.totalRevenue || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+
+    const countEl = document.getElementById('rep-order-count');
+    if (countEl) countEl.textContent = summary.count || 0;
+
+    const avgEl = document.getElementById('rep-avg-ticket');
+    if (avgEl) {
+      const avg = summary.count > 0 ? (summary.totalRevenue / summary.count) : 0;
+      avgEl.textContent = avg.toFixed(1) + ' ₺';
+    }
+
+    renderAdminReportsTable();
+  } catch (err) {
+    console.error('Error loading reports:', err);
+  }
+}
+
+function setAdminReportRange(range) {
+  adminReportsState.range = range;
+  document.querySelectorAll('.report-range-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.range === range);
+  });
+  loadAdminReports();
+}
+
+function filterAdminReports(query) {
+  adminReportsState.search = (query || '').toLowerCase().trim();
+  renderAdminReportsTable();
+}
+
+function renderAdminReportsTable() {
+  const tbody = document.getElementById('admin-reports-table-body');
+  if (!tbody) return;
+
+  let orders = adminReportsState.orders || [];
+  if (adminReportsState.search) {
+    const q = adminReportsState.search;
+    orders = orders.filter(o =>
+      String(o.receiptNumber || '').toLowerCase().includes(q) ||
+      String(o.tableName || '').toLowerCase().includes(q) ||
+      String(o.paymentMethod || '').toLowerCase().includes(q) ||
+      (o.items || []).some(it => String(it.name || '').toLowerCase().includes(q))
+    );
+  }
+
+  if (orders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:#94a3b8;">Filtreye uygun kapanmış fiş bulunamadı.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = orders.map(o => {
+    const d = o.closedAt ? new Date(o.closedAt) : new Date();
+    const timeStr = d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    const itemsSummary = (o.items || []).map(it => `${it.quantity}x ${it.name}`).join(', ');
+
+    return `
+      <tr>
+        <td><strong style="font-family:monospace; color:#2563eb;">${escapeHtml(o.receiptNumber || 'BILGI')}</strong></td>
+        <td><strong>${escapeHtml(o.tableName || 'Masa')}</strong></td>
+        <td style="font-size:12px; color:#64748b;">${timeStr}</td>
+        <td>
+          <span style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:12px; background:${o.paymentMethod && o.paymentMethod.includes('Nakit') ? '#dcfce7; color:#15803d;' : '#dbeafe; color:#1d4ed8;'}">
+            ${escapeHtml(o.paymentMethod || 'Nakit')}
+          </span>
+        </td>
+        <td style="font-size:12px; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(itemsSummary)}">
+          ${escapeHtml(itemsSummary)}
+        </td>
+        <td><strong style="color:#059669; font-size:14px;">${(o.totalAmount || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺</strong></td>
+        <td style="font-size:12px; color:#64748b;">${escapeHtml(o.cashier || 'Kasiyer')}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function exportSalesCsv() {
+  const token = adminData.token || localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token') || '';
+  const url = `/api/admin/reports/export-csv?token=${encodeURIComponent(token)}`;
+  window.open(url, '_blank');
+  showAdminToast('Excel / CSV satış raporu indiriliyor...');
+}
+
+window.setAdminReportRange = setAdminReportRange;
+window.filterAdminReports = filterAdminReports;
+window.exportSalesCsv = exportSalesCsv;
+window.fetchDashboardStats = fetchDashboardStats;

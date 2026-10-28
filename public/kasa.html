@@ -311,6 +311,16 @@
               </div>
             </button>
 
+            <button type="button" class="btn-pay btn-pay-split" onclick="openSplitPaymentModal()">
+              <div class="pay-btn-icon">
+                <span class="material-symbols-outlined">call_split</span>
+              </div>
+              <div class="pay-btn-text">
+                <strong>Parçalı Ödeme</strong>
+                <span>Nakit + Kredi Kartı</span>
+              </div>
+            </button>
+
             <button type="button" class="btn-pay btn-pay-meal" onclick="submitCloseTable('Yemek Kartı')">
               <div class="pay-btn-icon">
                 <span class="material-symbols-outlined">restaurant</span>
@@ -597,6 +607,74 @@
           <button type="button" class="btn-danger-confirm" onclick="submitCancelTable()">
             <span class="material-symbols-outlined">delete_forever</span>
             <span>Adisyonu İptal Et & Masayı Boşalt</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 5. SPLIT PAYMENT MODAL ==================== -->
+    <div class="modal-backdrop" id="split-modal">
+      <div class="split-card">
+        <div class="split-header">
+          <div class="split-header-icon">
+            <span class="material-symbols-outlined">call_split</span>
+          </div>
+          <div>
+            <h3 id="split-modal-title">Parçalı Ödeme Tahsilatı</h3>
+            <span id="split-table-desc">Masa 01 • Toplam: 0,00 ₺</span>
+          </div>
+          <button type="button" class="btn-close-modal" onclick="closeSplitPaymentModal()" style="margin-left:auto;">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="split-body">
+          <div class="split-total-banner">
+            <span>Ödenecek Toplam Tutar:</span>
+            <strong id="split-grand-total-val">0,00 ₺</strong>
+          </div>
+
+          <div class="split-inputs-grid">
+            <div class="split-input-group">
+              <label for="split-cash-input">
+                <span class="material-symbols-outlined" style="color:var(--accent-green); font-size:18px;">payments</span>
+                <span>Nakit Tutarı:</span>
+              </label>
+              <div class="split-input-wrap">
+                <input type="number" id="split-cash-input" min="0" step="0.5" placeholder="0" oninput="onSplitCashInput(this.value)"/>
+                <button type="button" class="btn-split-fill" onclick="fillSplitAll('cash')" title="Tamamını Nakit Yap">Tümü</button>
+              </div>
+            </div>
+
+            <div class="split-input-group">
+              <label for="split-card-input">
+                <span class="material-symbols-outlined" style="color:#60a5fa; font-size:18px;">credit_card</span>
+                <span>Kredi Kartı / POS:</span>
+              </label>
+              <div class="split-input-wrap">
+                <input type="number" id="split-card-input" min="0" step="0.5" placeholder="0" oninput="onSplitCardInput(this.value)"/>
+                <button type="button" class="btn-split-fill" onclick="fillSplitAll('card')" title="Tamamını Kart Yap">Tümü</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="split-calc-status" id="split-calc-status">
+            <div class="status-row">
+              <span style="color:var(--text-muted);">Girilen Toplam:</span>
+              <strong id="split-entered-val">0,00 ₺</strong>
+            </div>
+            <div class="status-row">
+              <span id="split-balance-label" style="color:var(--text-muted);">Kalan Bakiye:</span>
+              <strong id="split-balance-val">0,00 ₺</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="split-actions">
+          <button type="button" class="btn-modal-cancel" onclick="closeSplitPaymentModal()">Vazgeç</button>
+          <button type="button" class="btn-confirm-split" id="btn-submit-split" onclick="submitSplitPayment()">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>Ödemeyi Tamamla</span>
           </button>
         </div>
       </div>

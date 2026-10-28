@@ -1196,6 +1196,16 @@ button {
   color: var(--accent-purple);
 }
 
+/* 5. PARÇALI ÖDEME */
+.btn-pay-split {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: #fff;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+}
+.btn-pay-split .pay-btn-icon {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 /* ==================== VIEW 2: REPORTS & HISTORY ==================== */
 .reports-container {
   flex: 1;
@@ -1786,6 +1796,177 @@ button {
 @keyframes pulseAmber {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.6; transform: scale(1.15); }
+}
+
+/* SPLIT PAYMENT MODAL */
+.split-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+}
+
+.split-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+
+.split-header-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.split-header h3 {
+  font-size: 17px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-main);
+}
+
+.split-header span {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.split-total-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.split-total-banner span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.split-total-banner strong {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--accent-amber);
+}
+
+.split-inputs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.split-input-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.split-input-wrap {
+  display: flex;
+  gap: 8px;
+}
+
+.split-input-wrap input {
+  flex: 1;
+  height: 44px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  color: var(--text-main);
+  font-size: 16px;
+  font-weight: 700;
+  outline: none;
+}
+
+.split-input-wrap input:focus {
+  border-color: #a78bfa;
+}
+
+.btn-split-fill {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-split-fill:hover {
+  background: rgba(139, 92, 246, 0.25);
+  color: #fff;
+  border-color: #a78bfa;
+}
+
+.split-calc-status {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+.split-calc-status .status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.split-calc-status .status-row strong {
+  font-weight: 700;
+}
+
+.split-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-confirm-split {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-confirm-split:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.8);
 }
 
 /* ==================== 5. PRINT SPECIFIC MEDIA QUERY ==================== */

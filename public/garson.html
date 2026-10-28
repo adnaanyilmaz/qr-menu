@@ -276,6 +276,12 @@
               <span>Özel Not</span>
             </button>
 
+            <!-- Table Transfer Button -->
+            <button type="button" class="btn-secondary" onclick="openTableTransferModal()" title="Masayı Başka Masaya Aktar veya Birleştir">
+              <span class="material-symbols-outlined">move_up</span>
+              <span>Masa Taşı</span>
+            </button>
+
             <!-- Print / Receipt Button -->
             <button type="button" class="btn-secondary" onclick="openReceiptModal()">
               <span class="material-symbols-outlined">print</span>
@@ -420,6 +426,35 @@
           <button type="button" class="btn-primary-action" onclick="window.print()">
             <span class="material-symbols-outlined">print</span>
             <span>Yazdır</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 7. TABLE TRANSFER MODAL ==================== -->
+    <div class="modal-backdrop" id="transfer-modal">
+      <div class="payment-card" style="max-width:380px;">
+        <div class="payment-card-header">
+          <div>
+            <h3 id="transfer-modal-title">Masa Taşı / Birleştir</h3>
+            <span id="transfer-modal-sub">Adisyonu başka masaya aktarın</span>
+          </div>
+          <button type="button" class="btn-icon" onclick="closeTableTransferModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div style="padding:16px 20px;">
+          <label style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase;">Hedef Masa Seçin</label>
+          <select id="transfer-target-select" class="form-control" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid #cbd5e1; font-size:15px; font-weight:700; margin-top:8px;">
+            <!-- Dynamically populated tables -->
+          </select>
+          <p style="font-size:12px; color:#94a3b8; margin-top:10px;">Eğer hedef masada açık bir hesap varsa, iki masanın adisyonu otomatik birleştirilecektir.</p>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid #f1f5f9;">
+          <button type="button" class="btn-secondary" onclick="closeTableTransferModal()">Vazgeç</button>
+          <button type="button" class="btn-primary-action" onclick="submitTableTransfer()">
+            <span class="material-symbols-outlined">send</span>
+            <span>Aktarımı Tamamla</span>
           </button>
         </div>
       </div>

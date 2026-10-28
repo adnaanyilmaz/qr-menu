@@ -1231,6 +1231,283 @@ app.post('/api/garson/calls/dismiss-table', requireWaiterOrAdminAuth, (req, res)
   res.json({ success: true, message: `Masa ${parseInt(normId, 10)} çağrı ve siparişleri onaylandı, adisyona eklendi.` });
 });
 
+// ======================== KASA (POS & CASHIER) APIS ========================
+
+// Helper to compute today's summary metrics
+function computeDailySummary(orderHistory, adisyons, tableCount) {
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+  const todayOrders = (orderHistory || []).filter(o => (o.closedAt || 0) >= startOfDay);
+
+  const totalRevenue = Math.round(todayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0) * 100) / 100;
+  const totalOrders = todayOrders.length;
+
+  const cashOrders = todayOrders.filter(o => (o.paymentMethod || '').toLowerCase().includes('nakit'));
+  const cardOrders = todayOrders.filter(o => (o.paymentMethod || '').toLowerCase().includes('kart') || (o.paymentMethod || '').toLowerCase().includes('pos'));
+  const otherOrders = todayOrders.filter(o => !cashOrders.includes(o) && !cardOrders.includes(o));
+
+  const cashTotal = Math.round(cashOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0) * 100) / 100;
+  const cardTotal = Math.round(cardOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0) * 100) / 100;
+  const otherTotal = Math.round(otherOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0) * 100) / 100;
+
+  // Active / open adisyons
+  const activeAdisyonsList = Object.values(adisyons || {}).filter(a => a && Array.isArray(a.items) && a.items.length > 0);
+  const activeTablesCount = activeAdisyonsList.length;
+  const activeRevenue = Math.round(activeAdisyonsList.reduce((sum, a) => sum + (a.totalAmount || 0), 0) * 100) / 100;
+
+  // Top selling items today
+  const itemMap = {};
+  for (const o of todayOrders) {
+    for (const it of (o.items || [])) {
+      const name = it.name || 'Bilinmeyen Ürün';
+      if (!itemMap[name]) itemMap[name] = { name, count: 0, revenue: 0 };
+      itemMap[name].count += (it.quantity || 1);
+      itemMap[name].revenue += (it.total || (it.price * (it.quantity || 1)) || 0);
+    }
+  }
+  const topProducts = Object.values(itemMap).sort((a, b) => b.count - a.count).slice(0, 5);
+
+  return {
+    todayDateStr: now.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+    totalRevenue,
+    totalOrders,
+    cashTotal,
+    cardTotal,
+    otherTotal,
+    activeTablesCount,
+    activeRevenue,
+    topProducts
+  };
+}
+
+// 1. Full State for Kasa Terminal (Tables with live colors, adisyons, notifications, daily summary)
+app.get('/api/kasa/state', requireWaiterOrAdminAuth, (req, res) => {
+  const tableCount = Math.max(1, parseInt(db.settings.tableCount, 10) || 20);
+  const tables = [];
+
+  db.adisyons = db.adisyons || {};
+  db.notifications = db.notifications || [];
+  db.orderHistory = db.orderHistory || [];
+
+  for (let i = 1; i <= tableCount; i++) {
+    const tableId = i < 10 ? '0' + i : String(i);
+    const adisyon = db.adisyons[tableId] || null;
+    const pendingCalls = db.notifications.filter(n => normalizeTableId(n.table) === tableId);
+
+    const hasBillRequest = pendingCalls.some(n => {
+      const t = String(n.type || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      return t.includes('hesap');
+    });
+
+    const isOccupied = adisyon && Array.isArray(adisyon.items) && adisyon.items.length > 0;
+
+    // Status: 'bill_requested' (amber/pulse) > 'occupied' (green) > 'idle' (gray)
+    let status = 'idle';
+    if (hasBillRequest) {
+      status = 'bill_requested';
+    } else if (isOccupied) {
+      status = 'occupied';
+    }
+
+    tables.push({
+      tableId,
+      number: i,
+      name: `Masa ${i}`,
+      status,
+      isOccupied,
+      hasBillRequest,
+      totalAmount: adisyon ? (adisyon.totalAmount || 0) : 0,
+      totalItems: adisyon ? (adisyon.totalItems || 0) : 0,
+      openedAt: adisyon ? adisyon.openedAt : null,
+      updatedAt: adisyon ? adisyon.updatedAt : null,
+      pendingCallsCount: pendingCalls.length,
+      calls: pendingCalls
+    });
+  }
+
+  const dailySummary = computeDailySummary(db.orderHistory, db.adisyons, tableCount);
+
+  res.json({
+    success: true,
+    data: {
+      restaurantName: db.settings.restaurantName || 'Ali Baba Döner Kafe',
+      currency: db.settings.currency || '₺',
+      tableCount: tableCount,
+      taxRate: 10,
+      tables,
+      adisyons: db.adisyons,
+      notifications: db.notifications,
+      dailySummary,
+      recentHistory: (db.orderHistory || []).slice(0, 50)
+    }
+  });
+});
+
+// 2. Settle & Close Table with Payment & Receipt Generation
+app.post('/api/kasa/tables/:tableId/close', requireWaiterOrAdminAuth, (req, res) => {
+  const tableId = normalizeTableId(req.params.tableId);
+  const { paymentMethod, note, receivedAmount, discountAmount, cashier } = req.body || {};
+
+  db.adisyons = db.adisyons || {};
+  const tableAdisyon = db.adisyons[tableId];
+
+  if (!tableAdisyon || !Array.isArray(tableAdisyon.items) || tableAdisyon.items.length === 0) {
+    delete db.adisyons[tableId];
+    saveData(db);
+    broadcastNotificationEvent('adisyon_closed', { tableId });
+    return res.json({ success: true, message: 'Masa zaten boş.', data: null });
+  }
+
+  const now = Date.now();
+  const subtotal = tableAdisyon.totalAmount || 0;
+  const discount = Math.max(0, parseFloat(discountAmount) || 0);
+  const finalTotal = Math.max(0, Math.round((subtotal - discount) * 100) / 100);
+  const received = parseFloat(receivedAmount) || finalTotal;
+  const change = Math.max(0, Math.round((received - finalTotal) * 100) / 100);
+
+  const cleanPaymentMethod = sanitizeString(paymentMethod || 'Nakit');
+  const cleanNote = sanitizeString(note || '');
+  const cleanCashier = sanitizeString(cashier || 'Kasa Görevlisi');
+  const receiptNumber = `AB-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  const archivedOrder = {
+    ...tableAdisyon,
+    receiptNumber,
+    subtotal,
+    discount,
+    totalAmount: finalTotal,
+    receivedAmount: received,
+    changeAmount: change,
+    paymentMethod: cleanPaymentMethod,
+    closeNote: cleanNote,
+    cashier: cleanCashier,
+    closedAt: now,
+    taxRate: 10,
+    taxAmount: Math.round((finalTotal - (finalTotal / 1.10)) * 100) / 100
+  };
+
+  db.orderHistory = db.orderHistory || [];
+  db.orderHistory.unshift(archivedOrder);
+  if (db.orderHistory.length > 200) {
+    db.orderHistory = db.orderHistory.slice(0, 200);
+  }
+
+  delete db.adisyons[tableId];
+
+  // Dismiss any pending waiter or bill calls for this table
+  db.notifications = (db.notifications || []).filter(n => normalizeTableId(n.table) !== tableId);
+
+  saveData(db);
+  broadcastNotificationEvent('adisyon_closed', { tableId });
+  broadcastNotificationEvent('notifications_updated', db.notifications);
+
+  res.json({
+    success: true,
+    message: `Masa ${parseInt(tableId, 10)} hesabı (${cleanPaymentMethod} - ${finalTotal} ₺) başarıyla kapatıldı.`,
+    data: {
+      tableId,
+      receipt: archivedOrder
+    }
+  });
+});
+
+// 3. Cancel / Void Table Adisyon
+app.post('/api/kasa/tables/:tableId/cancel', requireWaiterOrAdminAuth, (req, res) => {
+  const tableId = normalizeTableId(req.params.tableId);
+  const { reason } = req.body || {};
+
+  db.adisyons = db.adisyons || {};
+  delete db.adisyons[tableId];
+
+  // Dismiss calls
+  db.notifications = (db.notifications || []).filter(n => normalizeTableId(n.table) !== tableId);
+
+  saveData(db);
+  broadcastNotificationEvent('adisyon_closed', { tableId });
+  broadcastNotificationEvent('notifications_updated', db.notifications);
+
+  res.json({
+    success: true,
+    message: `Masa ${parseInt(tableId, 10)} adisyonu iptal edildi.${reason ? ' Sebep: ' + sanitizeString(reason) : ''}`
+  });
+});
+
+// 4. Order History & Daily Report Filter API
+app.get('/api/kasa/history', requireWaiterOrAdminAuth, (req, res) => {
+  const { range = 'today', search = '', payment = 'all' } = req.query;
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startOfYesterday = startOfToday - (24 * 60 * 60 * 1000);
+
+  let filtered = (db.orderHistory || []);
+
+  if (range === 'today') {
+    filtered = filtered.filter(o => (o.closedAt || 0) >= startOfToday);
+  } else if (range === 'yesterday') {
+    filtered = filtered.filter(o => (o.closedAt || 0) >= startOfYesterday && (o.closedAt || 0) < startOfToday);
+  }
+
+  if (payment !== 'all') {
+    const pLow = payment.toLowerCase();
+    filtered = filtered.filter(o => (o.paymentMethod || '').toLowerCase().includes(pLow));
+  }
+
+  if (search && search.trim()) {
+    const sLow = search.toLowerCase().trim();
+    filtered = filtered.filter(o => {
+      const matchTable = String(o.tableId || '').includes(sLow) || String(o.tableName || '').toLowerCase().includes(sLow);
+      const matchReceipt = String(o.receiptNumber || '').toLowerCase().includes(sLow);
+      const matchItem = (o.items || []).some(it => String(it.name || '').toLowerCase().includes(sLow));
+      return matchTable || matchReceipt || matchItem;
+    });
+  }
+
+  const totalRevenue = Math.round(filtered.reduce((sum, o) => sum + (o.totalAmount || 0), 0) * 100) / 100;
+  const count = filtered.length;
+
+  res.json({
+    success: true,
+    data: {
+      orders: filtered,
+      summary: {
+        count,
+        totalRevenue
+      }
+    }
+  });
+});
+
+// 5. Thermal Receipt Data by Receipt No / Order Timestamp / Table
+app.get('/api/kasa/receipt/:id', requireWaiterOrAdminAuth, (req, res) => {
+  const { id } = req.params;
+
+  // Search in orderHistory first
+  let order = (db.orderHistory || []).find(o => o.receiptNumber === id || String(o.closedAt) === id);
+
+  // Or check active adisyon
+  if (!order && db.adisyons) {
+    const normId = normalizeTableId(id);
+    const adisyon = db.adisyons[normId];
+    if (adisyon && adisyon.items && adisyon.items.length > 0) {
+      order = {
+        ...adisyon,
+        receiptNumber: `BILGI-${normId}`,
+        isPreliminary: true,
+        closedAt: Date.now(),
+        paymentMethod: 'Beklemede'
+      };
+    }
+  }
+
+  if (!order) {
+    return res.status(404).json({ success: false, message: 'Fiş bulunamadı.' });
+  }
+
+  res.json({ success: true, data: order });
+});
+
 // 9. Reset Demo Data (Protected)
 app.post('/api/reset-demo', requireAdminAuth, (req, res) => {
   if (fs.existsSync(INITIAL_DATA_FILE)) {
@@ -1262,6 +1539,11 @@ app.get('/garson', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'garson.html'));
 });
 
+// Kasa / POS Route
+app.get('/kasa', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'kasa.html'));
+});
+
 // Fallback all other routes to customer menu index.html (Express 5 compatible)
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -1276,8 +1558,10 @@ app.use((err, req, res, next) => {
 // Start Server
 const server = app.listen(PORT, () => {
   console.log(`=================================================`);
-  console.log(`Ali Baba Döner Kafe Web Sitesi & Admin Paneli Yayında!`);
+  console.log(`Ali Baba Döner Kafe Web Sitesi, Kasa & POS Yayında!`);
   console.log(`Müşteri QR Menü: http://localhost:${PORT}`);
+  console.log(`Kasa / POS Ekranı: http://localhost:${PORT}/kasa`);
+  console.log(`Garson Terminali: http://localhost:${PORT}/garson`);
   console.log(`Yönetici Admin Paneli: http://localhost:${PORT}/admin`);
   console.log(`=================================================`);
 });

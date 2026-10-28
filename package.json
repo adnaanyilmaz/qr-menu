@@ -5,7 +5,12 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "node test_api.js"
+    "test": "node test_api.js",
+    "test:all": "node test_compatibility.js && node test_mutfak.js && node test_kasa.js && node test_garson.js && node test_api.js",
+    "test:compat": "node test_compatibility.js",
+    "test:mutfak": "node test_mutfak.js",
+    "test:kasa": "node test_kasa.js",
+    "test:garson": "node test_garson.js"
   },
   "keywords": [],
   "author": "",

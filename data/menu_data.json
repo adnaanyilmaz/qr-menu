@@ -704,6 +704,74 @@
   "adisyons": {},
   "orderHistory": [
     {
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "openedAt": 1793211884966,
+      "updatedAt": 1793211884966,
+      "items": [
+        {
+          "id": "item_1793211884966_2398",
+          "productId": "prod_1792953406798",
+          "name": "Psikopat",
+          "portion": "Standart",
+          "note": "",
+          "price": 200,
+          "quantity": 1,
+          "total": 200,
+          "addedAt": 1793211884966
+        },
+        {
+          "id": "item_1793211884966_6629",
+          "productId": "prod_26",
+          "name": "Ayran",
+          "portion": "Standart",
+          "note": "",
+          "price": 35,
+          "quantity": 1,
+          "total": 35,
+          "addedAt": 1793211884966
+        }
+      ],
+      "totalAmount": 235,
+      "totalItems": 2,
+      "closedAt": 1793211945146,
+      "paymentMethod": "Kredi Kartı",
+      "closeNote": ""
+    },
+    {
+      "tableId": "04",
+      "tableName": "Masa 4",
+      "openedAt": 1793211785692,
+      "updatedAt": 1793211785692,
+      "items": [
+        {
+          "id": "item_1793211785692_6475",
+          "productId": "prod_5",
+          "name": "Kaşarlı Tost",
+          "portion": "Standart",
+          "note": "",
+          "price": 100,
+          "quantity": 1,
+          "total": 100,
+          "addedAt": 1793211785692
+        }
+      ],
+      "totalAmount": 85,
+      "totalItems": 1,
+      "receiptNumber": "AB-20261028-7320",
+      "subtotal": 100,
+      "discount": 15,
+      "receivedAmount": 500,
+      "changeAmount": 415,
+      "paymentMethod": "Nakit",
+      "splitDetails": null,
+      "closeNote": "Kasa Tahsilat (Nakit)",
+      "cashier": "Kasa Görevlisi",
+      "closedAt": 1793211847472,
+      "taxRate": 10,
+      "taxAmount": 7.73
+    },
+    {
       "tableId": "04",
       "tableName": "Masa 4",
       "openedAt": 1793211561881,

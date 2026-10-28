@@ -75,7 +75,7 @@
         <!-- Selected Table Badge in Header -->
         <button type="button" class="current-table-pill" onclick="switchView('tables')" id="header-table-btn">
           <span class="material-symbols-outlined">table_restaurant</span>
-          <span id="header-table-name">Masa Seçilmedi</span>
+          <span id="header-table-name">Masa 01</span>
           <span class="material-symbols-outlined" style="font-size:16px;">swap_horiz</span>
         </button>
       </div>
@@ -110,24 +110,6 @@
         </div>
       </div>
     </header>
-
-    <!-- MOBILE VIEW TABS (SWITCH BETWEEN MASALAR / MENÜ / ADİSYON) -->
-    <nav class="mobile-tabs-bar" id="mobile-tabs-bar">
-      <button type="button" class="m-tab-btn active" data-view="tables" onclick="switchView('tables')">
-        <span class="material-symbols-outlined">table_restaurant</span>
-        <span>Masalar</span>
-        <span class="m-tab-badge" id="m-tab-calls-badge" style="display:none;">0</span>
-      </button>
-      <button type="button" class="m-tab-btn" data-view="catalog" onclick="switchView('catalog')">
-        <span class="material-symbols-outlined">restaurant_menu</span>
-        <span>Menü / Ürünler</span>
-      </button>
-      <button type="button" class="m-tab-btn" data-view="adisyon" onclick="switchView('adisyon')">
-        <span class="material-symbols-outlined">receipt_long</span>
-        <span>Adisyon</span>
-        <span class="m-tab-badge items-badge" id="m-tab-adisyon-badge" style="display:none;">0</span>
-      </button>
-    </nav>
 
     <!-- MAIN SPLIT WORKSPACE -->
     <main class="terminal-workspace">
@@ -193,6 +175,21 @@
         <div class="products-grid" id="products-grid">
           <!-- Dynamic Product Cards -->
         </div>
+
+        <!-- Floating Mobile Adisyon Quick Bar -->
+        <div class="mobile-adisyon-float-bar" id="mobile-adisyon-float-bar" onclick="switchView('adisyon')">
+          <div class="float-bar-info">
+            <span class="material-symbols-outlined float-receipt-icon">receipt_long</span>
+            <div>
+              <strong id="float-bar-table-title">Masa 01 Adisyonu</strong>
+              <span id="float-bar-summary">0 Ürün • 0,00 ₺</span>
+            </div>
+          </div>
+          <button type="button" class="btn-float-open">
+            <span>Adisyonu Gör</span>
+            <span class="material-symbols-outlined" style="font-size:16px;">arrow_forward</span>
+          </button>
+        </div>
       </section>
 
       <!-- ==================== COLUMN 3: ACTIVE TABLE ADİSYON (ADİSYON YÖNETİMİ) ==================== -->
@@ -214,18 +211,18 @@
           </div>
         </div>
 
-        <!-- Table Waiter Call Alert Banner (Shown if this specific table called waiter) -->
+        <!-- Table Waiter Call & Order Alert Banner -->
         <div class="table-call-banner" id="table-call-banner" style="display:none;">
           <div class="banner-content">
-            <span class="material-symbols-outlined pulse-icon">notifications_active</span>
+            <span class="material-symbols-outlined pulse-icon" id="table-call-icon">notifications_active</span>
             <div>
               <strong id="table-call-title">Bu masadan çağrı var!</strong>
               <p id="table-call-note">Garson çağrıldı</p>
             </div>
           </div>
-          <button type="button" class="btn-dismiss-table-call" onclick="dismissCurrentTableCalls()">
-            <span class="material-symbols-outlined">check_circle</span>
-            <span>Onayla & Kapat</span>
+          <button type="button" class="btn-dismiss-table-call" id="btn-banner-action" onclick="handleCurrentTableCallAction()">
+            <span class="material-symbols-outlined" id="btn-banner-icon">check_circle</span>
+            <span id="btn-banner-text">Onayla & Kapat</span>
           </button>
         </div>
 
@@ -287,6 +284,24 @@
       </aside>
 
     </main>
+
+    <!-- MOBILE BOTTOM NAVIGATION (NATIVE APP FEEL) -->
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+      <button type="button" class="m-bottom-btn active" data-view="tables" onclick="switchView('tables')">
+        <span class="material-symbols-outlined">table_restaurant</span>
+        <span>Masalar</span>
+        <span class="m-bottom-badge" id="m-bottom-calls-badge" style="display:none;">0</span>
+      </button>
+      <button type="button" class="m-bottom-btn" data-view="catalog" onclick="switchView('catalog')">
+        <span class="material-symbols-outlined">restaurant_menu</span>
+        <span>Menü / Ekle</span>
+      </button>
+      <button type="button" class="m-bottom-btn" data-view="adisyon" onclick="switchView('adisyon')">
+        <span class="material-symbols-outlined">receipt_long</span>
+        <span id="m-bottom-adisyon-text">Adisyon</span>
+        <span class="m-bottom-badge items-badge" id="m-bottom-items-badge" style="display:none;">0</span>
+      </button>
+    </nav>
 
     <!-- ==================== 4. PENDING CALLS SLIDE DRAWER ==================== -->
     <div class="calls-drawer-backdrop" id="calls-drawer-backdrop" onclick="toggleCallsDrawer()"></div>
@@ -411,3 +426,4 @@
   <script src="/js/garson.js"></script>
 </body>
 </html>
+

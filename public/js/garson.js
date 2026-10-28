@@ -44,9 +44,13 @@ const dom = {
   panelTables: document.getElementById('panel-tables'),
   panelCatalog: document.getElementById('panel-catalog'),
   panelAdisyon: document.getElementById('panel-adisyon'),
-  mobileTabsBar: document.getElementById('mobile-tabs-bar'),
-  mTabCallsBadge: document.getElementById('m-tab-calls-badge'),
-  mTabAdisyonBadge: document.getElementById('m-tab-adisyon-badge'),
+  mobileBottomNav: document.getElementById('mobile-bottom-nav'),
+  mBottomCallsBadge: document.getElementById('m-bottom-calls-badge'),
+  mBottomItemsBadge: document.getElementById('m-bottom-items-badge'),
+  mBottomAdisyonText: document.getElementById('m-bottom-adisyon-text'),
+  mobileAdisyonFloatBar: document.getElementById('mobile-adisyon-float-bar'),
+  floatBarTableTitle: document.getElementById('float-bar-table-title'),
+  floatBarSummary: document.getElementById('float-bar-summary'),
 
   // Table View
   tablesGrid: document.getElementById('tables-grid'),
@@ -69,6 +73,10 @@ const dom = {
   tableCallBanner: document.getElementById('table-call-banner'),
   tableCallTitle: document.getElementById('table-call-title'),
   tableCallNote: document.getElementById('table-call-note'),
+  tableCallIcon: document.getElementById('table-call-icon'),
+  btnBannerAction: document.getElementById('btn-banner-action'),
+  btnBannerIcon: document.getElementById('btn-banner-icon'),
+  btnBannerText: document.getElementById('btn-banner-text'),
   adisyonItemsList: document.getElementById('adisyon-items-list'),
   adisyonTotalCount: document.getElementById('adisyon-total-count'),
   adisyonTotalPrice: document.getElementById('adisyon-total-price'),
@@ -445,21 +453,33 @@ function renderHeader() {
 
   if (callsCount > 0) {
     dom.btnPendingCalls.classList.remove('no-calls');
-    dom.mTabCallsBadge.style.display = 'inline-block';
-    dom.mTabCallsBadge.textContent = callsCount;
   } else {
     dom.btnPendingCalls.classList.add('no-calls');
-    dom.mTabCallsBadge.style.display = 'none';
   }
 
-  // Active items badge on mobile
-  const activeAdisyon = state.adisyons[state.selectedTableId];
+  // Active items count and total for selected table
+  const normId = normalizeTableId(state.selectedTableId);
+  const activeAdisyon = state.adisyons[normId];
   const itemsCount = activeAdisyon ? (activeAdisyon.totalItems || 0) : 0;
-  if (itemsCount > 0) {
-    dom.mTabAdisyonBadge.style.display = 'inline-block';
-    dom.mTabAdisyonBadge.textContent = itemsCount;
-  } else {
-    dom.mTabAdisyonBadge.style.display = 'none';
+  const totalAmount = activeAdisyon ? (activeAdisyon.totalAmount || 0) : 0;
+
+  // Mobile Bottom Navigation Badges
+  if (dom.mBottomCallsBadge) {
+    dom.mBottomCallsBadge.style.display = callsCount > 0 ? 'inline-block' : 'none';
+    dom.mBottomCallsBadge.textContent = callsCount;
+  }
+  if (dom.mBottomItemsBadge) {
+    dom.mBottomItemsBadge.style.display = itemsCount > 0 ? 'inline-block' : 'none';
+    dom.mBottomItemsBadge.textContent = itemsCount;
+  }
+  if (dom.mBottomAdisyonText) {
+    dom.mBottomAdisyonText.textContent = itemsCount > 0 ? `Adisyon (${itemsCount})` : 'Adisyon';
+  }
+
+  // Mobile Floating Adisyon Quick Bar
+  if (dom.floatBarTableTitle && dom.floatBarSummary) {
+    dom.floatBarTableTitle.textContent = `Masa ${currentTableNum} Adisyonu`;
+    dom.floatBarSummary.textContent = `${itemsCount} Ürün • ${formatMoney(totalAmount)}`;
   }
 }
 
@@ -552,9 +572,12 @@ function selectTable(tableId) {
   renderTables();
   renderAdisyon();
 
-  // If mobile, switch to catalog or adisyon view
+  // If mobile, switch view smoothly
   if (window.innerWidth <= 768) {
-    switchView('catalog');
+    const norm = normalizeTableId(tableId);
+    const adisyon = state.adisyons[norm];
+    const hasItems = adisyon && adisyon.items && adisyon.items.length > 0;
+    switchView(hasItems ? 'adisyon' : 'catalog');
   }
 }
 
@@ -653,9 +676,25 @@ function renderAdisyon() {
   const tableCalls = state.notifications.filter(n => normalizeTableId(n.table) === normId);
   if (tableCalls.length > 0) {
     const firstCall = tableCalls[0];
+    const isOrder = (firstCall.type || '').toLowerCase().includes('sipariş');
+
     dom.tableCallBanner.style.display = 'flex';
-    dom.tableCallTitle.textContent = `${firstCall.type} (${firstCall.time || ''})`;
-    dom.tableCallNote.textContent = firstCall.note ? firstCall.note : 'Müşteri servis bekliyor.';
+    dom.tableCallBanner.classList.toggle('order-style', isOrder);
+
+    if (dom.tableCallIcon) {
+      dom.tableCallIcon.textContent = isOrder ? 'restaurant' : 'notifications_active';
+    }
+
+    dom.tableCallTitle.textContent = isOrder
+      ? `🔔 Yeni Sipariş Geldi! (${firstCall.time || ''})`
+      : `${firstCall.type} (${firstCall.time || ''})`;
+
+    dom.tableCallNote.textContent = firstCall.note ? firstCall.note : (isOrder ? 'Müşteri menüden sipariş gönderdi.' : 'Müşteri servis bekliyor.');
+
+    if (dom.btnBannerText && dom.btnBannerIcon) {
+      dom.btnBannerIcon.textContent = isOrder ? 'check_circle' : 'done';
+      dom.btnBannerText.textContent = isOrder ? 'Siparişi Onayla & Adisyona Ekle' : 'Onayla & Kapat';
+    }
   } else {
     dom.tableCallBanner.style.display = 'none';
   }
@@ -727,6 +766,20 @@ function renderCallsDrawer() {
     const normTable = normalizeTableId(c.table);
     const tableNum = parseInt(normTable, 10);
 
+    let itemsPreviewHtml = '';
+    if (Array.isArray(c.items) && c.items.length > 0) {
+      itemsPreviewHtml = `
+        <div class="order-items-preview">
+          ${c.items.map(it => `
+            <div class="order-item-preview-row">
+              <span class="qty-name">${it.quantity || 1}x ${escapeHtml(it.name)}${it.portion && it.portion !== 'Standart' ? ` (${escapeHtml(it.portion)})` : ''}</span>
+              <span class="price">${formatMoney((it.price || 0) * (it.quantity || 1))}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
     return `
       <div class="call-card ${isOrder ? 'order-type' : ''}">
         <div class="call-card-top">
@@ -736,18 +789,35 @@ function renderCallsDrawer() {
           </span>
           <span class="call-card-time">${c.time || ''}</span>
         </div>
-        <div class="call-card-type">${escapeHtml(c.type)}</div>
+        <div class="call-card-type">${isOrder ? '📦 Müşteri Siparişi' : escapeHtml(c.type)}</div>
         ${c.note ? `<div class="call-card-note">${escapeHtml(c.note)}</div>` : ''}
+        ${itemsPreviewHtml}
 
-        <div class="call-card-actions">
-          <button type="button" class="btn-open-table-from-call" onclick="jumpToTableFromCall('${normTable}')">
-            <span class="material-symbols-outlined" style="font-size:14px;">receipt_long</span>
-            <span>Adisyonu Aç</span>
-          </button>
-          <button type="button" class="btn-dismiss-call" onclick="dismissSingleCall('${c.id}')">
-            <span class="material-symbols-outlined" style="font-size:14px;">check</span>
-            <span>Onayla & Kapat</span>
-          </button>
+        <div class="call-card-actions" style="${isOrder ? 'flex-direction:column; gap:6px;' : ''}">
+          ${isOrder ? `
+            <button type="button" class="btn-approve-order" onclick="approveOrder('${c.id}')">
+              <span class="material-symbols-outlined" style="font-size:16px;">check_circle</span>
+              <span>Siparişi Onayla & Adisyona Ekle</span>
+            </button>
+            <div style="display:flex; width:100%; gap:8px;">
+              <button type="button" class="btn-open-table-from-call" onclick="jumpToTableFromCall('${normTable}')">
+                <span class="material-symbols-outlined" style="font-size:14px;">receipt_long</span>
+                <span>Adisyonu Aç</span>
+              </button>
+              <button type="button" class="btn-dismiss-call" style="background:var(--bg-panel); color:var(--text-muted); border:1px solid var(--border-color);" onclick="dismissSingleCall('${c.id}', false)">
+                <span>Yalnızca Kapat</span>
+              </button>
+            </div>
+          ` : `
+            <button type="button" class="btn-open-table-from-call" onclick="jumpToTableFromCall('${normTable}')">
+              <span class="material-symbols-outlined" style="font-size:14px;">receipt_long</span>
+              <span>Adisyonu Aç</span>
+            </button>
+            <button type="button" class="btn-dismiss-call" onclick="dismissSingleCall('${c.id}')">
+              <span class="material-symbols-outlined" style="font-size:14px;">check</span>
+              <span>Onayla & Kapat</span>
+            </button>
+          `}
         </div>
       </div>
     `;
@@ -869,24 +939,79 @@ function openCustomNoteModal() {
   }
 }
 
-// ==================== ÇAĞRILARI KAPATMA APILERI ====================
+// ==================== ÇAĞRILARI KAPATMA & SİPARİŞİ ONAYLAMA APILERI ====================
 
-// Tekil Çağrıyı Kapat
-async function dismissSingleCall(callId) {
-  playTapChime();
+// Siparişi Onayla & Doğrudan Masa Adisyonuna Ekle
+async function approveOrder(callId) {
+  playSuccessChime();
   try {
-    const res = await fetch(`/api/garson/calls/${callId}/dismiss`, {
+    const res = await fetch(`/api/garson/calls/${callId}/approve-order`, {
       method: 'POST',
       headers: getAuthHeaders()
     });
     const json = await res.json();
+    if (json.success && json.data) {
+      const tableId = json.data.tableId;
+      state.adisyons[tableId] = json.data.adisyon;
+      state.notifications = state.notifications.filter(n => n.id !== callId);
+      
+      // Auto-select this table and switch to adisyon if on mobile
+      state.selectedTableId = tableId;
+
+      renderHeader();
+      renderTables();
+      renderAdisyon();
+      renderCallsDrawer();
+
+      if (window.innerWidth <= 768) {
+        switchView('adisyon');
+      }
+
+      showToast(`Masa ${parseInt(tableId, 10)} siparişi onaylandı ve adisyona eklendi!`, 'success');
+    } else {
+      showToast(json.message || 'Sipariş onaylanamadı.', 'error');
+    }
+  } catch (err) {
+    showToast('Onaylama sırasında bağlantı hatası oluştu.', 'error');
+  }
+}
+
+// Seçili Masanın Banner İşlemi (Sipariş ise Onayla&Ekle, Servis ise Kapat)
+async function handleCurrentTableCallAction() {
+  const normId = normalizeTableId(state.selectedTableId);
+  const tableCalls = state.notifications.filter(n => normalizeTableId(n.table) === normId);
+  if (tableCalls.length === 0) return;
+
+  const firstCall = tableCalls[0];
+  const isOrder = (firstCall.type || '').toLowerCase().includes('sipariş');
+
+  if (isOrder) {
+    await approveOrder(firstCall.id);
+  } else {
+    await dismissSingleCall(firstCall.id);
+  }
+}
+
+// Tekil Çağrıyı Kapat (Sipariş ise isteğe bağlı adisyona ekler)
+async function dismissSingleCall(callId, addToAdisyon = true) {
+  playTapChime();
+  try {
+    const res = await fetch(`/api/garson/calls/${callId}/dismiss`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ addToAdisyon })
+    });
+    const json = await res.json();
     if (json.success) {
+      if (json.data && json.data.tableId && json.data.adisyon) {
+        state.adisyons[json.data.tableId] = json.data.adisyon;
+      }
       state.notifications = state.notifications.filter(n => n.id !== callId);
       renderHeader();
       renderTables();
       renderAdisyon();
       renderCallsDrawer();
-      showToast('Çağrı kapatıldı.', 'success');
+      showToast(json.message || 'Çağrı kapatıldı.', 'success');
     }
   } catch (err) {
     showToast('Çağrı kapatılamadı.', 'error');
@@ -1062,13 +1187,18 @@ function closeReceiptModal() {
 // ==================== VIEW SWITCHER (FOR MOBILE) ====================
 function switchView(viewName) {
   state.currentView = viewName;
-  document.querySelectorAll('.m-tab-btn').forEach(btn => {
+  document.querySelectorAll('.m-bottom-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.view === viewName);
   });
 
   dom.panelTables.classList.toggle('active', viewName === 'tables');
   dom.panelCatalog.classList.toggle('active', viewName === 'catalog');
   dom.panelAdisyon.classList.toggle('active', viewName === 'adisyon');
+
+  const activePanel = viewName === 'tables' ? dom.panelTables : (viewName === 'catalog' ? dom.panelCatalog : dom.panelAdisyon);
+  if (activePanel) {
+    activePanel.scrollTop = 0;
+  }
 }
 
 // ==================== HELPERS ====================
@@ -1141,3 +1271,4 @@ function showToast(message, type = 'info') {
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 }
+

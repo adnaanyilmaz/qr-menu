@@ -44,6 +44,7 @@ body.pos-theme {
   background-color: var(--bg-main);
   color: var(--text-main);
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   overflow: hidden;
   display: flex;
@@ -1649,6 +1650,166 @@ button:active {
   to { opacity: 1; }
 }
 
+/* ==================== MOBILE BOTTOM NAVIGATION ==================== */
+.mobile-bottom-nav {
+  display: none;
+  height: 60px;
+  background: rgba(17, 24, 39, 0.98);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border-color);
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 40;
+  flex-shrink: 0;
+}
+
+.m-bottom-btn {
+  background: transparent;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  position: relative;
+  transition: all 0.15s ease;
+  padding: 6px 0;
+}
+
+.m-bottom-btn.active {
+  color: var(--accent-amber);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.m-bottom-btn .material-symbols-outlined {
+  font-size: 22px;
+  margin-bottom: 2px;
+}
+
+.m-bottom-badge {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 20px);
+  background: var(--accent-red);
+  color: #fff;
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  padding: 1px 6px;
+  font-weight: 800;
+  animation: pulseButton 2s infinite;
+}
+
+.m-bottom-badge.items-badge {
+  background: var(--accent-amber);
+  color: #000;
+  animation: none;
+}
+
+/* ==================== MOBILE ADİSYON FLOAT BAR ==================== */
+.mobile-adisyon-float-bar {
+  display: none;
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #1f293d, #111827);
+  border-top: 2px solid var(--accent-amber);
+  padding: 10px 14px;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.6);
+  z-index: 25;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.float-bar-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.float-receipt-icon {
+  font-size: 26px;
+  color: var(--accent-amber);
+}
+
+.float-bar-info strong {
+  font-size: 13px;
+  color: var(--text-main);
+  display: block;
+}
+
+.float-bar-info span {
+  font-size: 12px;
+  color: var(--accent-amber);
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.btn-float-open {
+  background: var(--accent-amber);
+  color: #000;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ORDER ITEM ROW IN DRAWER & ALERT */
+.order-items-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  margin-top: 4px;
+}
+
+.order-item-preview-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-main);
+}
+
+.order-item-preview-row .qty-name {
+  font-weight: 700;
+}
+
+.order-item-preview-row .price {
+  color: var(--accent-amber);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+}
+
+.btn-approve-order {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.btn-approve-order:hover {
+  background: linear-gradient(135deg, #34d399, #10b981);
+}
+
 /* ==================== RESPONSIVE BREAKPOINTS ==================== */
 @media (max-width: 1024px) {
   .terminal-workspace {
@@ -1658,16 +1819,42 @@ button:active {
 
 @media (max-width: 768px) {
   body.pos-theme {
-    overflow: auto;
+    overflow: hidden;
+    height: 100vh;
+    height: 100dvh;
   }
 
-  .mobile-tabs-bar {
+  .mobile-bottom-nav {
     display: grid;
+  }
+
+  .mobile-adisyon-float-bar {
+    display: flex;
+  }
+
+  .terminal-header {
+    height: 54px;
+    padding: 0 10px;
+  }
+
+  .brand-title {
+    font-size: 13px;
+  }
+
+  .brand-logo {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+
+  .current-table-pill {
+    padding: 5px 10px;
+    font-size: 12px;
   }
 
   .terminal-workspace {
     display: block;
-    height: calc(100vh - 112px);
+    height: calc(100dvh - 54px - 60px);
     overflow: hidden;
   }
 
@@ -1677,19 +1864,85 @@ button:active {
     display: none;
     height: 100%;
     width: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .panel-tables.active,
   .panel-catalog.active,
   .panel-adisyon.active {
     display: flex;
+    flex-direction: column;
+  }
+
+  .tables-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .table-card {
+    min-height: 80px;
+    padding: 10px;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 10px;
+    padding-bottom: 20px;
+  }
+
+  .product-card {
+    min-height: 115px;
+    padding: 10px;
+  }
+
+  .product-card-thumb {
+    height: 52px;
+  }
+
+  .product-card-name {
+    font-size: 12px;
+  }
+
+  .product-card-price {
+    font-size: 13px;
+  }
+
+  .adisyon-footer {
+    padding: 10px 12px;
+  }
+
+  .adisyon-action-buttons {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .btn-primary-action#btn-close-table-action {
+    grid-column: 1 / -1;
+  }
+
+  .calls-drawer {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .payment-card {
+    padding: 16px;
+    max-width: 95vw;
+  }
+
+  .payment-methods-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
   }
 
   .desktop-only {
-    display: none;
+    display: none !important;
   }
 
   .brand-subtitle {
-    display: none;
+    display: none !important;
   }
 }
+

@@ -668,12 +668,32 @@ async function confirmAndSendOrder() {
 
   try {
     const drinkNames = [];
+    const orderItems = [
+      {
+        productId: currentSelectedProduct.id,
+        name: currentSelectedProduct.name,
+        price: parseFloat(currentSelectedProduct.price) || 0,
+        portion: portionText || 'Standart',
+        quantity: 1,
+        note: ''
+      }
+    ];
+
     let totalOrderPrice = parseFloat(currentSelectedProduct.price) || 0;
     selectedAddonDrinks.forEach(id => {
       const d = menuState.products.find(p => p.id === id);
       if (d) {
         drinkNames.push(d.name);
-        totalOrderPrice += parseFloat(d.price) || 0;
+        const drinkPrice = parseFloat(d.price) || 0;
+        totalOrderPrice += drinkPrice;
+        orderItems.push({
+          productId: d.id,
+          name: d.name,
+          price: drinkPrice,
+          portion: 'Standart',
+          quantity: 1,
+          note: ''
+        });
       }
     });
 
@@ -694,7 +714,8 @@ async function confirmAndSendOrder() {
       body: JSON.stringify({
         table: table,
         type: 'Sipariş',
-        note: note
+        note: note,
+        items: orderItems
       })
     });
 

@@ -174,6 +174,68 @@ async function runGarsonTests() {
       '11. Masa Durum Doğrulaması - Kapanan masa \'idle\' (boş) ve 0₺ durumuna dönmeli'
     );
 
+    // 8. Test: Customer sends order and Garson approves it -> DIRECTLY ADDED TO TABLE ADISYON!
+    // First clear table 07 to ensure clean state
+    await httpRequest('POST', '/api/garson/tables/07/clear', { 'x-staff-pin': '1234' });
+
+    const orderPayload = {
+      table: '07',
+      type: 'Sipariş',
+      note: '1x Ali Baba Dürüm (Standart) + İçecek: Ayran - Toplam: 190 ₺',
+      items: [
+        {
+          productId: 'prod_durum_1',
+          name: 'Ali Baba Dürüm',
+          price: 160,
+          portion: 'Standart',
+          quantity: 1,
+          note: ''
+        },
+        {
+          productId: 'prod_ayran_1',
+          name: 'Ayran',
+          price: 30,
+          portion: 'Standart',
+          quantity: 1,
+          note: ''
+        }
+      ]
+    };
+
+    const customerOrderRes = await httpRequest('POST', '/api/call-waiter', {}, orderPayload);
+    assert(
+      customerOrderRes.status === 200 && customerOrderRes.data.success && customerOrderRes.data.data.id,
+      '12. Müşteri QR Siparişi Gönderme - Masa 7 için 1x Dürüm + 1x Ayran siparişi iletilmeli'
+    );
+
+    const orderCallId = customerOrderRes.data.data.id;
+
+    // Approve the order via /api/garson/calls/:id/approve-order
+    const approveOrderRes = await httpRequest('POST', `/api/garson/calls/${orderCallId}/approve-order`, { 'x-staff-pin': '1234' });
+    assert(
+      approveOrderRes.status === 200 && approveOrderRes.data.success && approveOrderRes.data.data.adisyon.totalAmount === 190,
+      '13. Siparişi Onaylayıp Direkt Adisyona Ekleme - Sipariş onaylandıktan sonra Masa 7 adisyonuna 190₺ (2 ürün) olarak eklenmeli',
+      JSON.stringify(approveOrderRes.data)
+    );
+
+    // Verify Masa 7 adisyon has items and the call was removed from notifications
+    const stateAfterApprove = await httpRequest('GET', '/api/garson/state', { 'x-staff-pin': '1234' });
+    const table7 = stateAfterApprove.data.data.tables.find(t => t.tableId === '07');
+    const callStillExists = stateAfterApprove.data.data.notifications.some(n => n.id === orderCallId);
+    assert(
+      table7 && table7.status === 'occupied' && table7.totalAmount === 190 && !callStillExists,
+      '14. Adisyon & Bildirim Bütünlüğü - Masa 7 \'occupied\' durumuna geçmeli ve çağrı bildirimlerden silinmeli'
+    );
+
+    // 9. Mobile Elements Check in Garson HTML
+    assert(
+      garsonPage.data.includes('mobile-bottom-nav') && garsonPage.data.includes('mobile-adisyon-float-bar'),
+      '15. Mobil Uyumluluk - Alt mobil navigasyon çubuğu ve yapışkan adisyon float barı HTML\'de bulunmalı'
+    );
+
+    // Clean up Masa 7 for future runs
+    await httpRequest('POST', '/api/garson/tables/07/clear', { 'x-staff-pin': '1234' });
+
   } catch (err) {
     console.error('Test akışında beklenmeyen hata:', err);
   } finally {
@@ -185,3 +247,4 @@ async function runGarsonTests() {
 }
 
 runGarsonTests();
+

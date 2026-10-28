@@ -720,6 +720,7 @@ app.post('/api/call-waiter', (req, res) => {
     table: cleanTable,
     type: cleanType,
     note: cleanNote,
+    items: Array.isArray(req.body.items) ? req.body.items : [],
     time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
     createdAt: now
   };
@@ -1029,31 +1030,176 @@ app.post('/api/garson/tables/:tableId/clear', requireWaiterOrAdminAuth, (req, re
   res.json({ success: true, message: 'Masa adisyonu temizlendi.' });
 });
 
-// 8. Dismiss Single Waiter Call
+// Helper: Extract items from note if structured items array was missing
+function extractItemsFromOrderNote(note) {
+  if (!note || typeof note !== 'string') return [];
+  const items = [];
+  const products = db.products || [];
+
+  for (const prod of products) {
+    if (prod.name && note.toLowerCase().includes(prod.name.toLowerCase())) {
+      if (!items.some(it => it.productId === prod.id)) {
+        items.push({
+          productId: prod.id,
+          name: prod.name,
+          price: parseFloat(prod.price) || 0,
+          portion: prod.portion || 'Standart',
+          quantity: 1,
+          note: ''
+        });
+      }
+    }
+  }
+
+  if (items.length === 0) {
+    const priceMatch = note.match(/(\d+([.,]\d+)?)\s*₺/);
+    const price = priceMatch ? parseFloat(priceMatch[1].replace(',', '.')) : 0;
+    const cleanTitle = note.split('-')[0].split('+')[0].trim();
+    items.push({
+      productId: 'custom_' + Date.now(),
+      name: sanitizeString(cleanTitle || 'Sipariş Ürünü'),
+      price: price,
+      portion: 'Standart',
+      quantity: 1,
+      note: sanitizeString(note)
+    });
+  }
+
+  return items;
+}
+
+// Helper: Apply order items directly to table adisyon
+function applyOrderToAdisyon(notif) {
+  const tableId = normalizeTableId(notif.table);
+  db.adisyons = db.adisyons || {};
+  if (!db.adisyons[tableId]) {
+    db.adisyons[tableId] = {
+      tableId: tableId,
+      tableName: `Masa ${parseInt(tableId, 10)}`,
+      openedAt: Date.now(),
+      updatedAt: Date.now(),
+      items: [],
+      totalAmount: 0,
+      totalItems: 0
+    };
+  }
+
+  const tableAdisyon = db.adisyons[tableId];
+  let itemsToAdd = [];
+
+  if (Array.isArray(notif.items) && notif.items.length > 0) {
+    itemsToAdd = notif.items;
+  } else {
+    itemsToAdd = extractItemsFromOrderNote(notif.note);
+  }
+
+  for (const item of itemsToAdd) {
+    const cleanName = sanitizeString(item.name || 'Sipariş Ürünü');
+    const cleanPortion = sanitizeString(item.portion || 'Standart');
+    const cleanNote = sanitizeString(item.note || '');
+    const cleanPrice = parseFloat(String(item.price || 0).replace('₺', '').replace(/,/g, '.').trim()) || 0;
+    const cleanQty = Math.max(1, parseInt(item.quantity, 10) || 1);
+
+    const existing = tableAdisyon.items.find(it =>
+      (item.productId && it.productId && it.productId === item.productId && (it.portion || '') === cleanPortion && (it.note || '') === cleanNote) ||
+      (it.name.toLowerCase() === cleanName.toLowerCase() && (it.portion || '') === cleanPortion && (it.note || '') === cleanNote)
+    );
+
+    if (existing) {
+      existing.quantity += cleanQty;
+      existing.total = Math.round(existing.quantity * existing.price * 100) / 100;
+    } else {
+      tableAdisyon.items.push({
+        id: 'item_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+        productId: String(item.productId || ''),
+        name: cleanName,
+        portion: cleanPortion,
+        note: cleanNote,
+        price: cleanPrice,
+        quantity: cleanQty,
+        total: Math.round(cleanQty * cleanPrice * 100) / 100,
+        addedAt: Date.now()
+      });
+    }
+  }
+
+  tableAdisyon.totalAmount = Math.round(tableAdisyon.items.reduce((sum, it) => sum + (it.total || 0), 0) * 100) / 100;
+  tableAdisyon.totalItems = tableAdisyon.items.reduce((sum, it) => sum + (it.quantity || 0), 0);
+  tableAdisyon.updatedAt = Date.now();
+
+  broadcastNotificationEvent('adisyon_updated', { tableId, adisyon: tableAdisyon });
+  return tableAdisyon;
+}
+
+// 8. Explicit Approve Order & Add to Table Adisyon
+app.post('/api/garson/calls/:id/approve-order', requireWaiterOrAdminAuth, (req, res) => {
+  const { id } = req.params;
+  const notifIndex = (db.notifications || []).findIndex(n => n.id === id);
+  if (notifIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Sipariş çağrısı bulunamadı.' });
+  }
+
+  const notif = db.notifications[notifIndex];
+  const tableId = normalizeTableId(notif.table);
+  const updatedAdisyon = applyOrderToAdisyon(notif);
+
+  db.notifications.splice(notifIndex, 1);
+  saveData(db);
+  broadcastNotificationEvent('notification_dismissed', { id });
+
+  res.json({
+    success: true,
+    message: `Masa ${parseInt(tableId, 10)} siparişi onaylandı ve adisyona eklendi.`,
+    data: { tableId, adisyon: updatedAdisyon }
+  });
+});
+
+// 9. Dismiss Single Waiter Call (If it's an order, automatically adds to table adisyon unless opted-out)
 app.post('/api/garson/calls/:id/dismiss', requireWaiterOrAdminAuth, (req, res) => {
   const { id } = req.params;
-  const initialLen = (db.notifications || []).length;
-  db.notifications = (db.notifications || []).filter(n => n.id !== id);
-
-  if (db.notifications.length === initialLen) {
+  const notifIndex = (db.notifications || []).findIndex(n => n.id === id);
+  if (notifIndex === -1) {
     return res.status(404).json({ success: false, message: 'Çağrı bulunamadı.' });
   }
 
+  const notif = db.notifications[notifIndex];
+  const isOrder = (notif.type || '').toLowerCase().includes('sipariş');
+  let adisyon = null;
+  const tableId = normalizeTableId(notif.table);
+
+  if (isOrder && (!req.body || req.body.addToAdisyon !== false)) {
+    adisyon = applyOrderToAdisyon(notif);
+  }
+
+  db.notifications.splice(notifIndex, 1);
   saveData(db);
   broadcastNotificationEvent('notification_dismissed', { id });
-  res.json({ success: true, message: 'Masa çağrısı kapatıldı.' });
+
+  res.json({
+    success: true,
+    message: isOrder ? `Sipariş onaylandı ve Masa ${parseInt(tableId, 10)} adisyonuna eklendi.` : 'Masa çağrısı kapatıldı.',
+    data: adisyon ? { tableId, adisyon } : null
+  });
 });
 
-// 9. Dismiss All Calls for a Specific Table
+// 10. Dismiss All Calls for a Specific Table (Orders are auto-applied to adisyon)
 app.post('/api/garson/calls/dismiss-table', requireWaiterOrAdminAuth, (req, res) => {
   const { tableId } = req.body || {};
   const normId = normalizeTableId(tableId);
+
+  const tableCalls = (db.notifications || []).filter(n => normalizeTableId(n.table) === normId);
+  for (const call of tableCalls) {
+    const isOrder = (call.type || '').toLowerCase().includes('sipariş');
+    if (isOrder) {
+      applyOrderToAdisyon(call);
+    }
+  }
 
   db.notifications = (db.notifications || []).filter(n => normalizeTableId(n.table) !== normId);
   saveData(db);
   broadcastNotificationEvent('notifications_updated', db.notifications);
 
-  res.json({ success: true, message: `Masa ${parseInt(normId, 10)} çağrıları onaylandı ve kapatıldı.` });
+  res.json({ success: true, message: `Masa ${parseInt(normId, 10)} çağrı ve siparişleri onaylandı, adisyona eklendi.` });
 });
 
 // 9. Reset Demo Data (Protected)

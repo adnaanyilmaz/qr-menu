@@ -702,24 +702,158 @@
   ],
   "notifications": [
     {
-      "id": "call_1793192952869_520",
+      "id": "call_1793194097182_443",
       "table": "TestMasa99",
       "type": "Garson Çağır",
       "note": "Peçete lütfen",
-      "time": "16:09",
-      "createdAt": 1793192952869
-    },
-    {
-      "id": "call_1793192441968_762",
-      "table": "TestMasa99",
-      "type": "Garson Çağır",
-      "note": "Peçete lütfen",
-      "time": "16:00",
-      "createdAt": 1793192441968
+      "items": [],
+      "time": "16:28",
+      "createdAt": 1793194097182
     }
   ],
-  "adisyons": {},
+  "adisyons": {
+    "01": {
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "openedAt": 1793194079293,
+      "updatedAt": 1793194088455,
+      "items": [],
+      "totalAmount": 0,
+      "totalItems": 0
+    }
+  },
   "orderHistory": [
+    {
+      "tableId": "04",
+      "tableName": "Masa 4",
+      "openedAt": 1793194091669,
+      "updatedAt": 1793194091674,
+      "items": [
+        {
+          "id": "item_1793194091669_1570",
+          "productId": "prod_test_1",
+          "name": "Tombik Döner",
+          "portion": "Standart",
+          "note": "Soğansız",
+          "price": 150,
+          "quantity": 3,
+          "total": 450,
+          "addedAt": 1793194091669
+        }
+      ],
+      "totalAmount": 450,
+      "totalItems": 3,
+      "closedAt": 1793194091705,
+      "paymentMethod": "Kredi Kartı",
+      "closeNote": "Masa 4 ödeme tamamlandı"
+    },
+    {
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "openedAt": 1793193625268,
+      "updatedAt": 1793193754458,
+      "items": [
+        {
+          "id": "item_1793193625268_9417",
+          "productId": "prod_13",
+          "name": "Tavuk Dürüm Menü",
+          "portion": "Dürüm + Patates + Ayran",
+          "note": "soğansız, Az Pişmiş, Az Pişmiş, Bol Soslu, Bol Soslu",
+          "price": 210,
+          "quantity": 1,
+          "total": 210,
+          "addedAt": 1793193625268
+        }
+      ],
+      "totalAmount": 210,
+      "totalItems": 1,
+      "closedAt": 1793193848984,
+      "paymentMethod": "İkram",
+      "closeNote": "adnan beyin meisafirleri"
+    },
+    {
+      "tableId": "03",
+      "tableName": "Masa 3",
+      "openedAt": 1793193628455,
+      "updatedAt": 1793193628455,
+      "items": [
+        {
+          "id": "item_1793193628455_794",
+          "productId": "prod_13",
+          "name": "Tavuk Dürüm Menü",
+          "portion": "Dürüm + Patates + Ayran",
+          "note": "",
+          "price": 210,
+          "quantity": 1,
+          "total": 210,
+          "addedAt": 1793193628455
+        }
+      ],
+      "totalAmount": 210,
+      "totalItems": 1,
+      "closedAt": 1793193813857,
+      "paymentMethod": "İkram",
+      "closeNote": ""
+    },
+    {
+      "tableId": "02",
+      "tableName": "Masa 2",
+      "openedAt": 1793193636842,
+      "updatedAt": 1793193637450,
+      "items": [
+        {
+          "id": "item_1793193636842_84",
+          "productId": "prod_17",
+          "name": "Soğan Halkası",
+          "portion": "8 Adet Çıtır Halka",
+          "note": "",
+          "price": 90,
+          "quantity": 1,
+          "total": 90,
+          "addedAt": 1793193636842
+        },
+        {
+          "id": "item_1793193637450_8732",
+          "productId": "prod_18",
+          "name": "Çıtır Tavuk",
+          "portion": "5 Parça Fileto",
+          "note": "",
+          "price": 140,
+          "quantity": 1,
+          "total": 140,
+          "addedAt": 1793193637450
+        }
+      ],
+      "totalAmount": 230,
+      "totalItems": 2,
+      "closedAt": 1793193648841,
+      "paymentMethod": "Kredi Kartı",
+      "closeNote": ""
+    },
+    {
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "openedAt": 1793193366608,
+      "updatedAt": 1793193443311,
+      "items": [
+        {
+          "id": "item_1793193443311_6969",
+          "productId": "prod_16",
+          "name": "Patates Kızartması",
+          "portion": "Büyük Boy Kova",
+          "note": "",
+          "price": 80,
+          "quantity": 1,
+          "total": 80,
+          "addedAt": 1793193443311
+        }
+      ],
+      "totalAmount": 80,
+      "totalItems": 1,
+      "closedAt": 1793193451160,
+      "paymentMethod": "Nakit",
+      "closeNote": ""
+    },
     {
       "tableId": "04",
       "tableName": "Masa 4",

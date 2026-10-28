@@ -61,6 +61,20 @@ const dom = {
   portionButtons: document.querySelectorAll('.portion-btn'),
   modalAllergensList: document.getElementById('modal-allergens-list'),
   modalOrderActionBtn: document.getElementById('modal-order-action-btn'),
+
+  // Order Confirmation Modal
+  orderConfirmModal: document.getElementById('order-confirm-modal-backdrop'),
+  orderConfirmTable: document.getElementById('order-confirm-table'),
+  orderConfirmProductName: document.getElementById('order-confirm-product-name'),
+  orderConfirmProductPrice: document.getElementById('order-confirm-product-price'),
+  orderConfirmPortion: document.getElementById('order-confirm-portion'),
+  orderConfirmSelectedDrinks: document.getElementById('order-confirm-selected-drinks'),
+  orderConfirmTotalRow: document.getElementById('order-confirm-total-row'),
+  orderConfirmTotalPrice: document.getElementById('order-confirm-total-price'),
+  orderConfirmDrinkSection: document.getElementById('order-confirm-drink-section'),
+  orderConfirmDrinkList: document.getElementById('order-confirm-drink-list'),
+  btnSubmitOrderConfirm: document.getElementById('btn-submit-order-confirm'),
+  btnSubmitOrderText: document.getElementById('btn-submit-order-text'),
   
   // Info / Generic Modals
   centerModal: document.getElementById('center-modal-backdrop'),
@@ -447,8 +461,8 @@ function openProductModalById(prodId) {
     dom.modalOrderActionBtn.disabled = false;
     dom.modalOrderActionBtn.style.opacity = '1';
     dom.modalOrderActionBtn.innerHTML = `
-      <span class="material-symbols-outlined" style="font-size:18px;">notifications_active</span>
-      <span>Garsona Bu Ürünü Bildir</span>
+      <span class="material-symbols-outlined" style="font-size:18px;">restaurant</span>
+      <span>Sipariş Et</span>
     `;
   }
   
@@ -460,6 +474,248 @@ function openProductModalById(prodId) {
 function closeProductModal() {
   dom.productModal.classList.remove('open');
   document.body.style.overflow = '';
+}
+
+// Order Confirmation Modal Handlers & Drink Recommendations
+let selectedAddonDrinks = new Set();
+
+function openOrderConfirmModal() {
+  if (!currentSelectedProduct) return;
+
+  selectedAddonDrinks.clear();
+
+  const table = menuState.currentTable || '04';
+  const currency = menuState.settings.currency || '₺';
+  const selectedPortion = document.querySelector('.portion-btn.active');
+  const portionText = selectedPortion ? selectedPortion.textContent.trim() : 'Standart Porsiyon';
+
+  if (dom.orderConfirmTable) dom.orderConfirmTable.textContent = `Masa ${table}`;
+  if (dom.orderConfirmProductName) dom.orderConfirmProductName.textContent = currentSelectedProduct.name;
+  if (dom.orderConfirmProductPrice) dom.orderConfirmProductPrice.textContent = `${currentSelectedProduct.price} ${currency}`;
+  if (dom.orderConfirmPortion) dom.orderConfirmPortion.textContent = portionText;
+
+  // Check if current item is a meal/food or already a drink
+  const drinkCategories = ['sicak-icecekler', 'soguk-icecekler', 'frozen'];
+  const isFood = currentSelectedProduct.type === 'food' || 
+    (!drinkCategories.includes(currentSelectedProduct.category) && currentSelectedProduct.category !== 'icecekler');
+
+  if (isFood && dom.orderConfirmDrinkSection && dom.orderConfirmDrinkList) {
+    dom.orderConfirmDrinkSection.style.display = 'block';
+
+    // Find in-stock drinks from menu products
+    const availableDrinks = (menuState.products || []).filter(p => {
+      return (p.type === 'drink' || drinkCategories.includes(p.category)) && p.inStock !== false;
+    });
+
+    // Prioritize natural food pairings: Ayran, Kola, Limonata, Çay, Şeftalili, Su, Soda
+    const priorityKeywords = ['ayran', 'kola', 'limonata', 'çay', 'şeftalili', 'ice', 'su', 'soda'];
+    availableDrinks.sort((a, b) => {
+      const aName = (a.name || '').toLowerCase();
+      const bName = (b.name || '').toLowerCase();
+      const aIdx = priorityKeywords.findIndex(k => aName.includes(k));
+      const bIdx = priorityKeywords.findIndex(k => bName.includes(k));
+      const aRank = aIdx === -1 ? 999 : aIdx;
+      const bRank = bIdx === -1 ? 999 : bIdx;
+      return aRank - bRank;
+    });
+
+    const topDrinks = availableDrinks.slice(0, 5);
+
+    let html = '';
+    topDrinks.forEach(drink => {
+      const icon = drink.icon || (drink.category === 'sicak-icecekler' ? 'local_cafe' : 'local_drink');
+      const portion = drink.portion || (drink.desc ? drink.desc.slice(0, 28) + '…' : 'İçecek');
+      const hasImg = drink.img && typeof drink.img === 'string' && drink.img.trim().length > 0;
+
+      const visualHtml = hasImg
+        ? `<div class="drink-rec-thumb-wrap">
+             <img src="${escapeHtml(drink.img)}" alt="${escapeHtml(drink.name)}" class="drink-rec-thumb" loading="lazy" onerror="this.onerror=null; this.parentElement.outerHTML='<div class=\\'drink-rec-icon\\'><span class=\\'material-symbols-outlined\\'>${icon}</span></div>';"/>
+           </div>`
+        : `<div class="drink-rec-icon">
+             <span class="material-symbols-outlined">${icon}</span>
+           </div>`;
+
+      html += `
+        <div class="drink-rec-item" data-id="${drink.id}" onclick="toggleOrderDrink('${drink.id}')">
+          <div class="drink-rec-info">
+            ${visualHtml}
+            <div class="drink-rec-text">
+              <span class="drink-rec-name">${escapeHtml(drink.name)}</span>
+              <span class="drink-rec-portion">${escapeHtml(portion)}</span>
+            </div>
+          </div>
+          <div class="drink-rec-right">
+            <span class="drink-rec-price">+${drink.price} ${currency}</span>
+            <div class="drink-rec-btn">
+              <span class="material-symbols-outlined">add</span>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    dom.orderConfirmDrinkList.innerHTML = html;
+  } else if (dom.orderConfirmDrinkSection) {
+    dom.orderConfirmDrinkSection.style.display = 'none';
+  }
+
+  updateOrderConfirmSummary();
+
+  if (dom.orderConfirmModal) {
+    dom.orderConfirmModal.classList.add('open');
+  }
+}
+
+function toggleOrderDrink(drinkId) {
+  if (selectedAddonDrinks.has(drinkId)) {
+    selectedAddonDrinks.delete(drinkId);
+  } else {
+    selectedAddonDrinks.add(drinkId);
+  }
+
+  // Update UI item appearance
+  const itemEl = document.querySelector(`.drink-rec-item[data-id="${drinkId}"]`);
+  if (itemEl) {
+    const isSelected = selectedAddonDrinks.has(drinkId);
+    itemEl.classList.toggle('selected', isSelected);
+    const iconSpan = itemEl.querySelector('.drink-rec-btn span');
+    if (iconSpan) {
+      iconSpan.textContent = isSelected ? 'check' : 'add';
+    }
+  }
+
+  updateOrderConfirmSummary();
+}
+window.toggleOrderDrink = toggleOrderDrink;
+
+function updateOrderConfirmSummary() {
+  if (!currentSelectedProduct) return;
+
+  const currency = menuState.settings.currency || '₺';
+  const basePrice = parseFloat(currentSelectedProduct.price) || 0;
+  let drinksTotal = 0;
+  let drinksHtml = '';
+
+  selectedAddonDrinks.forEach(id => {
+    const d = menuState.products.find(p => p.id === id);
+    if (d) {
+      const pPrice = parseFloat(d.price) || 0;
+      drinksTotal += pPrice;
+      drinksHtml += `
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:#475569; margin-top:3px;">
+          <span style="display:flex; align-items:center; gap:4px;">
+            <span class="material-symbols-outlined" style="font-size:14px; color:#ea580c;">add_circle</span>
+            <span>${escapeHtml(d.name)}</span>
+          </span>
+          <strong style="color:#b91c1c;">+${pPrice} ${currency}</strong>
+        </div>
+      `;
+    }
+  });
+
+  const total = basePrice + drinksTotal;
+
+  if (dom.orderConfirmSelectedDrinks) {
+    if (drinksTotal > 0) {
+      dom.orderConfirmSelectedDrinks.style.display = 'block';
+      dom.orderConfirmSelectedDrinks.innerHTML = drinksHtml;
+    } else {
+      dom.orderConfirmSelectedDrinks.style.display = 'none';
+      dom.orderConfirmSelectedDrinks.innerHTML = '';
+    }
+  }
+
+  if (dom.orderConfirmTotalRow && dom.orderConfirmTotalPrice) {
+    if (drinksTotal > 0) {
+      dom.orderConfirmTotalRow.style.display = 'flex';
+      dom.orderConfirmTotalPrice.textContent = `${total} ${currency}`;
+    } else {
+      dom.orderConfirmTotalRow.style.display = 'none';
+    }
+  }
+
+  if (dom.btnSubmitOrderText) {
+    dom.btnSubmitOrderText.textContent = drinksTotal > 0
+      ? `Siparişi Onayla (${total} ${currency})`
+      : 'Siparişi Onayla';
+  }
+}
+
+function closeOrderConfirmModal() {
+  if (dom.orderConfirmModal) {
+    dom.orderConfirmModal.classList.remove('open');
+  }
+  selectedAddonDrinks.clear();
+}
+window.closeOrderConfirmModal = closeOrderConfirmModal;
+
+async function confirmAndSendOrder() {
+  if (!currentSelectedProduct) return;
+
+  const table = menuState.currentTable || '04';
+  const currency = menuState.settings.currency || '₺';
+  const selectedPortion = document.querySelector('.portion-btn.active');
+  const portionText = selectedPortion ? selectedPortion.textContent.trim() : '';
+  const submitBtn = dom.btnSubmitOrderConfirm;
+  const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <span class="material-symbols-outlined" style="font-size:18px; animation:spin 1s linear infinite;">progress_activity</span>
+      <span>İletiliyor...</span>
+    `;
+  }
+
+  try {
+    const drinkNames = [];
+    let totalOrderPrice = parseFloat(currentSelectedProduct.price) || 0;
+    selectedAddonDrinks.forEach(id => {
+      const d = menuState.products.find(p => p.id === id);
+      if (d) {
+        drinkNames.push(d.name);
+        totalOrderPrice += parseFloat(d.price) || 0;
+      }
+    });
+
+    let note = '';
+    let toastMsg = '';
+    if (drinkNames.length > 0) {
+      const drinksStr = drinkNames.join(', ');
+      note = `${currentSelectedProduct.name}${portionText ? ' (' + portionText + ')' : ''} + İçecek: ${drinksStr} - Toplam: ${totalOrderPrice} ${currency}`;
+      toastMsg = `Masa ${table} için "${currentSelectedProduct.name}" ve "${drinksStr}" siparişiniz mutfağa iletildi!`;
+    } else {
+      note = `${currentSelectedProduct.name}${portionText ? ' (' + portionText + ')' : ''} - ${currentSelectedProduct.price} ${currency}`;
+      toastMsg = `Masa ${table} için "${currentSelectedProduct.name}" siparişiniz mutfağa iletildi!`;
+    }
+
+    const res = await fetch('/api/call-waiter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        table: table,
+        type: 'Sipariş',
+        note: note
+      })
+    });
+
+    const result = await res.json();
+
+    if (result.success) {
+      closeOrderConfirmModal();
+      closeProductModal();
+      showToast(toastMsg);
+      // No cooldown timer for orders - customer can immediately order another item!
+    } else {
+      showToast(result.message || 'Sipariş iletilemedi, lütfen personele bildiriniz.');
+    }
+  } catch (err) {
+    showToast('Bağlantı hatası: Sipariş iletilemedi.');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnHtml;
+    }
+  }
 }
 
 // 7. Waiter Calling / Service Notifications with Cooldown & Debounce
@@ -544,14 +800,14 @@ async function callWaiterService(serviceType, note = '') {
     const result = await res.json();
 
     if (res.status === 429) {
-      const waitSec = result.remainingSeconds || 25;
+      const waitSec = result.remainingSeconds || 20;
       startCooldownTimer(waitSec);
       showToast(result.message || `Lütfen ${waitSec} saniye bekleyin.`);
       return;
     }
 
     if (result.success) {
-      startCooldownTimer(25);
+      startCooldownTimer(20);
       showToast(`Masa ${table} için "${serviceType}" talebiniz personele iletildi!`);
     } else {
       updateServiceButtonsState();
@@ -728,15 +984,17 @@ function setupEventListeners() {
     });
   });
   
-  // Product Modal Order / Call action
+  // Product Modal Order action -> Open Confirmation Dialog
   if (dom.modalOrderActionBtn) {
     dom.modalOrderActionBtn.addEventListener('click', () => {
-      if (currentSelectedProduct) {
-        const selectedPortion = document.querySelector('.portion-btn.active');
-        const portionText = selectedPortion ? selectedPortion.textContent.trim() : '';
-        callWaiterService('Sipariş Talebi', `${currentSelectedProduct.name} (${portionText})`);
-        closeProductModal();
-      }
+      openOrderConfirmModal();
+    });
+  }
+
+  // Submit Order Confirmation
+  if (dom.btnSubmitOrderConfirm) {
+    dom.btnSubmitOrderConfirm.addEventListener('click', () => {
+      confirmAndSendOrder();
     });
   }
   
@@ -744,6 +1002,11 @@ function setupEventListeners() {
   if (dom.productModal) {
     dom.productModal.addEventListener('click', (e) => {
       if (e.target === dom.productModal) closeProductModal();
+    });
+  }
+  if (dom.orderConfirmModal) {
+    dom.orderConfirmModal.addEventListener('click', (e) => {
+      if (e.target === dom.orderConfirmModal) closeOrderConfirmModal();
     });
   }
   if (dom.centerModal) {

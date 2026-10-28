@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
   checkAuth();
   setupNavTabs();
   setupEventListeners();
+  updateSoundUI();
 });
 
 // Helper for Authenticated Requests
@@ -35,7 +36,7 @@ async function fetchWithAuth(url, options = {}) {
   if (response.status === 401) {
     // Session expired or invalid
     sessionStorage.removeItem('alibaba_admin_token');
-    clearInterval(adminData.pollTimer);
+    stopNotificationStream();
     document.getElementById('login-screen').style.display = 'flex';
     showAdminToast('Oturum süresi doldu. Lütfen tekrar giriş yapın.');
     throw new Error('Yetkisiz erişim');
@@ -112,7 +113,7 @@ async function handleLogout() {
     await fetchWithAuth('/api/logout', { method: 'POST' });
   } catch (e) {}
   sessionStorage.removeItem('alibaba_admin_token');
-  clearInterval(adminData.pollTimer);
+  stopNotificationStream();
   window.location.reload();
 }
 
@@ -228,82 +229,516 @@ function renderDashboard() {
   fetchNotifications();
 }
 
-function startNotificationPolling() {
-  clearInterval(adminData.pollTimer);
-  fetchNotifications();
-  adminData.pollTimer = setInterval(fetchNotifications, 5000);
-}
+// ==========================================================================
+// Audio Notification Engine (Web Audio API Synthesizer)
+// ==========================================================================
+let audioContext = null;
+let soundEnabled = localStorage.getItem('alibaba_admin_sound') !== 'false';
+let knownNotificationIds = new Set();
+let dismissingNotificationIds = new Set();
+let notifEventSource = null;
+let hasInitializedNotifications = false;
+let titleAlertInterval = null;
 
-async function fetchNotifications() {
-  try {
-    const res = await fetchWithAuth('/api/notifications');
-    const result = await res.json();
-    if (result.success && result.data) {
-      adminData.notifications = result.data;
-      renderNotificationList();
-    }
-  } catch (e) {}
-}
-
-function renderNotificationList() {
-  const container = document.getElementById('notification-list');
-  const countBadge = document.getElementById('notif-nav-badge');
-  const notifs = adminData.notifications;
-
-  if (countBadge) {
-    if (notifs.length > 0) {
-      countBadge.style.display = 'inline-block';
-      countBadge.textContent = notifs.length;
-    } else {
-      countBadge.style.display = 'none';
+function initAudioContext() {
+  if (!audioContext) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) {
+      audioContext = new AudioContextClass();
     }
   }
+  if (audioContext && audioContext.state === 'suspended') {
+    audioContext.resume().catch(() => {});
+  }
+  return audioContext;
+}
 
-  if (!container) return;
+// Global user interaction unlocks AudioContext
+document.addEventListener('click', () => {
+  initAudioContext();
+}, { once: false });
 
-  if (notifs.length === 0) {
-    container.innerHTML = `
-      <div class="notif-empty">
-        <span class="material-symbols-outlined" style="font-size:36px; color:#cbd5e1; display:block; margin-bottom:8px;">notifications_paused</span>
-        Şu anda bekleyen masa çağrısı bulunmuyor.
-      </div>
-    `;
+function updateSoundUI() {
+  const btn = document.getElementById('btn-sound-toggle');
+  const icon = document.getElementById('sound-icon');
+  const label = document.getElementById('sound-label');
+
+  if (!btn || !icon || !label) return;
+
+  if (soundEnabled) {
+    btn.classList.remove('muted');
+    icon.textContent = 'volume_up';
+    icon.style.color = '#16a34a';
+    label.textContent = 'Ses Açık';
+    btn.title = 'Sesli Bildirim Açık (Test etmek için tıklayın)';
+  } else {
+    btn.classList.add('muted');
+    icon.textContent = 'volume_off';
+    icon.style.color = '#94a3b8';
+    label.textContent = 'Ses Kapalı';
+    btn.title = 'Sesli Bildirim Kapalı (Açmak için tıklayın)';
+  }
+}
+
+function toggleSoundPreference() {
+  initAudioContext();
+  soundEnabled = !soundEnabled;
+  localStorage.setItem('alibaba_admin_sound', soundEnabled ? 'true' : 'false');
+  updateSoundUI();
+
+  if (soundEnabled) {
+    playOrderSound();
+    const btn = document.getElementById('btn-sound-toggle');
+    if (btn) {
+      btn.classList.add('active-pulse');
+      setTimeout(() => btn.classList.remove('active-pulse'), 400);
+    }
+    showAdminToast('Sesli bildirim açıldı (Sipariş zili test edildi).');
+  } else {
+    showAdminToast('Sesli bildirim kapatıldı.');
+  }
+}
+window.toggleSoundPreference = toggleSoundPreference;
+
+function playTone(ctx, freq, startTime, duration, maxGain = 0.28) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq, startTime);
+
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(maxGain, startTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.start(startTime);
+  osc.stop(startTime + duration);
+}
+
+// Order Chime: Resonant 3-tone ascending bell (E5 -> G5 -> C6)
+function playOrderSound() {
+  if (!soundEnabled) return;
+  try {
+    const ctx = initAudioContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    playTone(ctx, 659.25, now, 0.16, 0.28);          // E5
+    playTone(ctx, 783.99, now + 0.13, 0.16, 0.30);   // G5
+    playTone(ctx, 1046.50, now + 0.26, 0.65, 0.38);  // C6 (Resonant Bell)
+  } catch (err) {
+    console.warn('Audio play error:', err);
+  }
+}
+
+// Waiter Call Chime: Dual-tone chime (A5 -> D6)
+function playWaiterCallSound() {
+  if (!soundEnabled) return;
+  try {
+    const ctx = initAudioContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    playTone(ctx, 880.00, now, 0.16, 0.24);          // A5
+    playTone(ctx, 1174.66, now + 0.14, 0.45, 0.32);  // D6
+  } catch (err) {
+    console.warn('Audio play error:', err);
+  }
+}
+
+function triggerTitleAlert(msg) {
+  if (!document.hidden) return;
+  clearInterval(titleAlertInterval);
+  const originalTitle = document.title;
+  let toggle = false;
+  titleAlertInterval = setInterval(() => {
+    document.title = toggle ? `🔔 ${msg}` : originalTitle;
+    toggle = !toggle;
+  }, 1000);
+
+  window.addEventListener('focus', () => {
+    clearInterval(titleAlertInterval);
+    document.title = 'Ali Baba Döner Kafe - Admin';
+  }, { once: true });
+}
+
+function startNotificationPolling() {
+  initNotificationStream();
+}
+
+function initNotificationStream() {
+  stopNotificationStream();
+  const token = sessionStorage.getItem('alibaba_admin_token');
+  if (!token) return;
+
+  if (!window.EventSource) {
+    console.warn('EventSource tarayıcı tarafından desteklenmiyor. Periyodik sorgulamaya geçiliyor.');
+    startFallbackPolling();
     return;
   }
 
-  let html = '';
-  notifs.forEach(n => {
-    html += `
-      <div class="notif-item">
-        <div class="notif-left">
-          <div class="notif-title">
-            <span class="notif-table-pill">Masa ${escapeHtml(n.table)}</span>
-            <span>${escapeHtml(n.type)}</span>
-          </div>
-          ${n.note ? `<div class="notif-desc">${escapeHtml(n.note)}</div>` : ''}
-          <div class="notif-time">İletilme: ${escapeHtml(n.time)}</div>
-        </div>
-        <button class="notif-btn-clear" onclick="dismissNotification('${escapeHtml(n.id)}')" title="Tamamlandı olarak işaretle">
-          <span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">check</span> İlgilendim
-        </button>
+  try {
+    const streamUrl = `/api/notifications/stream?token=${encodeURIComponent(token)}`;
+    notifEventSource = new EventSource(streamUrl);
+
+    // Initial load from SSE
+    notifEventSource.addEventListener('init', (e) => {
+      try {
+        const initialNotifs = JSON.parse(e.data);
+        if (Array.isArray(initialNotifs)) {
+          initialNotifs.forEach(n => knownNotificationIds.add(n.id));
+          hasInitializedNotifications = true;
+          reconcileNotificationList(initialNotifs, true);
+        }
+      } catch (err) {
+        console.error('SSE init verisi ayrıştırılamadı:', err);
+      }
+    });
+
+    // Real-time newly created order or call
+    notifEventSource.addEventListener('notification_created', (e) => {
+      try {
+        const notification = JSON.parse(e.data);
+        handleNewNotificationEvent(notification);
+      } catch (err) {
+        console.error('SSE notification_created ayrıştırma hatası:', err);
+      }
+    });
+
+    // Real-time dismissed notification (from this or another admin tab)
+    notifEventSource.addEventListener('notification_dismissed', (e) => {
+      try {
+        const { id } = JSON.parse(e.data);
+        handleNotificationDismissedEvent(id);
+      } catch (err) {
+        console.error('SSE notification_dismissed ayrıştırma hatası:', err);
+      }
+    });
+
+    // Real-time demo reset
+    notifEventSource.addEventListener('notifications_reset', () => {
+      knownNotificationIds.clear();
+      dismissingNotificationIds.clear();
+      reconcileNotificationList([], true);
+    });
+
+    notifEventSource.onerror = () => {
+      if (notifEventSource && notifEventSource.readyState === EventSource.CLOSED) {
+        console.warn('SSE bağlantısı kesildi, yeniden bağlanılmaya çalışılıyor...');
+      }
+    };
+
+    // Low-frequency safety fallback (every 30s) to keep in sync if offline
+    adminData.pollTimer = setInterval(() => {
+      fetchNotifications(false, true);
+    }, 30000);
+  } catch (err) {
+    console.warn('SSE başlatılamadı, alternatif sorgulamaya geçiliyor:', err);
+    startFallbackPolling();
+  }
+}
+
+function startFallbackPolling() {
+  clearInterval(adminData.pollTimer);
+  fetchNotifications(false, false);
+  adminData.pollTimer = setInterval(() => fetchNotifications(false, false), 5000);
+}
+
+function stopNotificationStream() {
+  if (notifEventSource) {
+    try {
+      notifEventSource.close();
+    } catch (e) {}
+    notifEventSource = null;
+  }
+  if (adminData.pollTimer) {
+    clearInterval(adminData.pollTimer);
+    adminData.pollTimer = null;
+  }
+}
+
+function updateNotificationBadge(count) {
+  const countBadge = document.getElementById('notif-nav-badge');
+  if (!countBadge) return;
+  if (count > 0) {
+    countBadge.style.display = 'inline-block';
+    countBadge.textContent = count;
+  } else {
+    countBadge.style.display = 'none';
+  }
+}
+
+function showEmptyNotificationsState(container) {
+  if (!container) return;
+  container.innerHTML = `
+    <div class="notif-empty">
+      <span class="material-symbols-outlined" style="font-size:36px; color:#cbd5e1; display:block; margin-bottom:8px;">notifications_paused</span>
+      Şu anda bekleyen masa çağrısı veya sipariş bulunmuyor.
+    </div>
+  `;
+}
+
+function createNotificationElement(n) {
+  const isOrder = (n.type || '').toLowerCase().includes('sipariş') || (n.type || '').toLowerCase().includes('order');
+  const item = document.createElement('div');
+  item.className = `notif-item ${isOrder ? 'notif-order' : ''}`;
+  item.dataset.id = n.id;
+
+  const badgeHtml = isOrder
+    ? `<span class="notif-badge-order"><span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle;">restaurant</span> Sipariş</span>`
+    : `<span class="notif-badge-call"><span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle;">notifications</span> ${escapeHtml(n.type)}</span>`;
+
+  const isDismissing = dismissingNotificationIds.has(n.id);
+  if (isDismissing) {
+    item.classList.add('notif-dismissing');
+  }
+
+  item.innerHTML = `
+    <div class="notif-left">
+      <div class="notif-title">
+        <span class="notif-table-pill">Masa ${escapeHtml(n.table)}</span>
+        ${badgeHtml}
       </div>
-    `;
+      ${n.note ? `<div class="notif-desc" style="font-weight:600; color:#0f172a; margin-top:4px;">${escapeHtml(n.note)}</div>` : ''}
+      <div class="notif-time">İletilme: ${escapeHtml(n.time)}</div>
+    </div>
+    <button class="notif-btn-clear" data-id="${escapeHtml(n.id)}" ${isDismissing ? 'disabled' : ''} title="Tamamlandı olarak işaretle">
+      <span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">${isDismissing ? 'hourglass_top' : 'check'}</span> ${isDismissing ? 'İşleniyor...' : 'İlgilendim'}
+    </button>
+  `;
+
+  const btn = item.querySelector('.notif-btn-clear');
+  if (btn) {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dismissNotification(n.id);
+    });
+  }
+
+  return item;
+}
+
+function reconcileNotificationList(newList, isInitial = false) {
+  adminData.notifications = newList || [];
+  updateNotificationBadge(adminData.notifications.length);
+
+  const container = document.getElementById('notification-list');
+  if (!container) return;
+
+  if (adminData.notifications.length === 0) {
+    if (!container.querySelector('.notif-empty')) {
+      showEmptyNotificationsState(container);
+    }
+    return;
+  }
+
+  // Remove empty state placeholder if present
+  const emptyEl = container.querySelector('.notif-empty');
+  if (emptyEl) {
+    emptyEl.remove();
+  }
+
+  const newIds = new Set(adminData.notifications.map(n => n.id));
+
+  // 1. Remove DOM cards that are no longer in the updated list
+  const existingCards = container.querySelectorAll('.notif-item');
+  existingCards.forEach(card => {
+    const id = card.dataset.id;
+    if (!newIds.has(id)) {
+      card.classList.add('notif-exit');
+      setTimeout(() => {
+        card.remove();
+        if (container.querySelectorAll('.notif-item').length === 0) {
+          showEmptyNotificationsState(container);
+        }
+      }, 220);
+    }
   });
 
-  container.innerHTML = html;
+  // 2. Reconcile or insert elements preserving exact order without destroying unchanged cards
+  adminData.notifications.forEach((n, idx) => {
+    let el = container.querySelector(`.notif-item[data-id="${n.id}"]`);
+    if (!el) {
+      el = createNotificationElement(n);
+      if (!isInitial) {
+        el.classList.add('notif-enter');
+      }
+    } else {
+      // Preserve dismissing state
+      const btn = el.querySelector('.notif-btn-clear');
+      if (btn && dismissingNotificationIds.has(n.id)) {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">hourglass_top</span> İşleniyor...`;
+        el.classList.add('notif-dismissing');
+      }
+    }
+
+    // Insert at current ordered position
+    const currentChild = container.children[idx];
+    if (currentChild !== el) {
+      container.insertBefore(el, currentChild || null);
+    }
+  });
+}
+
+function renderNotificationList() {
+  reconcileNotificationList(adminData.notifications || [], false);
+}
+
+function handleNewNotificationEvent(notification) {
+  if (!notification || !notification.id) return;
+  // Prevent duplicate records
+  if (knownNotificationIds.has(notification.id) || (adminData.notifications || []).some(n => n.id === notification.id)) {
+    return;
+  }
+
+  knownNotificationIds.add(notification.id);
+
+  const isOrder = (notification.type || '').toLowerCase().includes('sipariş') || (notification.type || '').toLowerCase().includes('order');
+  if (isOrder) {
+    playOrderSound();
+    showAdminToast(`🔔 YENİ SİPARİŞ! Masa ${notification.table}: ${notification.note || notification.type}`);
+    triggerTitleAlert(`(Yeni Sipariş!) Masa ${notification.table}`);
+  } else {
+    playWaiterCallSound();
+    showAdminToast(`🔔 MASA ÇAĞRISI! Masa ${notification.table}: ${notification.type}`);
+    triggerTitleAlert(`(Masa Çağrısı!) Masa ${notification.table}`);
+  }
+
+  adminData.notifications = adminData.notifications || [];
+  adminData.notifications.unshift(notification);
+  updateNotificationBadge(adminData.notifications.length);
+
+  const container = document.getElementById('notification-list');
+  if (!container) return;
+
+  const emptyEl = container.querySelector('.notif-empty');
+  if (emptyEl) emptyEl.remove();
+
+  // Prepend single new card with entrance animation
+  const newCard = createNotificationElement(notification);
+  newCard.classList.add('notif-enter');
+  container.prepend(newCard);
+}
+
+function handleNotificationDismissedEvent(id) {
+  if (!id) return;
+  knownNotificationIds.delete(id);
+  dismissingNotificationIds.delete(id);
+
+  adminData.notifications = (adminData.notifications || []).filter(n => n.id !== id);
+  updateNotificationBadge(adminData.notifications.length);
+
+  const container = document.getElementById('notification-list');
+  if (!container) return;
+
+  const card = container.querySelector(`.notif-item[data-id="${id}"]`);
+  if (card) {
+    card.classList.add('notif-exit');
+    setTimeout(() => {
+      card.remove();
+      if (container.querySelectorAll('.notif-item').length === 0) {
+        showEmptyNotificationsState(container);
+      }
+    }, 220);
+  }
+}
+
+async function fetchNotifications(isManual = false, isSilent = false) {
+  try {
+    const res = await fetchWithAuth('/api/notifications');
+    const result = await res.json();
+    if (result.success && Array.isArray(result.data)) {
+      const incomingNotifs = result.data;
+
+      if (!hasInitializedNotifications) {
+        incomingNotifs.forEach(n => knownNotificationIds.add(n.id));
+        hasInitializedNotifications = true;
+        reconcileNotificationList(incomingNotifs, true);
+      } else {
+        const newOrders = [];
+        const newWaiterCalls = [];
+
+        incomingNotifs.forEach(n => {
+          if (!knownNotificationIds.has(n.id)) {
+            knownNotificationIds.add(n.id);
+            const isOrder = (n.type || '').toLowerCase().includes('sipariş') || (n.type || '').toLowerCase().includes('order');
+            if (isOrder) {
+              newOrders.push(n);
+            } else {
+              newWaiterCalls.push(n);
+            }
+          }
+        });
+
+        if (!isSilent) {
+          if (newOrders.length > 0) {
+            playOrderSound();
+            const firstOrder = newOrders[0];
+            showAdminToast(`🔔 YENİ SİPARİŞ! Masa ${firstOrder.table}: ${firstOrder.note || firstOrder.type}`);
+            triggerTitleAlert(`(Yeni Sipariş!) Masa ${firstOrder.table}`);
+          } else if (newWaiterCalls.length > 0) {
+            playWaiterCallSound();
+            const firstCall = newWaiterCalls[0];
+            showAdminToast(`🔔 MASA ÇAĞRISI! Masa ${firstCall.table}: ${firstCall.type}`);
+            triggerTitleAlert(`(Masa Çağrısı!) Masa ${firstCall.table}`);
+          }
+        }
+
+        reconcileNotificationList(incomingNotifs, false);
+      }
+
+      if (isManual) {
+        showAdminToast('Bildirimler güncellendi.');
+      }
+    }
+  } catch (e) {
+    if (isManual) {
+      showAdminToast('Bildirimler alınamadı.');
+    }
+  }
 }
 
 async function dismissNotification(id) {
+  if (!id || dismissingNotificationIds.has(id)) return;
+
+  dismissingNotificationIds.add(id);
+
+  const container = document.getElementById('notification-list');
+  const card = container ? container.querySelector(`.notif-item[data-id="${id}"]`) : null;
+
+  if (card) {
+    card.classList.add('notif-dismissing');
+    const btn = card.querySelector('.notif-btn-clear');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = `<span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">hourglass_top</span> İşleniyor...`;
+    }
+  }
+
   try {
     const res = await fetchWithAuth(`/api/notifications/${id}`, { method: 'DELETE' });
     const result = await res.json();
     if (result.success) {
-      adminData.notifications = adminData.notifications.filter(n => n.id !== id);
-      renderNotificationList();
+      handleNotificationDismissedEvent(id);
       showAdminToast('Masa bildirimi kapatıldı.');
+    } else {
+      throw new Error(result.message || 'Hata');
     }
   } catch (e) {
-    showAdminToast('Bildirim kapatılamadı.');
+    dismissingNotificationIds.delete(id);
+    if (card) {
+      card.classList.remove('notif-dismissing');
+      const btn = card.querySelector('.notif-btn-clear');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">check</span> İlgilendim`;
+      }
+    }
+    showAdminToast('Bildirim kapatılamadı: ' + (e.message || ''));
   }
 }
 
@@ -1054,3 +1489,9 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+window.addEventListener('beforeunload', () => {
+  stopNotificationStream();
+});
+window.fetchNotifications = (isManual = true) => fetchNotifications(isManual);
+window.dismissNotification = dismissNotification;

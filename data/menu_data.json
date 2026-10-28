@@ -60,6 +60,22 @@
   ],
   "products": [
     {
+      "id": "prod_1792953406798",
+      "name": "Psikopat",
+      "price": "200",
+      "currency": "₺",
+      "desc": "",
+      "portion": "200",
+      "allergens": "",
+      "type": "food",
+      "category": "donerler",
+      "badge": "",
+      "featured": false,
+      "inStock": true,
+      "img": "/uploads/food-1792953397592-108497273.png",
+      "icon": ""
+    },
+    {
       "id": "prod_1",
       "name": "Tavuk Döner Dürüm",
       "price": "150",
@@ -360,7 +376,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/cay.jpg",
       "icon": "emoji_food_beverage"
     },
     {
@@ -376,7 +392,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/turk_kahvesi.jpg",
       "icon": "coffee"
     },
     {
@@ -472,7 +488,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/ayran.jpg",
       "icon": "local_drink"
     },
     {
@@ -488,7 +504,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/kola.jpg",
       "icon": "liquor"
     },
     {
@@ -504,7 +520,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/limonata.jpg",
       "icon": "water_drop"
     },
     {
@@ -552,7 +568,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/soguk_cay.jpg",
       "icon": "icecream"
     },
     {
@@ -684,5 +700,14 @@
       "icon": "pie_chart"
     }
   ],
-  "notifications": []
+  "notifications": [
+    {
+      "id": "call_1793181969692_820",
+      "table": "04",
+      "type": "Hesap İste",
+      "note": "",
+      "time": "13:06",
+      "createdAt": 1793181969692
+    }
+  ]
 }

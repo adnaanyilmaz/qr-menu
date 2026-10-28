@@ -355,7 +355,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/cay.jpg",
       "icon": "emoji_food_beverage"
     },
     {
@@ -371,7 +371,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/turk_kahvesi.jpg",
       "icon": "coffee"
     },
     {
@@ -467,7 +467,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/ayran.jpg",
       "icon": "local_drink"
     },
     {
@@ -483,7 +483,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/kola.jpg",
       "icon": "liquor"
     },
     {
@@ -499,7 +499,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/limonata.jpg",
       "icon": "water_drop"
     },
     {
@@ -547,7 +547,7 @@
       "badge": "",
       "featured": false,
       "inStock": true,
-      "img": "",
+      "img": "/uploads/soguk_cay.jpg",
       "icon": "icecream"
     },
     {

@@ -39,7 +39,7 @@ const LOGIN_BLOCK_TIME_MS = 60 * 1000; // 1 minute
 
 // Rate Limiter / Cooldown for Waiter Calling (Key -> timestamp)
 const waiterCooldowns = new Map();
-const WAITER_COOLDOWN_MS = 25 * 1000; // 25 seconds between calls per table
+const WAITER_COOLDOWN_MS = 20 * 1000; // 20 seconds between waiter calls per table
 
 // XSS Sanitizer Helper
 function sanitizeString(str) {
@@ -173,6 +173,8 @@ function requireAdminAuth(req, res, next) {
     } else {
       token = authHeader.trim();
     }
+  } else if (req.query && req.query.token) {
+    token = String(req.query.token).trim();
   }
 
   if (!token || !activeSessions.has(token)) {
@@ -612,6 +614,20 @@ app.get('/api/qr', async (req, res) => {
   }
 });
 
+// Real-time Server-Sent Events (SSE) Client Connections
+const sseClients = new Set();
+
+function broadcastNotificationEvent(eventType, data) {
+  const payload = `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
+  for (const client of sseClients) {
+    try {
+      client.write(payload);
+    } catch (err) {
+      sseClients.delete(client);
+    }
+  }
+}
+
 // 8. Waiter Call & Notifications (Spam & Cooldown Protected)
 app.post('/api/call-waiter', (req, res) => {
   const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
@@ -621,26 +637,32 @@ app.post('/api/call-waiter', (req, res) => {
   const cleanType = sanitizeString(String(type || 'Garson Çağır').slice(0, 50));
   const cleanNote = sanitizeString(String(note || '').slice(0, 200));
 
-  // Cooldown Key: Table + Client IP
-  const cooldownKey = `${cleanTable}_${clientIp}`;
-  const now = Date.now();
-  const lastCallTime = waiterCooldowns.get(cooldownKey);
+  // Check if this request is a product order vs waiter/service call
+  const isOrder = cleanType.toLowerCase().includes('sipariş') || cleanType.toLowerCase().includes('order');
 
-  if (lastCallTime && (now - lastCallTime < WAITER_COOLDOWN_MS)) {
-    const remainingSeconds = Math.ceil((WAITER_COOLDOWN_MS - (now - lastCallTime)) / 1000);
-    return res.status(429).json({
-      success: false,
-      cooldown: true,
-      remainingSeconds: remainingSeconds,
-      message: `Talebiniz zaten iletildi. Lütfen yeni çağrı için ${remainingSeconds} saniye bekleyin.`
-    });
+  // Cooldown only applies to waiter/bill calls, NOT to product orders
+  if (!isOrder) {
+    const cooldownKey = `${cleanTable}_${clientIp}`;
+    const now = Date.now();
+    const lastCallTime = waiterCooldowns.get(cooldownKey);
+
+    if (lastCallTime && (now - lastCallTime < WAITER_COOLDOWN_MS)) {
+      const remainingSeconds = Math.ceil((WAITER_COOLDOWN_MS - (now - lastCallTime)) / 1000);
+      return res.status(429).json({
+        success: false,
+        cooldown: true,
+        remainingSeconds: remainingSeconds,
+        message: `Talebiniz zaten iletildi. Lütfen yeni çağrı için ${remainingSeconds} saniye bekleyin.`
+      });
+    }
+
+    // Set new cooldown for waiter calls
+    waiterCooldowns.set(cooldownKey, now);
   }
 
-  // Set new cooldown
-  waiterCooldowns.set(cooldownKey, now);
-
+  const now = Date.now();
   const notification = {
-    id: 'call_' + now + '_' + Math.floor(Math.random() * 1000),
+    id: (isOrder ? 'order_' : 'call_') + now + '_' + Math.floor(Math.random() * 1000),
     table: cleanTable,
     type: cleanType,
     note: cleanNote,
@@ -657,10 +679,42 @@ app.post('/api/call-waiter', (req, res) => {
   }
 
   saveData(db);
+  broadcastNotificationEvent('notification_created', notification);
+
   res.json({
     success: true,
-    message: 'Talebiniz servis personeline iletildi!',
+    message: isOrder ? 'Siparişiniz başarıyla alındı!' : 'Talebiniz servis personeline iletildi!',
     data: notification
+  });
+});
+
+// Real-Time Notification Stream (SSE)
+app.get('/api/notifications/stream', requireAdminAuth, (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no'
+  });
+
+  // Send initial connected event + current notifications
+  res.write(`event: init\ndata: ${JSON.stringify(db.notifications || [])}\n\n`);
+
+  sseClients.add(res);
+
+  // Keep-alive heartbeat every 20s
+  const heartbeatTimer = setInterval(() => {
+    try {
+      res.write(': keepalive\n\n');
+    } catch (e) {
+      clearInterval(heartbeatTimer);
+      sseClients.delete(res);
+    }
+  }, 20000);
+
+  req.on('close', () => {
+    clearInterval(heartbeatTimer);
+    sseClients.delete(res);
   });
 });
 
@@ -680,6 +734,8 @@ app.delete('/api/notifications/:id', requireAdminAuth, (req, res) => {
   }
 
   saveData(db);
+  broadcastNotificationEvent('notification_dismissed', { id });
+
   res.json({ success: true, message: 'Bildirim kapatıldı.' });
 });
 
@@ -693,6 +749,7 @@ app.post('/api/reset-demo', requireAdminAuth, (req, res) => {
       db.products = initial.products;
       db.notifications = [];
       saveData(db);
+      broadcastNotificationEvent('notifications_reset', []);
       return res.json({ success: true, message: 'Menü demo verilerine başarıyla sıfırlandı!' });
     } catch (err) {
       return res.status(500).json({ success: false, message: 'Sıfırlama hatası: ' + err.message });

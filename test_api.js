@@ -234,13 +234,30 @@ async function runTests() {
       assert.strictEqual(notifsRes.status, 200);
       assert.ok(notifsRes.body.data.some(n => n.id === notifId), 'Yeni bildirim admin listesinde görünmeli');
 
-      // Admin dismisses notification
-      const dismissRes = await request({
-        path: `/api/notifications/${notifId}`,
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${adminToken}` }
+      // Immediate consecutive orders -> MUST NOT be rate limited (no cooldown for orders)
+      const firstOrder = await request({ path: '/api/call-waiter', method: 'POST' }, {
+        table: 'TestMasa99',
+        type: 'Sipariş',
+        note: 'Tombik Döner (1 Porsiyon)'
       });
-      assert.strictEqual(dismissRes.status, 200, 'Bildirim kapatma 200 dönmeli');
+      assert.strictEqual(firstOrder.status, 200, 'İlk sipariş 200 dönmeli');
+      assert.strictEqual(firstOrder.body.success, true);
+
+      const secondOrder = await request({ path: '/api/call-waiter', method: 'POST' }, {
+        table: 'TestMasa99',
+        type: 'Sipariş',
+        note: 'Ayran (Standart)'
+      });
+      assert.strictEqual(secondOrder.status, 200, 'Peş peşe ikinci sipariş bekleme süresiz 200 dönmeli');
+      assert.strictEqual(secondOrder.body.success, true);
+
+      // Clean up order notifications
+      if (firstOrder.body.data?.id) {
+        await request({ path: `/api/notifications/${firstOrder.body.data.id}`, method: 'DELETE', headers: { 'Authorization': `Bearer ${adminToken}` } });
+      }
+      if (secondOrder.body.data?.id) {
+        await request({ path: `/api/notifications/${secondOrder.body.data.id}`, method: 'DELETE', headers: { 'Authorization': `Bearer ${adminToken}` } });
+      }
     });
 
     // 7. XSS Sanitization
@@ -304,6 +321,68 @@ async function runTests() {
       assert.ok(parsed.settings, 'settings nesnesi bulunmalı');
       assert.ok(Array.isArray(parsed.products), 'products dizi olmalı');
       assert.ok(Array.isArray(parsed.categories), 'categories dizi olmalı');
+    });
+
+    // 10. Real-time SSE Stream & Notification Lifecycle
+    await test('10. Gerçek Zamanlı SSE Bildirim Yayını - Anlık sipariş ve kapatma olayları', async () => {
+      // Connect to SSE stream
+      const events = [];
+      const sseReq = http.request({
+        hostname: '127.0.0.1',
+        port: PORT,
+        method: 'GET',
+        path: `/api/notifications/stream?token=${encodeURIComponent(adminToken)}`,
+        headers: { 'Accept': 'text/event-stream' }
+      }, (res) => {
+        res.on('data', chunk => {
+          const parts = chunk.toString().split('\n\n');
+          for (const part of parts) {
+            if (!part.trim() || part.startsWith(':')) continue;
+            let event = 'message';
+            let data = '';
+            for (const line of part.split('\n')) {
+              if (line.startsWith('event: ')) event = line.slice(7).trim();
+              if (line.startsWith('data: ')) data = line.slice(6);
+            }
+            try { data = JSON.parse(data); } catch (e) {}
+            events.push({ event, data });
+          }
+        });
+      });
+      sseReq.end();
+
+      // Wait 150ms for init event
+      await new Promise(r => setTimeout(r, 150));
+      assert.ok(events.some(e => e.event === 'init'), 'SSE init olayı alınmalı');
+
+      // Create new order
+      const orderRes = await request({ path: '/api/call-waiter', method: 'POST' }, {
+        table: 'Masa 15',
+        type: 'Ürün Siparişi - Kaşarlı Döner',
+        note: 'Sıcak gelsin'
+      });
+      assert.strictEqual(orderRes.status, 200);
+      const createdId = orderRes.body.data.id;
+
+      // Wait 150ms for notification_created event
+      await new Promise(r => setTimeout(r, 150));
+      const createdEvent = events.find(e => e.event === 'notification_created' && e.data.id === createdId);
+      assert.ok(createdEvent, 'Yeni sipariş SSE stream üzerinden anlık iletilmeli');
+
+      // Dismiss notification (İlgilendim)
+      const dismissRes = await request({
+        path: `/api/notifications/${createdId}`,
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+      assert.strictEqual(dismissRes.status, 200);
+
+      // Wait 150ms for notification_dismissed event
+      await new Promise(r => setTimeout(r, 150));
+      const dismissedEvent = events.find(e => e.event === 'notification_dismissed' && e.data.id === createdId);
+      assert.ok(dismissedEvent, 'Kapatılan bildirim SSE stream üzerinden anlık iletilmeli');
+
+      sseReq.destroy();
     });
 
     console.log(`\n======================================================`);

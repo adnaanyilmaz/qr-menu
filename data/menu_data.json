@@ -702,12 +702,47 @@
   ],
   "notifications": [
     {
-      "id": "call_1793181969692_820",
-      "table": "04",
-      "type": "Hesap İste",
-      "note": "",
-      "time": "13:06",
-      "createdAt": 1793181969692
+      "id": "call_1793192952869_520",
+      "table": "TestMasa99",
+      "type": "Garson Çağır",
+      "note": "Peçete lütfen",
+      "time": "16:09",
+      "createdAt": 1793192952869
+    },
+    {
+      "id": "call_1793192441968_762",
+      "table": "TestMasa99",
+      "type": "Garson Çağır",
+      "note": "Peçete lütfen",
+      "time": "16:00",
+      "createdAt": 1793192441968
+    }
+  ],
+  "adisyons": {},
+  "orderHistory": [
+    {
+      "tableId": "04",
+      "tableName": "Masa 4",
+      "openedAt": 1793192900194,
+      "updatedAt": 1793192900199,
+      "items": [
+        {
+          "id": "item_1793192900195_5398",
+          "productId": "prod_test_1",
+          "name": "Tombik Döner",
+          "portion": "Standart",
+          "note": "Soğansız",
+          "price": 150,
+          "quantity": 3,
+          "total": 450,
+          "addedAt": 1793192900195
+        }
+      ],
+      "totalAmount": 450,
+      "totalItems": 3,
+      "closedAt": 1793192900225,
+      "paymentMethod": "Kredi Kartı",
+      "closeNote": "Masa 4 ödeme tamamlandı"
     }
   ]
 }

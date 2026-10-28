@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Ali Baba Döner Kafe — Garson Terminali & Hızlı POS</title>
+
+  <!-- Google Fonts & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
+  <!-- Garson Terminal CSS -->
+  <link rel="stylesheet" href="/css/garson.css"/>
+</head>
+<body class="pos-theme">
+
+  <!-- ==================== 1. PIN LOGIN MODAL ==================== -->
+  <div id="pin-modal" class="modal-backdrop active">
+    <div class="pin-card">
+      <div class="pin-header">
+        <div class="pin-logo">AB</div>
+        <h2>Garson Terminali</h2>
+        <p>Hızlı masa ve adisyon yönetimi için PIN girin</p>
+      </div>
+
+      <div class="pin-display">
+        <div class="pin-dots" id="pin-dots">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+        <div id="pin-error" class="pin-error"></div>
+      </div>
+
+      <!-- Numeric Keypad -->
+      <div class="pin-keypad">
+        <button type="button" class="key-btn" onclick="pressKey('1')">1</button>
+        <button type="button" class="key-btn" onclick="pressKey('2')">2</button>
+        <button type="button" class="key-btn" onclick="pressKey('3')">3</button>
+        <button type="button" class="key-btn" onclick="pressKey('4')">4</button>
+        <button type="button" class="key-btn" onclick="pressKey('5')">5</button>
+        <button type="button" class="key-btn" onclick="pressKey('6')">6</button>
+        <button type="button" class="key-btn" onclick="pressKey('7')">7</button>
+        <button type="button" class="key-btn" onclick="pressKey('8')">8</button>
+        <button type="button" class="key-btn" onclick="pressKey('9')">9</button>
+        <button type="button" class="key-btn action-key" onclick="clearPin()">C</button>
+        <button type="button" class="key-btn" onclick="pressKey('0')">0</button>
+        <button type="button" class="key-btn action-key" onclick="deletePin()">⌫</button>
+      </div>
+
+      <div class="pin-helper">
+        <span>Varsayılan Personel PIN: <strong>1234</strong></span>
+        <button type="button" class="btn-fast-login" onclick="quickFillPin()">Hızlı Giriş (1234)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 2. MAIN APPLICATION CONTAINER ==================== -->
+  <div class="terminal-container" id="terminal-app" style="display:none;">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="terminal-header">
+      <div class="header-left">
+        <div class="brand-pill">
+          <span class="brand-logo">AB</span>
+          <div class="brand-text">
+            <span class="brand-title" id="header-restaurant-name">Ali Baba Döner Kafe</span>
+            <span class="brand-subtitle">Garson & Servis Terminali</span>
+          </div>
+        </div>
+
+        <!-- Selected Table Badge in Header -->
+        <button type="button" class="current-table-pill" onclick="switchView('tables')" id="header-table-btn">
+          <span class="material-symbols-outlined">table_restaurant</span>
+          <span id="header-table-name">Masa Seçilmedi</span>
+          <span class="material-symbols-outlined" style="font-size:16px;">swap_horiz</span>
+        </button>
+      </div>
+
+      <div class="header-right">
+        <!-- Live Pending Calls Bell Button -->
+        <button type="button" class="btn-call-badge" id="btn-pending-calls" onclick="toggleCallsDrawer()">
+          <span class="material-symbols-outlined bell-icon">notifications</span>
+          <span class="call-badge-text">Çağrılar</span>
+          <span class="badge-count" id="header-calls-count">0</span>
+        </button>
+
+        <!-- Sound Toggle -->
+        <button type="button" class="btn-icon-header" id="btn-sound-toggle" onclick="toggleSound()" title="Sesli Bildirim">
+          <span class="material-symbols-outlined" id="sound-icon">volume_up</span>
+        </button>
+
+        <!-- Fullscreen Toggle -->
+        <button type="button" class="btn-icon-header" onclick="toggleFullScreen()" title="Tam Ekran">
+          <span class="material-symbols-outlined">fullscreen</span>
+        </button>
+
+        <!-- Quick Links Menu Dropdown -->
+        <div class="nav-links-wrap">
+          <a href="/admin" target="_blank" class="btn-subtle" title="Yönetici Paneli">
+            <span class="material-symbols-outlined">admin_panel_settings</span>
+            <span class="desktop-only">Admin</span>
+          </a>
+          <button type="button" class="btn-subtle" onclick="logout()" title="Oturumu Kapat">
+            <span class="material-symbols-outlined">logout</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- MOBILE VIEW TABS (SWITCH BETWEEN MASALAR / MENÜ / ADİSYON) -->
+    <nav class="mobile-tabs-bar" id="mobile-tabs-bar">
+      <button type="button" class="m-tab-btn active" data-view="tables" onclick="switchView('tables')">
+        <span class="material-symbols-outlined">table_restaurant</span>
+        <span>Masalar</span>
+        <span class="m-tab-badge" id="m-tab-calls-badge" style="display:none;">0</span>
+      </button>
+      <button type="button" class="m-tab-btn" data-view="catalog" onclick="switchView('catalog')">
+        <span class="material-symbols-outlined">restaurant_menu</span>
+        <span>Menü / Ürünler</span>
+      </button>
+      <button type="button" class="m-tab-btn" data-view="adisyon" onclick="switchView('adisyon')">
+        <span class="material-symbols-outlined">receipt_long</span>
+        <span>Adisyon</span>
+        <span class="m-tab-badge items-badge" id="m-tab-adisyon-badge" style="display:none;">0</span>
+      </button>
+    </nav>
+
+    <!-- MAIN SPLIT WORKSPACE -->
+    <main class="terminal-workspace">
+
+      <!-- ==================== COLUMN 1: TABLES VIEW (HIZLI MASA SEÇİMİ) ==================== -->
+      <section class="panel-tables active" id="panel-tables">
+        <div class="panel-header">
+          <div class="panel-header-title">
+            <span class="material-symbols-outlined">table_restaurant</span>
+            <h2>Masalar</h2>
+            <span class="badge-subtle" id="tables-total-count">20 Masa</span>
+          </div>
+
+          <!-- Table Filter Tabs -->
+          <div class="table-filter-pills">
+            <button type="button" class="filter-pill active" data-filter="all" onclick="filterTables('all')">
+              Tümü (<span id="count-filter-all">20</span>)
+            </button>
+            <button type="button" class="filter-pill" data-filter="calling" onclick="filterTables('calling')">
+              🔔 Çağrılar (<span id="count-filter-calling">0</span>)
+            </button>
+            <button type="button" class="filter-pill" data-filter="occupied" onclick="filterTables('occupied')">
+              Dolu (<span id="count-filter-occupied">0</span>)
+            </button>
+            <button type="button" class="filter-pill" data-filter="idle" onclick="filterTables('idle')">
+              Boş (<span id="count-filter-idle">20</span>)
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Grid List -->
+        <div class="tables-grid" id="tables-grid">
+          <!-- Dynamic Table Cards injected via JS -->
+        </div>
+      </section>
+
+      <!-- ==================== COLUMN 2: PRODUCT CATALOG (HIZLI KATEGORİ ÜRÜNLERİ) ==================== -->
+      <section class="panel-catalog" id="panel-catalog">
+        <div class="catalog-top-bar">
+          <!-- Live Search Bar -->
+          <div class="search-box">
+            <span class="material-symbols-outlined">search</span>
+            <input type="text" id="catalog-search" placeholder="Ürün adı, döner, içecek ara..." oninput="handleCatalogSearch(this.value)"/>
+            <button type="button" class="clear-search-btn" id="btn-clear-search" onclick="clearCatalogSearch()" style="display:none;">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <!-- Selected Table Sticky Indicator -->
+          <div class="catalog-table-indicator" id="catalog-table-indicator">
+            <span class="label">Aktif Masa:</span>
+            <strong id="catalog-current-table-name">Masa 01</strong>
+            <button type="button" class="btn-change-table" onclick="switchView('tables')">Değiştir</button>
+          </div>
+        </div>
+
+        <!-- Horizontal Scrollable Category Bar -->
+        <div class="category-scroll-bar" id="category-scroll-bar">
+          <!-- Dynamic Category Pills -->
+        </div>
+
+        <!-- Products Grid List -->
+        <div class="products-grid" id="products-grid">
+          <!-- Dynamic Product Cards -->
+        </div>
+      </section>
+
+      <!-- ==================== COLUMN 3: ACTIVE TABLE ADİSYON (ADİSYON YÖNETİMİ) ==================== -->
+      <aside class="panel-adisyon" id="panel-adisyon">
+
+        <!-- Adisyon Header -->
+        <div class="adisyon-header">
+          <div class="adisyon-header-left">
+            <span class="material-symbols-outlined icon-receipt">receipt_long</span>
+            <div>
+              <h2 id="adisyon-table-title">Masa 01 Adisyonu</h2>
+              <span class="adisyon-status-tag" id="adisyon-status-tag">Açık Adisyon</span>
+            </div>
+          </div>
+          <div class="adisyon-header-right">
+            <button type="button" class="btn-icon" onclick="clearAdisyonWithConfirm()" title="Adisyonu İptal Et / Sıfırla">
+              <span class="material-symbols-outlined">delete_sweep</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Waiter Call Alert Banner (Shown if this specific table called waiter) -->
+        <div class="table-call-banner" id="table-call-banner" style="display:none;">
+          <div class="banner-content">
+            <span class="material-symbols-outlined pulse-icon">notifications_active</span>
+            <div>
+              <strong id="table-call-title">Bu masadan çağrı var!</strong>
+              <p id="table-call-note">Garson çağrıldı</p>
+            </div>
+          </div>
+          <button type="button" class="btn-dismiss-table-call" onclick="dismissCurrentTableCalls()">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>Onayla & Kapat</span>
+          </button>
+        </div>
+
+        <!-- Quick Item Note Chips (Fast tap to attach notes) -->
+        <div class="quick-note-bar">
+          <span class="quick-note-label">Hızlı Not:</span>
+          <div class="quick-note-chips">
+            <button type="button" class="chip-note" onclick="applyQuickNote('Soğansız')">+ Soğansız</button>
+            <button type="button" class="chip-note" onclick="applyQuickNote('Az Pişmiş')">+ Az Pişmiş</button>
+            <button type="button" class="chip-note" onclick="applyQuickNote('Bol Soslu')">+ Bol Soslu</button>
+            <button type="button" class="chip-note" onclick="applyQuickNote('Açık Ayran')">+ Açık</button>
+            <button type="button" class="chip-note" onclick="applyQuickNote('Paket')">+ Paket</button>
+            <button type="button" class="chip-note" onclick="applyQuickNote('Acılı')">+ Acılı</button>
+          </div>
+        </div>
+
+        <!-- Adisyon Items List (Scrollable) -->
+        <div class="adisyon-items-list" id="adisyon-items-list">
+          <div class="empty-adisyon">
+            <span class="material-symbols-outlined">add_shopping_cart</span>
+            <p>Bu masaya henüz ürün eklenmedi.</p>
+            <span>Ortadaki menüden ürünlere dokunarak hızlıca ekleyin.</span>
+          </div>
+        </div>
+
+        <!-- Adisyon Summary & Footer Actions -->
+        <div class="adisyon-footer">
+          <div class="summary-breakdown">
+            <div class="summary-row">
+              <span>Toplam Ürün:</span>
+              <strong id="adisyon-total-count">0 Adet</strong>
+            </div>
+            <div class="summary-row total-row">
+              <span>Genel Toplam:</span>
+              <strong class="total-price" id="adisyon-total-price">0,00 ₺</strong>
+            </div>
+          </div>
+
+          <div class="adisyon-action-buttons">
+            <!-- Add Custom Item / Note Button -->
+            <button type="button" class="btn-secondary" onclick="openCustomNoteModal()">
+              <span class="material-symbols-outlined">edit_note</span>
+              <span>Özel Not</span>
+            </button>
+
+            <!-- Print / Receipt Button -->
+            <button type="button" class="btn-secondary" onclick="openReceiptModal()">
+              <span class="material-symbols-outlined">print</span>
+              <span>Fiş Gör</span>
+            </button>
+
+            <!-- Pay / Close Table Button -->
+            <button type="button" class="btn-primary-action" id="btn-close-table-action" onclick="openPaymentModal()">
+              <span class="material-symbols-outlined">payments</span>
+              <span>Hesap Kapat</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+    </main>
+
+    <!-- ==================== 4. PENDING CALLS SLIDE DRAWER ==================== -->
+    <div class="calls-drawer-backdrop" id="calls-drawer-backdrop" onclick="toggleCallsDrawer()"></div>
+    <aside class="calls-drawer" id="calls-drawer">
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <span class="material-symbols-outlined">notifications_active</span>
+          <h3>Masa Çağrıları & Talepler</h3>
+          <span class="badge-count" id="drawer-calls-count">0</span>
+        </div>
+        <button type="button" class="btn-close-drawer" onclick="toggleCallsDrawer()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="drawer-actions-bar">
+        <button type="button" class="btn-dismiss-all" onclick="dismissAllCalls()">
+          <span class="material-symbols-outlined">done_all</span>
+          <span>Tüm Çağrıları Onayla & Kapat</span>
+        </button>
+      </div>
+
+      <div class="calls-list" id="drawer-calls-list">
+        <!-- Injected via JS -->
+      </div>
+    </aside>
+
+    <!-- ==================== 5. PAYMENT / SETTLE MODAL ==================== -->
+    <div class="modal-backdrop" id="payment-modal">
+      <div class="payment-card">
+        <div class="payment-card-header">
+          <div>
+            <h3 id="payment-modal-title">Hesap Kapat — Masa 01</h3>
+            <span id="payment-modal-sub">Toplam tutarı tahsil edin ve masayı açın</span>
+          </div>
+          <button type="button" class="btn-icon" onclick="closePaymentModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="payment-amount-box">
+          <span>Ödenecek Tutar</span>
+          <h2 id="payment-modal-amount">0,00 ₺</h2>
+        </div>
+
+        <div class="payment-methods-grid">
+          <button type="button" class="pay-method-btn active" data-method="Nakit" onclick="selectPaymentMethod('Nakit')">
+            <span class="material-symbols-outlined">attach_money</span>
+            <span>Nakit</span>
+          </button>
+          <button type="button" class="pay-method-btn" data-method="Kredi Kartı" onclick="selectPaymentMethod('Kredi Kartı')">
+            <span class="material-symbols-outlined">credit_card</span>
+            <span>Kredi Kartı / POS</span>
+          </button>
+          <button type="button" class="pay-method-btn" data-method="Yemek Kartı" onclick="selectPaymentMethod('Yemek Kartı')">
+            <span class="material-symbols-outlined">restaurant</span>
+            <span>Yemek Kartı / Multinet</span>
+          </button>
+          <button type="button" class="pay-method-btn" data-method="İkram" onclick="selectPaymentMethod('İkram')">
+            <span class="material-symbols-outlined">featured_seasonal_and_gifts</span>
+            <span>İkram / Zayi</span>
+          </button>
+        </div>
+
+        <div class="payment-note-field">
+          <label>Kapanış Notu (Opsiyonel)</label>
+          <input type="text" id="payment-note-input" class="form-input" placeholder="Örn: %10 personel indirimi yapıldı"/>
+        </div>
+
+        <div class="payment-card-footer">
+          <button type="button" class="btn-secondary" onclick="closePaymentModal()">İptal</button>
+          <button type="button" class="btn-primary-action" onclick="submitPayment()">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>Ödemeyi Tamamla & Masayı Boşalt</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 6. RECEIPT PREVIEW MODAL ==================== -->
+    <div class="modal-backdrop" id="receipt-modal">
+      <div class="receipt-card">
+        <div class="receipt-paper" id="receipt-paper-content">
+          <div class="receipt-header">
+            <h2 id="receipt-brand-title">Ali Baba Döner Kafe</h2>
+            <p>Adisyon Bilgi Fişi</p>
+            <div class="receipt-meta">
+              <span id="receipt-table-text">Masa: 01</span>
+              <span id="receipt-date-text">Tarih: 28.10.2026 15:45</span>
+            </div>
+          </div>
+          <div class="receipt-divider">================================</div>
+          <div class="receipt-items-table" id="receipt-items-table">
+            <!-- Injected via JS -->
+          </div>
+          <div class="receipt-divider">================================</div>
+          <div class="receipt-total-row">
+            <span>TOPLAM:</span>
+            <span id="receipt-total-amount">0,00 ₺</span>
+          </div>
+          <div class="receipt-footer">
+            <p>Bizi tercih ettiğiniz için teşekkür ederiz.</p>
+            <p>Afiyet olsun!</p>
+          </div>
+        </div>
+        <div class="receipt-actions">
+          <button type="button" class="btn-secondary" onclick="closeReceiptModal()">Kapat</button>
+          <button type="button" class="btn-primary-action" onclick="window.print()">
+            <span class="material-symbols-outlined">print</span>
+            <span>Yazdır</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+  </div>
+
+  <!-- Audio Chime Audio Elements (Web Audio API Synthesizer fallback) -->
+  <script src="/js/garson.js"></script>
+</body>
+</html>

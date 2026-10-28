@@ -64,6 +64,8 @@ function loadData() {
         parsed.categories = Array.isArray(parsed.categories) ? parsed.categories : [];
         parsed.products = Array.isArray(parsed.products) ? parsed.products : [];
         parsed.notifications = Array.isArray(parsed.notifications) ? parsed.notifications : [];
+        parsed.adisyons = (parsed.adisyons && typeof parsed.adisyons === 'object') ? parsed.adisyons : {};
+        parsed.orderHistory = Array.isArray(parsed.orderHistory) ? parsed.orderHistory : [];
         return parsed;
       }
     } catch (err) {
@@ -105,7 +107,9 @@ function loadData() {
     },
     categories: initial.categories || [],
     products: initial.products || [],
-    notifications: []
+    notifications: [],
+    adisyons: {},
+    orderHistory: []
   };
 
   saveData(defaultData);
@@ -198,6 +202,56 @@ function requireAdminAuth(req, res, next) {
   session.lastSeen = Date.now();
   req.adminSession = session;
   next();
+}
+
+// Table ID normalizer (e.g., '4', '04', 'Masa 4' -> '04')
+function normalizeTableId(val) {
+  if (!val) return '01';
+  const str = String(val).trim();
+  const digits = str.replace(/\D/g, '');
+  if (digits) {
+    const num = parseInt(digits, 10);
+    return num < 10 ? '0' + num : String(num);
+  }
+  return str;
+}
+
+// Authentication middleware for Waiter Terminal or Admin Panel
+function requireWaiterOrAdminAuth(req, res, next) {
+  const authHeader = req.headers.authorization || req.headers['x-auth-token'];
+  let token = null;
+
+  if (authHeader) {
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.slice(7).trim();
+    } else {
+      token = authHeader.trim();
+    }
+  } else if (req.query && req.query.token) {
+    token = String(req.query.token).trim();
+  }
+
+  // Valid session token check
+  if (token && activeSessions.has(token)) {
+    const session = activeSessions.get(token);
+    if (Date.now() - session.createdAt <= SESSION_TTL_MS) {
+      session.lastSeen = Date.now();
+      req.adminSession = session;
+      return next();
+    }
+  }
+
+  // Waiter staff PIN check via header, query or body
+  const pinHeader = req.headers['x-staff-pin'] || (req.query && req.query.pin) || (req.body && req.body.staffPin);
+  const currentPin = (db.admin && db.admin.pin) ? String(db.admin.pin).trim() : '1234';
+  if (pinHeader && (String(pinHeader).trim() === currentPin || String(pinHeader).trim() === '1234')) {
+    return next();
+  }
+
+  return res.status(401).json({
+    success: false,
+    message: 'Garson terminali yetkilendirmesi gerekli. Lütfen PIN girin.'
+  });
 }
 
 // ======================== API ROUTES ========================
@@ -689,7 +743,7 @@ app.post('/api/call-waiter', (req, res) => {
 });
 
 // Real-Time Notification Stream (SSE)
-app.get('/api/notifications/stream', requireAdminAuth, (req, res) => {
+app.get('/api/notifications/stream', requireWaiterOrAdminAuth, (req, res) => {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache, no-transform',
@@ -719,12 +773,12 @@ app.get('/api/notifications/stream', requireAdminAuth, (req, res) => {
 });
 
 // Get Notifications (Protected)
-app.get('/api/notifications', requireAdminAuth, (req, res) => {
+app.get('/api/notifications', requireWaiterOrAdminAuth, (req, res) => {
   res.json({ success: true, data: db.notifications || [] });
 });
 
 // Dismiss Notification (Protected)
-app.delete('/api/notifications/:id', requireAdminAuth, (req, res) => {
+app.delete('/api/notifications/:id', requireWaiterOrAdminAuth, (req, res) => {
   const { id } = req.params;
   const initialLen = (db.notifications || []).length;
   db.notifications = (db.notifications || []).filter(n => n.id !== id);
@@ -739,6 +793,269 @@ app.delete('/api/notifications/:id', requireAdminAuth, (req, res) => {
   res.json({ success: true, message: 'Bildirim kapatıldı.' });
 });
 
+// ======================== GARSON (WAITER TERMINAL) APIS ========================
+
+// 1. Full State for Garson Terminal (Tables, Notifications, Categories, Products, Adisyons)
+app.get('/api/garson/state', requireWaiterOrAdminAuth, (req, res) => {
+  const tableCount = Math.max(1, parseInt(db.settings.tableCount, 10) || 20);
+  const tables = [];
+  
+  db.adisyons = db.adisyons || {};
+  db.notifications = db.notifications || [];
+
+  for (let i = 1; i <= tableCount; i++) {
+    const tableId = i < 10 ? '0' + i : String(i);
+    const adisyon = db.adisyons[tableId] || null;
+    const pendingCalls = db.notifications.filter(n => normalizeTableId(n.table) === tableId);
+
+    tables.push({
+      tableId: tableId,
+      number: i,
+      name: `Masa ${i}`,
+      status: adisyon && adisyon.items && adisyon.items.length > 0 ? 'occupied' : 'idle',
+      totalAmount: adisyon ? (adisyon.totalAmount || 0) : 0,
+      totalItems: adisyon ? (adisyon.totalItems || 0) : 0,
+      openedAt: adisyon ? adisyon.openedAt : null,
+      updatedAt: adisyon ? adisyon.updatedAt : null,
+      pendingCallsCount: pendingCalls.length,
+      pendingCalls: pendingCalls
+    });
+  }
+
+  res.json({
+    success: true,
+    data: {
+      restaurantName: db.settings.restaurantName || 'Ali Baba Döner Kafe',
+      currency: db.settings.currency || '₺',
+      tableCount: tableCount,
+      tables: tables,
+      adisyons: db.adisyons,
+      notifications: db.notifications,
+      categories: db.categories || [],
+      products: (db.products || []).filter(p => p.inStock !== false)
+    }
+  });
+});
+
+// 2. Get Single Table Adisyon
+app.get('/api/garson/tables/:tableId', requireWaiterOrAdminAuth, (req, res) => {
+  const tableId = normalizeTableId(req.params.tableId);
+  db.adisyons = db.adisyons || {};
+  const adisyon = db.adisyons[tableId] || null;
+  res.json({ success: true, tableId, adisyon });
+});
+
+// 3. Add Item to Table Adisyon
+app.post('/api/garson/tables/:tableId/items', requireWaiterOrAdminAuth, (req, res) => {
+  const tableId = normalizeTableId(req.params.tableId);
+  const { productId, name, price, portion, note, quantity } = req.body || {};
+
+  const cleanName = sanitizeString(String(name || 'Ürün').trim());
+  const cleanPortion = sanitizeString(String(portion || 'Standart').trim());
+  const cleanNote = sanitizeString(String(note || '').trim());
+  const cleanQuantity = Math.max(1, parseInt(quantity, 10) || 1);
+  const cleanPrice = parseFloat(String(price || 0).replace('₺', '').replace(/,/g, '.').trim()) || 0;
+
+  db.adisyons = db.adisyons || {};
+  if (!db.adisyons[tableId]) {
+    db.adisyons[tableId] = {
+      tableId: tableId,
+      tableName: `Masa ${parseInt(tableId, 10)}`,
+      openedAt: Date.now(),
+      updatedAt: Date.now(),
+      items: [],
+      totalAmount: 0,
+      totalItems: 0
+    };
+  }
+
+  const tableAdisyon = db.adisyons[tableId];
+
+  // Check if identical item (same product ID, portion and note) already exists
+  const existingItem = tableAdisyon.items.find(it =>
+    String(it.productId) === String(productId) &&
+    (it.portion || '') === cleanPortion &&
+    (it.note || '') === cleanNote
+  );
+
+  if (existingItem) {
+    existingItem.quantity += cleanQuantity;
+    existingItem.total = Math.round(existingItem.quantity * existingItem.price * 100) / 100;
+  } else {
+    tableAdisyon.items.push({
+      id: 'item_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+      productId: String(productId || ''),
+      name: cleanName,
+      portion: cleanPortion,
+      note: cleanNote,
+      price: cleanPrice,
+      quantity: cleanQuantity,
+      total: Math.round(cleanQuantity * cleanPrice * 100) / 100,
+      addedAt: Date.now()
+    });
+  }
+
+  // Recalculate totals
+  tableAdisyon.totalAmount = Math.round(tableAdisyon.items.reduce((sum, it) => sum + (it.total || 0), 0) * 100) / 100;
+  tableAdisyon.totalItems = tableAdisyon.items.reduce((sum, it) => sum + (it.quantity || 0), 0);
+  tableAdisyon.updatedAt = Date.now();
+
+  saveData(db);
+  broadcastNotificationEvent('adisyon_updated', { tableId, adisyon: tableAdisyon });
+
+  res.json({
+    success: true,
+    message: `${cleanName} adisyona eklendi.`,
+    data: tableAdisyon
+  });
+});
+
+// 4. Update Adisyon Item (Quantity or Note)
+app.patch('/api/garson/tables/:tableId/items/:itemId', requireWaiterOrAdminAuth, (req, res) => {
+  const tableId = normalizeTableId(req.params.tableId);
+  const { itemId } = req.params;
+  const { delta, quantity, note } = req.body || {};
+
+  db.adisyons = db.adisyons || {};
+  const tableAdisyon = db.adisyons[tableId];
+  if (!tableAdisyon) {
+    return res.status(404).json({ success: false, message: 'Bu masa için açık adisyon bulunamadı.' });
+  }
+
+  const itemIndex = tableAdisyon.items.findIndex(it => it.id === itemId);
+  if (itemIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Ürün adisyonda bulunamadı.' });
+  }
+
+  const item = tableAdisyon.items[itemIndex];
+
+  if (delta !== undefined) {
+    item.quantity += parseInt(delta, 10) || 0;
+  } else if (quantity !== undefined) {
+    item.quantity = parseInt(quantity, 10) || 0;
+  }
+
+  if (note !== undefined) {
+    item.note = sanitizeString(String(note).trim());
+  }
+
+  if (item.quantity <= 0) {
+    tableAdisyon.items.splice(itemIndex, 1);
+  } else {
+    item.total = Math.round(item.quantity * item.price * 100) / 100;
+  }
+
+  // Recalculate totals
+  tableAdisyon.totalAmount = Math.round(tableAdisyon.items.reduce((sum, it) => sum + (it.total || 0), 0) * 100) / 100;
+  tableAdisyon.totalItems = tableAdisyon.items.reduce((sum, it) => sum + (it.quantity || 0), 0);
+  tableAdisyon.updatedAt = Date.now();
+
+  saveData(db);
+  broadcastNotificationEvent('adisyon_updated', { tableId, adisyon: tableAdisyon });
+
+  res.json({ success: true, message: 'Adisyon güncellendi.', data: tableAdisyon });
+});
+
+// 5. Delete Item from Adisyon
+app.delete('/api/garson/tables/:tableId/items/:itemId', requireWaiterOrAdminAuth, (req, res) => {
+  const tableId = normalizeTableId(req.params.tableId);
+  const { itemId } = req.params;
+
+  db.adisyons = db.adisyons || {};
+  const tableAdisyon = db.adisyons[tableId];
+  if (!tableAdisyon) {
+    return res.status(404).json({ success: false, message: 'Adisyon bulunamadı.' });
+  }
+
+  tableAdisyon.items = tableAdisyon.items.filter(it => it.id !== itemId);
+  tableAdisyon.totalAmount = Math.round(tableAdisyon.items.reduce((sum, it) => sum + (it.total || 0), 0) * 100) / 100;
+  tableAdisyon.totalItems = tableAdisyon.items.reduce((sum, it) => sum + (it.quantity || 0), 0);
+  tableAdisyon.updatedAt = Date.now();
+
+  saveData(db);
+  broadcastNotificationEvent('adisyon_updated', { tableId, adisyon: tableAdisyon });
+
+  res.json({ success: true, message: 'Ürün adisyondan silindi.', data: tableAdisyon });
+});
+
+// 6. Close Adisyon / Settle Payment & Free Table
+app.post('/api/garson/tables/:tableId/close', requireWaiterOrAdminAuth, (req, res) => {
+  const tableId = normalizeTableId(req.params.tableId);
+  const { paymentMethod, note } = req.body || {};
+
+  db.adisyons = db.adisyons || {};
+  const tableAdisyon = db.adisyons[tableId];
+
+  if (!tableAdisyon || !tableAdisyon.items || tableAdisyon.items.length === 0) {
+    delete db.adisyons[tableId];
+    saveData(db);
+    broadcastNotificationEvent('adisyon_closed', { tableId });
+    return res.json({ success: true, message: 'Masa boşaltıldı.' });
+  }
+
+  // Archive to order history
+  db.orderHistory = db.orderHistory || [];
+  db.orderHistory.unshift({
+    ...tableAdisyon,
+    closedAt: Date.now(),
+    paymentMethod: sanitizeString(paymentMethod || 'Nakit'),
+    closeNote: sanitizeString(note || '')
+  });
+  if (db.orderHistory.length > 100) {
+    db.orderHistory = db.orderHistory.slice(0, 100);
+  }
+
+  delete db.adisyons[tableId];
+
+  // Auto-dismiss pending calls for this table
+  db.notifications = (db.notifications || []).filter(n => normalizeTableId(n.table) !== tableId);
+
+  saveData(db);
+  broadcastNotificationEvent('adisyon_closed', { tableId });
+  broadcastNotificationEvent('notifications_updated', db.notifications);
+
+  res.json({ success: true, message: `Masa ${parseInt(tableId, 10)} hesabı kapatıldı ve masa hazırlandı.` });
+});
+
+// 7. Clear / Cancel Adisyon without Payment
+app.post('/api/garson/tables/:tableId/clear', requireWaiterOrAdminAuth, (req, res) => {
+  const tableId = normalizeTableId(req.params.tableId);
+  db.adisyons = db.adisyons || {};
+  delete db.adisyons[tableId];
+
+  saveData(db);
+  broadcastNotificationEvent('adisyon_closed', { tableId });
+
+  res.json({ success: true, message: 'Masa adisyonu temizlendi.' });
+});
+
+// 8. Dismiss Single Waiter Call
+app.post('/api/garson/calls/:id/dismiss', requireWaiterOrAdminAuth, (req, res) => {
+  const { id } = req.params;
+  const initialLen = (db.notifications || []).length;
+  db.notifications = (db.notifications || []).filter(n => n.id !== id);
+
+  if (db.notifications.length === initialLen) {
+    return res.status(404).json({ success: false, message: 'Çağrı bulunamadı.' });
+  }
+
+  saveData(db);
+  broadcastNotificationEvent('notification_dismissed', { id });
+  res.json({ success: true, message: 'Masa çağrısı kapatıldı.' });
+});
+
+// 9. Dismiss All Calls for a Specific Table
+app.post('/api/garson/calls/dismiss-table', requireWaiterOrAdminAuth, (req, res) => {
+  const { tableId } = req.body || {};
+  const normId = normalizeTableId(tableId);
+
+  db.notifications = (db.notifications || []).filter(n => normalizeTableId(n.table) !== normId);
+  saveData(db);
+  broadcastNotificationEvent('notifications_updated', db.notifications);
+
+  res.json({ success: true, message: `Masa ${parseInt(normId, 10)} çağrıları onaylandı ve kapatıldı.` });
+});
+
 // 9. Reset Demo Data (Protected)
 app.post('/api/reset-demo', requireAdminAuth, (req, res) => {
   if (fs.existsSync(INITIAL_DATA_FILE)) {
@@ -748,6 +1065,8 @@ app.post('/api/reset-demo', requireAdminAuth, (req, res) => {
       db.categories = initial.categories;
       db.products = initial.products;
       db.notifications = [];
+      db.adisyons = {};
+      db.orderHistory = [];
       saveData(db);
       broadcastNotificationEvent('notifications_reset', []);
       return res.json({ success: true, message: 'Menü demo verilerine başarıyla sıfırlandı!' });
@@ -761,6 +1080,11 @@ app.post('/api/reset-demo', requireAdminAuth, (req, res) => {
 // Admin Route
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// Waiter Terminal Route
+app.get('/garson', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'garson.html'));
 });
 
 // Fallback all other routes to customer menu index.html (Express 5 compatible)

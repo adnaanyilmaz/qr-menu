@@ -700,38 +700,16 @@
       "icon": "pie_chart"
     }
   ],
-  "notifications": [
-    {
-      "id": "call_1793203235275_719",
-      "table": "TestMasa99",
-      "type": "Garson Çağır",
-      "note": "Peçete lütfen",
-      "items": [],
-      "time": "19:00",
-      "createdAt": 1793203235275
-    }
-  ],
+  "notifications": [],
   "adisyons": {
     "15": {
       "tableId": "15",
       "tableName": "Masa 15",
       "openedAt": 1793203235700,
-      "updatedAt": 1793203235700,
-      "items": [
-        {
-          "id": "item_1793203235700_9093",
-          "productId": "custom_1793203235700",
-          "name": "Sıcak gelsin",
-          "portion": "Standart",
-          "note": "Sıcak gelsin",
-          "price": 0,
-          "quantity": 1,
-          "total": 0,
-          "addedAt": 1793203235700
-        }
-      ],
+      "updatedAt": 1793203570335,
+      "items": [],
       "totalAmount": 0,
-      "totalItems": 1
+      "totalItems": 0
     },
     "99": {
       "tableId": "99",
@@ -769,22 +747,10 @@
       "tableId": "01",
       "tableName": "Masa 1",
       "openedAt": 1793202358723,
-      "updatedAt": 1793202359036,
-      "items": [
-        {
-          "id": "item_1793202358723_1849",
-          "productId": "prod_11",
-          "name": "Tavuk Burger",
-          "portion": "Çıtır Fileto",
-          "note": "",
-          "price": 170,
-          "quantity": 3,
-          "total": 510,
-          "addedAt": 1793202358724
-        }
-      ],
-      "totalAmount": 510,
-      "totalItems": 3
+      "updatedAt": 1793203560585,
+      "items": [],
+      "totalAmount": 0,
+      "totalItems": 0
     }
   },
   "orderHistory": [

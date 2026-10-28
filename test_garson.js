@@ -99,7 +99,8 @@ async function runGarsonTests() {
       '4. Hızlı Masa Yapısı - Masalar 1\'den tableCount\'a kadar doğru ID ve formatta listelenmeli'
     );
 
-    // 4. Add product to table 04 adisyon
+    // 4. Clear table 04 and add product to table 04 adisyon
+    await httpRequest('POST', '/api/garson/tables/04/clear', { 'x-staff-pin': '1234' });
     const addItemRes = await httpRequest('POST', '/api/garson/tables/04/items', { 'x-staff-pin': '1234' }, {
       productId: 'prod_test_1',
       name: 'Tombik Döner',

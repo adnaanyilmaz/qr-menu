@@ -700,37 +700,17 @@
       "icon": "pie_chart"
     }
   ],
-  "notifications": [
-    {
-      "id": "call_1793194097182_443",
-      "table": "TestMasa99",
-      "type": "Garson Çağır",
-      "note": "Peçete lütfen",
-      "items": [],
-      "time": "16:28",
-      "createdAt": 1793194097182
-    }
-  ],
-  "adisyons": {
-    "01": {
-      "tableId": "01",
-      "tableName": "Masa 1",
-      "openedAt": 1793194079293,
-      "updatedAt": 1793194088455,
-      "items": [],
-      "totalAmount": 0,
-      "totalItems": 0
-    }
-  },
+  "notifications": [],
+  "adisyons": {},
   "orderHistory": [
     {
       "tableId": "04",
       "tableName": "Masa 4",
-      "openedAt": 1793194091669,
-      "updatedAt": 1793194091674,
+      "openedAt": 1793201701268,
+      "updatedAt": 1793201701272,
       "items": [
         {
-          "id": "item_1793194091669_1570",
+          "id": "item_1793201701268_1650",
           "productId": "prod_test_1",
           "name": "Tombik Döner",
           "portion": "Standart",
@@ -738,12 +718,71 @@
           "price": 150,
           "quantity": 3,
           "total": 450,
-          "addedAt": 1793194091669
+          "addedAt": 1793201701268
         }
       ],
       "totalAmount": 450,
       "totalItems": 3,
-      "closedAt": 1793194091705,
+      "closedAt": 1793201701302,
+      "paymentMethod": "Kredi Kartı",
+      "closeNote": "Masa 4 ödeme tamamlandı"
+    },
+    {
+      "tableId": "04",
+      "tableName": "Masa 4",
+      "openedAt": 1793201571113,
+      "updatedAt": 1793201571118,
+      "items": [
+        {
+          "id": "item_1793201571113_8992",
+          "productId": "prod_test_1",
+          "name": "Tombik Döner",
+          "portion": "Standart",
+          "note": "Soğansız",
+          "price": 150,
+          "quantity": 3,
+          "total": 450,
+          "addedAt": 1793201571113
+        }
+      ],
+      "totalAmount": 450,
+      "totalItems": 3,
+      "closedAt": 1793201571150,
+      "paymentMethod": "Kredi Kartı",
+      "closeNote": "Masa 4 ödeme tamamlandı"
+    },
+    {
+      "tableId": "04",
+      "tableName": "Masa 4",
+      "openedAt": 1793194812372,
+      "updatedAt": 1793201555175,
+      "items": [
+        {
+          "id": "item_1793194812373_515",
+          "productId": "custom_1793194812372",
+          "name": "1x Ali Baba Dürüm (Standart)",
+          "portion": "Standart",
+          "note": "1x Ali Baba Dürüm (Standart) - 160 ₺",
+          "price": 160,
+          "quantity": 3,
+          "total": 480,
+          "addedAt": 1793194812373
+        },
+        {
+          "id": "item_1793201555170_3310",
+          "productId": "prod_test_1",
+          "name": "Tombik Döner",
+          "portion": "Standart",
+          "note": "Soğansız",
+          "price": 150,
+          "quantity": 2,
+          "total": 300,
+          "addedAt": 1793201555170
+        }
+      ],
+      "totalAmount": 780,
+      "totalItems": 5,
+      "closedAt": 1793201555212,
       "paymentMethod": "Kredi Kartı",
       "closeNote": "Masa 4 ödeme tamamlandı"
     },

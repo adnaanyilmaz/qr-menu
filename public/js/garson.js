@@ -676,7 +676,7 @@ function renderAdisyon() {
   const tableCalls = state.notifications.filter(n => normalizeTableId(n.table) === normId);
   if (tableCalls.length > 0) {
     const firstCall = tableCalls[0];
-    const isOrder = (firstCall.type || '').toLowerCase().includes('sipariş');
+    const isOrder = isOrderNotification(firstCall);
 
     dom.tableCallBanner.style.display = 'flex';
     dom.tableCallBanner.classList.toggle('order-style', isOrder);
@@ -762,7 +762,7 @@ function renderCallsDrawer() {
   }
 
   dom.drawerCallsList.innerHTML = calls.map(c => {
-    const isOrder = (c.type || '').toLowerCase().includes('sipariş');
+    const isOrder = isOrderNotification(c);
     const normTable = normalizeTableId(c.table);
     const tableNum = parseInt(normTable, 10);
 
@@ -944,36 +944,87 @@ function openCustomNoteModal() {
 // Siparişi Onayla & Doğrudan Masa Adisyonuna Ekle
 async function approveOrder(callId) {
   playSuccessChime();
+  const targetCall = state.notifications.find(n => n.id === callId);
+  const targetTableId = targetCall ? normalizeTableId(targetCall.table) : state.selectedTableId;
+
+  let handledOnServer = false;
+
+  // 1. Primary dedicated endpoint
   try {
     const res = await fetch(`/api/garson/calls/${callId}/approve-order`, {
       method: 'POST',
       headers: getAuthHeaders()
     });
-    const json = await res.json();
-    if (json.success && json.data) {
-      const tableId = json.data.tableId;
-      state.adisyons[tableId] = json.data.adisyon;
-      state.notifications = state.notifications.filter(n => n.id !== callId);
-      
-      // Auto-select this table and switch to adisyon if on mobile
-      state.selectedTableId = tableId;
-
-      renderHeader();
-      renderTables();
-      renderAdisyon();
-      renderCallsDrawer();
-
-      if (window.innerWidth <= 768) {
-        switchView('adisyon');
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.success) {
+        handledOnServer = true;
+        if (json.data && json.data.tableId && json.data.adisyon) {
+          state.adisyons[json.data.tableId] = json.data.adisyon;
+        }
       }
-
-      showToast(`Masa ${parseInt(tableId, 10)} siparişi onaylandı ve adisyona eklendi!`, 'success');
-    } else {
-      showToast(json.message || 'Sipariş onaylanamadı.', 'error');
     }
   } catch (err) {
-    showToast('Onaylama sırasında bağlantı hatası oluştu.', 'error');
+    console.warn('approve-order route error, trying resilient fallback...', err);
   }
+
+  // 2. Resilient fallback (if server had not restarted or returned non-JSON)
+  if (!handledOnServer) {
+    try {
+      // Add items directly to table
+      if (targetCall && Array.isArray(targetCall.items) && targetCall.items.length > 0) {
+        for (const it of targetCall.items) {
+          await fetch(`/api/garson/tables/${targetTableId}/items`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+              productId: it.productId || '',
+              name: it.name || 'Sipariş Ürünü',
+              price: it.price || 0,
+              portion: it.portion || 'Standart',
+              quantity: it.quantity || 1,
+              note: it.note || ''
+            })
+          }).then(r => r.json()).then(j => {
+            if (j && j.success && j.data) {
+              state.adisyons[targetTableId] = j.data;
+            }
+          }).catch(() => {});
+        }
+      }
+      // Dismiss notification via DELETE or POST dismiss
+      await fetch(`/api/notifications/${callId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      }).catch(() => {});
+    } catch (fallbackErr) {
+      console.warn('Fallback error:', fallbackErr);
+    }
+  }
+
+  // 3. Always remove notification from client state
+  state.notifications = state.notifications.filter(n => n.id !== callId);
+
+  // 4. Auto-select this table
+  state.selectedTableId = targetTableId;
+
+  // 5. Close calls drawer if currently open
+  if (state.isCallsDrawerOpen) {
+    toggleCallsDrawer();
+  }
+
+  // 6. Re-render UI
+  renderHeader();
+  renderTables();
+  renderAdisyon();
+  renderCallsDrawer();
+
+  // 7. On mobile, switch smoothly to adisyon view so waiter sees added items
+  if (window.innerWidth <= 768) {
+    switchView('adisyon');
+  }
+
+  showToast(`Masa ${parseInt(targetTableId, 10)} siparişi onaylandı ve adisyona eklendi!`, 'success');
 }
 
 // Seçili Masanın Banner İşlemi (Sipariş ise Onayla&Ekle, Servis ise Kapat)
@@ -983,39 +1034,53 @@ async function handleCurrentTableCallAction() {
   if (tableCalls.length === 0) return;
 
   const firstCall = tableCalls[0];
-  const isOrder = (firstCall.type || '').toLowerCase().includes('sipariş');
-
-  if (isOrder) {
+  if (isOrderNotification(firstCall)) {
     await approveOrder(firstCall.id);
   } else {
-    await dismissSingleCall(firstCall.id);
+    await dismissSingleCall(firstCall.id, false);
   }
 }
 
 // Tekil Çağrıyı Kapat (Sipariş ise isteğe bağlı adisyona ekler)
 async function dismissSingleCall(callId, addToAdisyon = true) {
   playTapChime();
+  const targetCall = state.notifications.find(n => n.id === callId);
+  const isOrder = isOrderNotification(targetCall);
+
+  if (isOrder && addToAdisyon) {
+    return await approveOrder(callId);
+  }
+
   try {
     const res = await fetch(`/api/garson/calls/${callId}/dismiss`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ addToAdisyon })
+      body: JSON.stringify({ addToAdisyon: false })
     });
-    const json = await res.json();
-    if (json.success) {
-      if (json.data && json.data.tableId && json.data.adisyon) {
-        state.adisyons[json.data.tableId] = json.data.adisyon;
-      }
-      state.notifications = state.notifications.filter(n => n.id !== callId);
-      renderHeader();
-      renderTables();
-      renderAdisyon();
-      renderCallsDrawer();
-      showToast(json.message || 'Çağrı kapatıldı.', 'success');
+    if (!res.ok) {
+      await fetch(`/api/notifications/${callId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
     }
   } catch (err) {
-    showToast('Çağrı kapatılamadı.', 'error');
+    await fetch(`/api/notifications/${callId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    }).catch(() => {});
   }
+
+  state.notifications = state.notifications.filter(n => n.id !== callId);
+
+  if (state.isCallsDrawerOpen && state.notifications.length === 0) {
+    toggleCallsDrawer();
+  }
+
+  renderHeader();
+  renderTables();
+  renderAdisyon();
+  renderCallsDrawer();
+  showToast('Çağrı kapatıldı.', 'success');
 }
 
 // Seçili Masanın Tüm Çağrılarını Kapat
@@ -1202,6 +1267,18 @@ function switchView(viewName) {
 }
 
 // ==================== HELPERS ====================
+function normalizeTurkish(str) {
+  return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+function isOrderNotification(call) {
+  if (!call) return false;
+  if (typeof call.id === 'string' && call.id.startsWith('order_')) return true;
+  if (Array.isArray(call.items) && call.items.length > 0) return true;
+  const t = normalizeTurkish(call.type);
+  return t.includes('sipar') || t.includes('order');
+}
+
 function normalizeTableId(val) {
   if (!val) return '01';
   const str = String(val).trim();

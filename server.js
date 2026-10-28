@@ -682,6 +682,24 @@ function broadcastNotificationEvent(eventType, data) {
   }
 }
 
+// Helper: Order identification and text normalization (handles Turkish locale i/İ/ı/I)
+function normalizeTurkishSearch(str) {
+  return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+function isOrderType(typeStr) {
+  if (!typeStr) return false;
+  const normalized = normalizeTurkishSearch(typeStr);
+  return normalized.includes('sipar') || normalized.includes('order');
+}
+
+function isOrderNotification(notif) {
+  if (!notif) return false;
+  if (typeof notif.id === 'string' && notif.id.startsWith('order_')) return true;
+  if (Array.isArray(notif.items) && notif.items.length > 0) return true;
+  return isOrderType(notif.type);
+}
+
 // 8. Waiter Call & Notifications (Spam & Cooldown Protected)
 app.post('/api/call-waiter', (req, res) => {
   const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
@@ -692,7 +710,8 @@ app.post('/api/call-waiter', (req, res) => {
   const cleanNote = sanitizeString(String(note || '').slice(0, 200));
 
   // Check if this request is a product order vs waiter/service call
-  const isOrder = cleanType.toLowerCase().includes('sipariş') || cleanType.toLowerCase().includes('order');
+  const hasItems = Array.isArray(req.body.items) && req.body.items.length > 0;
+  const isOrder = hasItems || isOrderType(cleanType);
 
   // Cooldown only applies to waiter/bill calls, NOT to product orders
   if (!isOrder) {
@@ -781,17 +800,27 @@ app.get('/api/notifications', requireWaiterOrAdminAuth, (req, res) => {
 // Dismiss Notification (Protected)
 app.delete('/api/notifications/:id', requireWaiterOrAdminAuth, (req, res) => {
   const { id } = req.params;
-  const initialLen = (db.notifications || []).length;
-  db.notifications = (db.notifications || []).filter(n => n.id !== id);
-
-  if (db.notifications.length === initialLen) {
-    return res.status(404).json({ success: false, message: 'Bildirim bulunamadı.' });
+  const notif = (db.notifications || []).find(n => n.id === id);
+  if (!notif) {
+    return res.json({ success: true, message: 'Bildirim zaten kapatılmış.' });
   }
 
+  // If it's an order notification, also ensure it is added to the table's adisyon!
+  let adisyon = null;
+  const tableId = normalizeTableId(notif.table);
+  if (isOrderNotification(notif)) {
+    adisyon = applyOrderToAdisyon(notif);
+  }
+
+  db.notifications = db.notifications.filter(n => n.id !== id);
   saveData(db);
   broadcastNotificationEvent('notification_dismissed', { id });
 
-  res.json({ success: true, message: 'Bildirim kapatıldı.' });
+  res.json({
+    success: true,
+    message: isOrderNotification(notif) ? `Sipariş onaylandı ve Masa ${parseInt(tableId, 10)} adisyonuna eklendi.` : 'Bildirim kapatıldı.',
+    data: adisyon ? { tableId, adisyon } : null
+  });
 });
 
 // ======================== GARSON (WAITER TERMINAL) APIS ========================
@@ -1035,9 +1064,10 @@ function extractItemsFromOrderNote(note) {
   if (!note || typeof note !== 'string') return [];
   const items = [];
   const products = db.products || [];
+  const normNote = normalizeTurkishSearch(note);
 
   for (const prod of products) {
-    if (prod.name && note.toLowerCase().includes(prod.name.toLowerCase())) {
+    if (prod.name && normNote.includes(normalizeTurkishSearch(prod.name))) {
       if (!items.some(it => it.productId === prod.id)) {
         items.push({
           productId: prod.id,
@@ -1136,7 +1166,7 @@ app.post('/api/garson/calls/:id/approve-order', requireWaiterOrAdminAuth, (req, 
   const { id } = req.params;
   const notifIndex = (db.notifications || []).findIndex(n => n.id === id);
   if (notifIndex === -1) {
-    return res.status(404).json({ success: false, message: 'Sipariş çağrısı bulunamadı.' });
+    return res.json({ success: true, message: 'Sipariş çağrısı zaten işleme alınmış.', data: null });
   }
 
   const notif = db.notifications[notifIndex];
@@ -1159,11 +1189,11 @@ app.post('/api/garson/calls/:id/dismiss', requireWaiterOrAdminAuth, (req, res) =
   const { id } = req.params;
   const notifIndex = (db.notifications || []).findIndex(n => n.id === id);
   if (notifIndex === -1) {
-    return res.status(404).json({ success: false, message: 'Çağrı bulunamadı.' });
+    return res.json({ success: true, message: 'Çağrı zaten kapatılmış.', data: null });
   }
 
   const notif = db.notifications[notifIndex];
-  const isOrder = (notif.type || '').toLowerCase().includes('sipariş');
+  const isOrder = isOrderNotification(notif);
   let adisyon = null;
   const tableId = normalizeTableId(notif.table);
 
@@ -1189,8 +1219,7 @@ app.post('/api/garson/calls/dismiss-table', requireWaiterOrAdminAuth, (req, res)
 
   const tableCalls = (db.notifications || []).filter(n => normalizeTableId(n.table) === normId);
   for (const call of tableCalls) {
-    const isOrder = (call.type || '').toLowerCase().includes('sipariş');
-    if (isOrder) {
+    if (isOrderNotification(call)) {
       applyOrderToAdisyon(call);
     }
   }

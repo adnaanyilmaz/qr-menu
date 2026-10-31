@@ -716,49 +716,10 @@
             </div>
           </div>
 
-          <!-- Porsiyon / Boyut ve Fiyat Yönetimi -->
-          <div class="form-group" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; margin-top:8px;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-              <div>
-                <label class="form-label" style="margin:0; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px;">
-                  <span class="material-symbols-outlined" style="font-size:18px; color:#b91c1c;">scale</span>
-                  <span>Porsiyon / Boyut ve Fiyat Yönetimi</span>
-                </label>
-                <p style="font-size:11.5px; color:#64748b; margin:2px 0 0 0;">
-                  Müşteri menüde bu porsiyonları seçtiğinde ürün fiyatı anında güncellenir.
-                </p>
-              </div>
-              <button type="button" class="btn-secondary" onclick="addAdminPortionRow()" style="padding:5px 10px; font-size:11.5px; border-radius:8px; font-weight:700; display:flex; align-items:center; gap:4px; white-space:nowrap; background:#ffffff;">
-                <span class="material-symbols-outlined" style="font-size:16px; color:#059669;">add_circle</span>
-                <span>Porsiyon Ekle</span>
-              </button>
-            </div>
-
-            <!-- Quick Template Presets -->
-            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; align-items:center;">
-              <span style="font-size:11px; font-weight:700; color:#64748b;">Hızlı Şablon:</span>
-              <button type="button" onclick="applyPortionPreset('food')" style="padding:4px 8px; font-size:11px; border-radius:6px; border:1px dashed #cbd5e1; background:#ffffff; cursor:pointer; color:#334155; font-weight:600; display:flex; align-items:center; gap:4px;">
-                <span>🍽️ Döner/Yemek (Standart, 1.5, Duble)</span>
-              </button>
-              <button type="button" onclick="applyPortionPreset('drink')" style="padding:4px 8px; font-size:11px; border-radius:6px; border:1px dashed #cbd5e1; background:#ffffff; cursor:pointer; color:#334155; font-weight:600; display:flex; align-items:center; gap:4px;">
-                <span>🥤 İçecek (Küçük, Orta, Büyük)</span>
-              </button>
-              <button type="button" onclick="clearAdminPortions()" style="padding:4px 8px; font-size:11px; border-radius:6px; border:none; background:transparent; cursor:pointer; color:#94a3b8; font-weight:600; text-decoration:underline;">
-                Temizle
-              </button>
-            </div>
-
-            <!-- Container for dynamic portion rows -->
-            <div id="admin-portions-container" style="display:flex; flex-direction:column; gap:8px;">
-              <!-- Populated dynamically: each row has [Porsiyon Adı] [Fiyat (₺)] [Sil] -->
-            </div>
-
-            <div id="admin-portions-empty-hint" style="display:none; text-align:center; padding:10px; font-size:12px; color:#94a3b8; border:1px dashed #e2e8f0; border-radius:8px; background:#ffffff;">
-              Özel porsiyon tanımlanmadı (Yukarıdaki varsayılan tek fiyat geçerli olacaktır).
-            </div>
-
-            <!-- Backwards-compatible input (synced on save) -->
-            <input type="hidden" id="form-prod-portions" value=""/>
+          <div class="form-group">
+            <label class="form-label">Çoklu Porsiyon / Boyut Seçenekleri ve Fiyatları (İsteğe Bağlı)</label>
+            <input type="text" id="form-prod-portions" class="form-control" placeholder="Örn: Standart: 150, 1.5 Porsiyon: 210, Duble: 270 (veya Küçük: 35, Büyük: 55)"/>
+            <span style="font-size:11px; color:#64748b;">Müşteri menüde ürün detayında bu porsiyonları seçebilir. Format: Porsiyon: Fiyat, ...</span>
           </div>
 
           <div class="form-group">

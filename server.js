@@ -784,9 +784,6 @@ app.patch('/api/products/:id/quick-price', requireAdminAuth, (req, res) => {
   }
 
   product.price = cleanPrice;
-  if (product.portions && Array.isArray(product.portions) && product.portions.length > 0) {
-    product.portions[0].price = parseFloat(cleanPrice);
-  }
   saveData(db);
   res.json({ success: true, message: 'Fiyat güncellendi.', price: product.price });
 });
@@ -1230,11 +1227,160 @@ app.post('/api/garson/tables/:tableId/items', requireWaiterOrAdminAuth, (req, re
   });
 });
 
+// Helper: Check if a kitchen ticket item matches an adisyon item
+function isKitchenItemMatch(kItem, adisyonItem) {
+  if (!kItem || !adisyonItem) return false;
+  if (kItem.productId && adisyonItem.productId && String(kItem.productId) === String(adisyonItem.productId)) {
+    return true;
+  }
+  const kName = normalizeTurkishSearch(kItem.name);
+  const aName = normalizeTurkishSearch(adisyonItem.name);
+  if (kName === aName) {
+    if (kItem.portion && adisyonItem.portion && kItem.portion !== 'Standart' && adisyonItem.portion !== 'Standart') {
+      return normalizeTurkishSearch(kItem.portion) === normalizeTurkishSearch(adisyonItem.portion);
+    }
+    return true;
+  }
+  return false;
+}
+
+// Helper: Synchronize Adisyon Item Deletion or Reduction with Kitchen (KDS) Tickets
+function cancelOrReduceKitchenItem({ tableId, item, quantityToCancel, reason, managerPin, force = false }) {
+  db.kitchenOrders = db.kitchenOrders || [];
+  db.wasteLogs = db.wasteLogs || [];
+  db.cancellationLogs = db.cancellationLogs || [];
+
+  const cleanTableId = normalizeTableId(tableId);
+  const now = Date.now();
+  const masterPin = (db.admin && db.admin.pin) ? String(db.admin.pin).trim() : '1234';
+
+  // Find all active kitchen orders for this table (pending or preparing)
+  const activeOrders = db.kitchenOrders.filter(o =>
+    normalizeTableId(o.tableId || o.tableName) === cleanTableId &&
+    (o.status === 'pending' || o.status === 'preparing')
+  );
+
+  if (activeOrders.length === 0) {
+    return { success: true, updatedTickets: [], cancelledTickets: [], wasteLogged: false };
+  }
+
+  // Check if matching item is in a "preparing" ticket
+  const preparingOrders = activeOrders.filter(o => o.status === 'preparing');
+  const hasMatchInPreparing = preparingOrders.some(ord =>
+    Array.isArray(ord.items) && ord.items.some(it => !it.cancelled && it.quantity > 0 && isKitchenItemMatch(it, item))
+  );
+
+  if (hasMatchInPreparing && !force) {
+    if (!managerPin || String(managerPin).trim() !== masterPin) {
+      return {
+        success: false,
+        requiresManagerPin: true,
+        isPreparing: true,
+        message: `"${item.name}" mutfakta hazırlanıyor! İptal etmek için müdür PIN kodu zorunludur.`
+      };
+    }
+  }
+
+  let remainingToCancel = Math.max(1, parseInt(quantityToCancel, 10) || 1);
+  const updatedTickets = [];
+  const cancelledTickets = [];
+  let wasteLogged = false;
+
+  // Process pending tickets first (safe to cancel without waste), then preparing tickets
+  const pendingOrders = activeOrders.filter(o => o.status === 'pending');
+  const searchOrders = [...pendingOrders, ...preparingOrders];
+
+  for (const ord of searchOrders) {
+    if (remainingToCancel <= 0) break;
+    if (!Array.isArray(ord.items)) continue;
+
+    for (const it of ord.items) {
+      if (remainingToCancel <= 0) break;
+      if (it.cancelled || it.quantity <= 0) continue;
+
+      if (!isKitchenItemMatch(it, item)) continue;
+
+      const cancelQty = Math.min(it.quantity, remainingToCancel);
+      remainingToCancel -= cancelQty;
+
+      // If ticket is preparing, record kitchen waste (zayi/fire)
+      if (ord.status === 'preparing') {
+        wasteLogged = true;
+        db.wasteLogs.unshift({
+          id: 'waste_' + now + '_' + Math.floor(Math.random() * 1000),
+          tableId: cleanTableId,
+          tableName: ord.tableName || `Masa ${parseInt(cleanTableId, 10)}`,
+          ticketNumber: ord.ticketNumber || '',
+          name: it.name,
+          portion: it.portion || 'Standart',
+          quantity: cancelQty,
+          price: it.price || item.price || 0,
+          reason: `Personel Hatası / Zayi (Hazırlık Sırasında Adisyondan Silindi - ${reason || 'Adisyondan Çıkarıldı'})`,
+          loggedAt: now
+        });
+      }
+
+      // Record cancellation log
+      db.cancellationLogs.unshift({
+        id: 'canc_' + now + '_' + Math.floor(Math.random() * 1000),
+        ticketNumber: ord.ticketNumber || '',
+        tableId: cleanTableId,
+        tableName: ord.tableName || `Masa ${parseInt(cleanTableId, 10)}`,
+        reason: reason || 'Adisyondan Silindi',
+        items: [{
+          productId: it.productId,
+          name: it.name,
+          portion: it.portion,
+          quantity: cancelQty,
+          note: it.note
+        }],
+        wasPreparing: ord.status === 'preparing',
+        managerApproved: ord.status === 'preparing',
+        cancelledAt: now
+      });
+
+      if (cancelQty >= it.quantity) {
+        it.cancelled = true;
+        it.quantity = 0;
+      } else {
+        it.quantity -= cancelQty;
+      }
+    }
+
+    // Check if ticket still has any active non-cancelled items
+    const hasActiveItems = ord.items.some(it => !it.cancelled && it.quantity > 0);
+    if (!hasActiveItems) {
+      ord.status = 'cancelled';
+      ord.cancelReason = reason || 'Tüm ürünler adisyondan silindi';
+      ord.cancelledAt = now;
+      cancelledTickets.push(ord);
+      broadcastNotificationEvent('kds_order_cancelled', {
+        id: ord.id,
+        ticketNumber: ord.ticketNumber,
+        tableName: ord.tableName,
+        reason: ord.cancelReason,
+        cancelledAt: now
+      });
+    } else {
+      updatedTickets.push(ord);
+      broadcastNotificationEvent('kds_order_updated', ord);
+    }
+  }
+
+  saveData(db);
+  return {
+    success: true,
+    updatedTickets,
+    cancelledTickets,
+    wasteLogged
+  };
+}
+
 // 4. Update Adisyon Item (Quantity or Note)
 app.patch('/api/garson/tables/:tableId/items/:itemId', requireWaiterOrAdminAuth, (req, res) => {
   const tableId = normalizeTableId(req.params.tableId);
   const { itemId } = req.params;
-  const { delta, quantity, note } = req.body || {};
+  const { delta, quantity, note, reason, managerPin, force } = req.body || {};
 
   db.adisyons = db.adisyons || {};
   const tableAdisyon = db.adisyons[tableId];
@@ -1248,17 +1394,52 @@ app.patch('/api/garson/tables/:tableId/items/:itemId', requireWaiterOrAdminAuth,
   }
 
   const item = tableAdisyon.items[itemIndex];
+  const oldQty = item.quantity;
+  let newQty = oldQty;
 
   if (delta !== undefined) {
-    item.quantity += parseInt(delta, 10) || 0;
+    newQty = oldQty + (parseInt(delta, 10) || 0);
   } else if (quantity !== undefined) {
-    item.quantity = parseInt(quantity, 10) || 0;
+    newQty = parseInt(quantity, 10) || 0;
   }
 
   if (note !== undefined) {
     item.note = sanitizeString(String(note).trim());
   }
 
+  if (newQty < oldQty) {
+    const qtyToReduce = oldQty - Math.max(0, newQty);
+    const kSync = cancelOrReduceKitchenItem({
+      tableId,
+      item,
+      quantityToCancel: qtyToReduce,
+      reason: sanitizeString(reason || 'Miktar Azaltıldı'),
+      managerPin,
+      force: Boolean(force)
+    });
+
+    if (!kSync.success) {
+      return res.status(403).json(kSync);
+    }
+  } else if (newQty > oldQty) {
+    // If increased, dispatch extra ticket to kitchen
+    const addedQty = newQty - oldQty;
+    createKitchenTicket({
+      table: tableId,
+      items: [{
+        productId: item.productId,
+        name: item.name,
+        portion: item.portion || 'Standart',
+        quantity: addedQty,
+        note: item.note || '',
+        price: item.price
+      }],
+      note: item.note || '',
+      source: 'garson'
+    });
+  }
+
+  item.quantity = newQty;
   if (item.quantity <= 0) {
     tableAdisyon.items.splice(itemIndex, 1);
   } else {
@@ -1273,13 +1454,14 @@ app.patch('/api/garson/tables/:tableId/items/:itemId', requireWaiterOrAdminAuth,
   saveData(db);
   broadcastNotificationEvent('adisyon_updated', { tableId, adisyon: tableAdisyon });
 
-  res.json({ success: true, message: 'Adisyon güncellendi.', data: tableAdisyon });
+  res.json({ success: true, message: 'Adisyon ve mutfak güncellendi.', data: tableAdisyon });
 });
 
 // 5. Delete Item from Adisyon
 app.delete('/api/garson/tables/:tableId/items/:itemId', requireWaiterOrAdminAuth, (req, res) => {
   const tableId = normalizeTableId(req.params.tableId);
   const { itemId } = req.params;
+  const { reason, managerPin, force } = req.body || {};
 
   db.adisyons = db.adisyons || {};
   const tableAdisyon = db.adisyons[tableId];
@@ -1287,7 +1469,28 @@ app.delete('/api/garson/tables/:tableId/items/:itemId', requireWaiterOrAdminAuth
     return res.status(404).json({ success: false, message: 'Adisyon bulunamadı.' });
   }
 
-  tableAdisyon.items = tableAdisyon.items.filter(it => it.id !== itemId);
+  const itemIndex = tableAdisyon.items.findIndex(it => it.id === itemId);
+  if (itemIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Ürün adisyonda bulunamadı.' });
+  }
+
+  const item = tableAdisyon.items[itemIndex];
+
+  // Synchronize with Kitchen Orders
+  const kSync = cancelOrReduceKitchenItem({
+    tableId,
+    item,
+    quantityToCancel: item.quantity,
+    reason: sanitizeString(reason || 'Adisyondan Silindi'),
+    managerPin,
+    force: Boolean(force)
+  });
+
+  if (!kSync.success) {
+    return res.status(403).json(kSync);
+  }
+
+  tableAdisyon.items.splice(itemIndex, 1);
   tableAdisyon.totalAmount = Math.round(tableAdisyon.items.reduce((sum, it) => sum + (it.total || 0), 0) * 100) / 100;
   tableAdisyon.totalItems = tableAdisyon.items.reduce((sum, it) => sum + (it.quantity || 0), 0);
   tableAdisyon.updatedAt = Date.now();
@@ -1295,7 +1498,13 @@ app.delete('/api/garson/tables/:tableId/items/:itemId', requireWaiterOrAdminAuth
   saveData(db);
   broadcastNotificationEvent('adisyon_updated', { tableId, adisyon: tableAdisyon });
 
-  res.json({ success: true, message: 'Ürün adisyondan silindi.', data: tableAdisyon });
+  res.json({
+    success: true,
+    message: `${item.name} adisyondan ve mutfaktan çıkarıldı.`,
+    data: tableAdisyon,
+    kitchenCancelled: kSync.cancelledTickets.length > 0,
+    wasteLogged: kSync.wasteLogged
+  });
 });
 
 // 5.1 Cancel Order Scenario with Status Control & Manager PIN (Requirement 9)
@@ -1655,16 +1864,89 @@ app.post('/api/garson/tables/:tableId/close', requireWaiterOrAdminAuth, (req, re
   res.json({ success: true, message: `Masa ${parseInt(tableId, 10)} hesabı kapatıldı ve masa hazırlandı.` });
 });
 
-// 7. Clear / Cancel Adisyon without Payment
+// 7. Clear / Cancel Adisyon without Payment (Synchronizes with Kitchen)
 app.post('/api/garson/tables/:tableId/clear', requireWaiterOrAdminAuth, (req, res) => {
   const tableId = normalizeTableId(req.params.tableId);
+  const { reason, managerPin } = req.body || {};
+  const masterPin = (db.admin && db.admin.pin) ? String(db.admin.pin).trim() : '1234';
+  const cleanReason = sanitizeString(reason || 'Masa adisyonu temizlendi');
+
+  db.kitchenOrders = db.kitchenOrders || [];
+  db.wasteLogs = db.wasteLogs || [];
+  db.cancellationLogs = db.cancellationLogs || [];
+
+  const tableOrders = db.kitchenOrders.filter(o =>
+    normalizeTableId(o.tableId || o.tableName) === tableId &&
+    (o.status === 'pending' || o.status === 'preparing')
+  );
+
+  const hasPreparing = tableOrders.some(o => o.status === 'preparing');
+  if (hasPreparing) {
+    if (!managerPin || String(managerPin).trim() !== masterPin) {
+      return res.status(403).json({
+        success: false,
+        requiresManagerPin: true,
+        message: 'Mutfakta hazırlanan siparişler var! Masayı temizlemek için müdür PIN kodu zorunludur.'
+      });
+    }
+  }
+
+  const now = Date.now();
+  for (const ord of tableOrders) {
+    const wasPreparing = ord.status === 'preparing';
+    ord.status = 'cancelled';
+    ord.cancelReason = cleanReason;
+    ord.cancelledAt = now;
+
+    if (wasPreparing && Array.isArray(ord.items)) {
+      for (const it of ord.items) {
+        if (!it.cancelled && it.quantity > 0) {
+          db.wasteLogs.unshift({
+            id: 'waste_' + now + '_' + Math.floor(Math.random() * 1000),
+            tableId: tableId,
+            tableName: ord.tableName || `Masa ${parseInt(tableId, 10)}`,
+            ticketNumber: ord.ticketNumber || '',
+            name: it.name,
+            portion: it.portion || 'Standart',
+            quantity: it.quantity || 1,
+            price: it.price || 0,
+            reason: `Personel Hatası / Zayi (Masa Temizleme - ${cleanReason})`,
+            loggedAt: now
+          });
+        }
+      }
+    }
+
+    db.cancellationLogs.unshift({
+      id: 'canc_' + now + '_' + Math.floor(Math.random() * 1000),
+      ticketNumber: ord.ticketNumber || '',
+      tableId: tableId,
+      tableName: ord.tableName || `Masa ${parseInt(tableId, 10)}`,
+      reason: cleanReason,
+      items: ord.items || [],
+      wasPreparing,
+      managerApproved: hasPreparing,
+      cancelledAt: now
+    });
+
+    broadcastNotificationEvent('kds_order_cancelled', {
+      id: ord.id,
+      ticketNumber: ord.ticketNumber,
+      tableName: ord.tableName,
+      reason: cleanReason,
+      cancelledAt: now
+    });
+  }
+
   db.adisyons = db.adisyons || {};
   delete db.adisyons[tableId];
 
-  saveData(db);
+  db.notifications = (db.notifications || []).filter(n => normalizeTableId(n.table) !== tableId);
+  broadcastNotificationEvent('notifications_updated', db.notifications);
   broadcastNotificationEvent('adisyon_closed', { tableId });
 
-  res.json({ success: true, message: 'Masa adisyonu temizlendi.' });
+  saveData(db);
+  res.json({ success: true, message: 'Masa adisyonu ve mutfak siparişleri temizlendi.' });
 });
 
 // Helper: Extract items from note if structured items array was missing

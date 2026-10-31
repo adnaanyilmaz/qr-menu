@@ -1032,6 +1032,29 @@ body.kds-body {
   background: transparent;
 }
 
+.kds-item-row.item-cancelled {
+  opacity: 0.7;
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-left: 4px solid #ef4444 !important;
+  cursor: not-allowed;
+}
+
+.kds-item-row.item-cancelled .item-qty,
+.kds-item-row.item-cancelled .item-name {
+  color: #ef4444 !important;
+  text-decoration: line-through;
+}
+
+.kds-item-row.item-cancelled .item-check-box {
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
+}
+
+.kds-item-row.item-cancelled .item-check-icon {
+  display: block !important;
+  color: #ef4444 !important;
+}
+
 .item-check-box {
   width: 22px;
   height: 22px;

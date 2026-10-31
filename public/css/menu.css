@@ -1140,73 +1140,30 @@ h1, h2, h3, h4, .font-heading {
 
 .portion-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(95px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin-bottom: 16px;
 }
 
 .portion-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-height: 52px;
-  padding: 8px 6px;
+  padding: 8px 4px;
   border-radius: var(--radius-sm);
   border: 1.5px solid var(--border-mid);
   background: #ffffff;
   color: var(--charcoal);
   font-family: var(--font-heading);
+  font-size: 11.5px;
+  font-weight: 700;
   cursor: pointer;
   text-align: center;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
-
-.portion-btn:hover {
-  border-color: var(--primary);
-  background: #fff8f8;
+  transition: all 0.15s ease;
 }
 
 .portion-btn.active {
-  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
-  border-color: #991b1b;
+  background: var(--primary);
+  border-color: var(--primary);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.25);
-  transform: translateY(-1px);
-}
-
-.portion-btn .portion-btn-name {
-  font-size: 11.5px;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.portion-btn .portion-btn-price {
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--primary);
-  line-height: 1.2;
-  margin-top: 1px;
-}
-
-.portion-btn.active .portion-btn-name {
-  color: #ffffff;
-}
-
-.portion-btn.active .portion-btn-price {
-  color: #fef08a; /* Soft golden highlight */
-}
-
-.price-bump {
-  animation: pricePulse 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes pricePulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.18); color: #ea580c; }
-  100% { transform: scale(1); }
+  box-shadow: var(--shadow-xs);
 }
 
 .allergens-box {

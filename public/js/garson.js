@@ -997,7 +997,10 @@ async function updateItemDelta(itemId, delta, event) {
   try {
     const res = await fetch(`/api/garson/tables/${tableId}/items/${itemId}`, {
       method: 'PATCH',
-      headers: getAuthHeaders(),
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({ delta })
     });
     const json = await res.json();
@@ -1007,6 +1010,16 @@ async function updateItemDelta(itemId, delta, event) {
       renderTables();
       renderAdisyon();
       renderProducts();
+      if (delta > 0) {
+        showToast('İlave ürün mutfağa iletildi.', 'info');
+      } else {
+        showToast('Ürün miktarı güncellendi.', 'info');
+      }
+    } else if (json.requiresManagerPin) {
+      const item = state.adisyons[tableId]?.items?.find(it => it.id === itemId);
+      openCancelItemModal(itemId, item ? item.name : 'Ürün', json.message);
+    } else {
+      showToast(json.message || 'Güncelleme hatası.', 'error');
     }
   } catch (err) {
     showToast('Güncelleme hatası.', 'error');
@@ -1014,15 +1027,21 @@ async function updateItemDelta(itemId, delta, event) {
 }
 
 // Adisyondan Ürün Silme
-async function removeItem(itemId, event) {
+async function removeItem(itemId, event, managerPin = '', reason = 'Müşteri Vazgeçti') {
   if (event) event.stopPropagation();
   playTapChime();
   const tableId = normalizeTableId(state.selectedTableId);
+  const item = state.adisyons[tableId]?.items?.find(it => it.id === itemId);
+  const itemName = item ? item.name : 'Ürün';
 
   try {
     const res = await fetch(`/api/garson/tables/${tableId}/items/${itemId}`, {
       method: 'DELETE',
-      headers: getAuthHeaders()
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ managerPin, reason })
     });
     const json = await res.json();
     if (json.success && json.data) {
@@ -1034,7 +1053,12 @@ async function removeItem(itemId, event) {
       renderTables();
       renderAdisyon();
       renderProducts();
-      showToast('Ürün adisyondan çıkarıldı.', 'success');
+      closeCancelOrderModal();
+      showToast(`${itemName} adisyondan ve mutfaktan çıkarıldı.`, 'success');
+    } else if (json.requiresManagerPin) {
+      openCancelItemModal(itemId, itemName, json.message);
+    } else {
+      showToast(json.message || 'Silme hatası.', 'error');
     }
   } catch (err) {
     showToast('Silme hatası.', 'error');
@@ -1428,7 +1452,10 @@ async function submitPayment() {
 }
 
 // ==================== SİPARİŞ İPTALİ & MÜDÜR PIN YÖNETİMİ ====================
+let cancelModalTarget = { type: 'table', itemId: null };
+
 function openCancelOrderModal() {
+  cancelModalTarget = { type: 'table', itemId: null };
   const normId = normalizeTableId(state.selectedTableId);
   const adisyon = state.adisyons[normId];
   if (!adisyon || !adisyon.items || adisyon.items.length === 0) {
@@ -1436,11 +1463,17 @@ function openCancelOrderModal() {
     return;
   }
 
+  const titleEl = document.getElementById('cancel-modal-title');
+  if (titleEl) titleEl.textContent = 'Masa Adisyonunu İptal Et';
+
   const tableSub = document.getElementById('cancel-modal-table-sub');
   if (tableSub) tableSub.textContent = `Masa ${parseInt(normId, 10)} Adisyonu (${adisyon.totalItems} Ürün, ${formatMoney(adisyon.totalAmount || 0)})`;
 
   const pinGroup = document.getElementById('cancel-manager-pin-group');
   if (pinGroup) pinGroup.style.display = 'none';
+
+  const pinLabel = document.getElementById('cancel-manager-pin-label');
+  if (pinLabel) pinLabel.textContent = '⚠️ Aşçı hazırlamaya başladı! İptal için Yönetici PIN Kodu zorunludur:';
 
   const pinInput = document.getElementById('cancel-manager-pin');
   if (pinInput) pinInput.value = '';
@@ -1452,9 +1485,41 @@ function openCancelOrderModal() {
   if (modal) modal.classList.add('active');
 }
 
+function openCancelItemModal(itemId, itemName, customMessage) {
+  cancelModalTarget = { type: 'item', itemId };
+  const normId = normalizeTableId(state.selectedTableId);
+
+  const titleEl = document.getElementById('cancel-modal-title');
+  if (titleEl) titleEl.textContent = `Ürün İptali: ${itemName}`;
+
+  const tableSub = document.getElementById('cancel-modal-table-sub');
+  if (tableSub) tableSub.textContent = `Masa ${parseInt(normId, 10)} — ${itemName}`;
+
+  const pinGroup = document.getElementById('cancel-manager-pin-group');
+  if (pinGroup) pinGroup.style.display = 'block';
+
+  const pinLabel = document.getElementById('cancel-manager-pin-label');
+  if (pinLabel) {
+    pinLabel.textContent = customMessage || '⚠️ Aşçı hazırlamaya başladı! Ürünü iptal etmek için Yönetici PIN Kodu zorunludur:';
+  }
+
+  const pinInput = document.getElementById('cancel-manager-pin');
+  if (pinInput) {
+    pinInput.value = '';
+    setTimeout(() => pinInput.focus(), 100);
+  }
+
+  const errEl = document.getElementById('cancel-error-msg');
+  if (errEl) errEl.textContent = '';
+
+  const modal = document.getElementById('cancel-order-modal');
+  if (modal) modal.classList.add('active');
+}
+
 function closeCancelOrderModal() {
   const modal = document.getElementById('cancel-order-modal');
   if (modal) modal.classList.remove('active');
+  cancelModalTarget = { type: 'table', itemId: null };
 }
 
 async function submitCancelOrder() {
@@ -1464,6 +1529,39 @@ async function submitCancelOrder() {
   const managerPinInput = document.getElementById('cancel-manager-pin');
   const managerPin = managerPinInput ? managerPinInput.value.trim() : '';
   const errEl = document.getElementById('cancel-error-msg');
+
+  // Single Item Cancellation Mode
+  if (cancelModalTarget && cancelModalTarget.type === 'item' && cancelModalTarget.itemId) {
+    try {
+      const res = await fetch(`/api/garson/tables/${normId}/items/${cancelModalTarget.itemId}`, {
+        method: 'DELETE',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason, managerPin })
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        state.adisyons[normId] = json.data;
+        if (state.selectedItemId === cancelModalTarget.itemId) {
+          state.selectedItemId = null;
+        }
+        renderHeader();
+        renderTables();
+        renderAdisyon();
+        renderProducts();
+        closeCancelOrderModal();
+        showToast(`Ürün adisyondan ve mutfaktan çıkarıldı. (${reason})`, 'success');
+      } else {
+        if (errEl) errEl.textContent = json.message || 'Müdür PIN kodu hatalı.';
+        if (managerPinInput) managerPinInput.focus();
+      }
+    } catch (err) {
+      if (errEl) errEl.textContent = 'İptal işlemi sırasında hata oluştu.';
+    }
+    return;
+  }
 
   try {
     const res = await fetch(`/api/garson/tables/${normId}/cancel-order`, {

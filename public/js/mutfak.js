@@ -629,11 +629,22 @@
 
   function handleUpdatedKitchenTicket(ticket) {
     const idx = kdsState.orders.findIndex(o => o.id === ticket.id);
+    const prevOrder = idx !== -1 ? kdsState.orders[idx] : null;
+
     if (idx !== -1) {
       kdsState.orders[idx] = ticket;
     } else {
       kdsState.orders.unshift(ticket);
     }
+
+    // Check if an item in this ticket was newly cancelled
+    const hasCancelled = Array.isArray(ticket.items) && ticket.items.some(it => it.cancelled);
+    const wasAlreadyCancelled = prevOrder && Array.isArray(prevOrder.items) && prevOrder.items.some(it => it.cancelled);
+    if (hasCancelled && !wasAlreadyCancelled) {
+      audioSynth.playUrgentAlert();
+      showToast(`⚠️ ${ticket.tableName || 'Masa'}: Bir ürün adisyondan silindi / iptal edildi!`, 'warning');
+    }
+
     renderMetrics();
     renderTicketsGrid();
   }
@@ -1001,21 +1012,29 @@
       const timeStr = order.createdAt ? new Date(order.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
 
       // Items list HTML
-      const itemsHtml = (order.items || []).map(it => `
-        <div class="kds-item-row ${it.completed ? 'item-checked' : ''}" onclick="toggleItemCheck('${order.id}', '${it.id}', event)">
-          <div class="item-check-box">
-            <span class="material-symbols-outlined item-check-icon">check</span>
-          </div>
-          <div class="item-info">
-            <div class="item-main-line">
-              <span class="item-qty">${it.quantity}x</span>
-              <span class="item-name">${escapeHtml(it.name)}</span>
-              ${it.portion && it.portion !== 'Standart' ? `<span class="item-portion">(${escapeHtml(it.portion)})</span>` : ''}
+      const itemsHtml = (order.items || []).map(it => {
+        const isCancelled = Boolean(it.cancelled || it.quantity <= 0);
+        return `
+          <div class="kds-item-row ${it.completed ? 'item-checked' : ''} ${isCancelled ? 'item-cancelled' : ''}" 
+               ${isCancelled ? '' : `onclick="toggleItemCheck('${order.id}', '${it.id}', event)"`}
+               style="${isCancelled ? 'opacity:0.65; text-decoration:line-through; background:rgba(239,68,68,0.1); border-left:4px solid #ef4444; border-radius:6px; padding:6px 8px; margin-bottom:5px;' : ''}">
+            <div class="item-check-box" style="${isCancelled ? 'background:#fee2e2; border-color:#ef4444;' : ''}">
+              <span class="material-symbols-outlined item-check-icon" style="${isCancelled ? 'color:#ef4444; font-size:14px;' : ''}">
+                ${isCancelled ? 'close' : 'check'}
+              </span>
             </div>
-            ${it.note ? `<div class="item-kitchen-note"><span class="material-symbols-outlined" style="font-size:12px; vertical-align:middle;">assignment</span> ${escapeHtml(it.note)}</div>` : ''}
+            <div class="item-info">
+              <div class="item-main-line">
+                <span class="item-qty" style="${isCancelled ? 'color:#ef4444;' : ''}">${it.quantity}x</span>
+                <span class="item-name" style="${isCancelled ? 'color:#ef4444;' : ''}">${escapeHtml(it.name)}</span>
+                ${it.portion && it.portion !== 'Standart' ? `<span class="item-portion" style="${isCancelled ? 'color:#ef4444;' : ''}">(${escapeHtml(it.portion)})</span>` : ''}
+                ${isCancelled ? `<span style="font-size:10px; font-weight:800; color:#fff; background:#ef4444; padding:1px 6px; border-radius:4px; text-decoration:none; display:inline-block; margin-left:6px; vertical-align:middle;">❌ İPTAL EDİLDİ</span>` : ''}
+              </div>
+              ${it.note ? `<div class="item-kitchen-note"><span class="material-symbols-outlined" style="font-size:12px; vertical-align:middle;">assignment</span> ${escapeHtml(it.note)}</div>` : ''}
+            </div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
 
       // Actions Footer
       let footerHtml = '';

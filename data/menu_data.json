@@ -896,49 +896,6 @@
       "totalAmount": 150,
       "totalItems": 1
     },
-    "18": {
-      "tableId": "18",
-      "tableName": "Masa 18",
-      "openedAt": 1793475261972,
-      "updatedAt": 1793475390834,
-      "items": [
-        {
-          "id": "item_1793475261972_1601",
-          "productId": "",
-          "name": "Tombik Döner",
-          "portion": "Standart",
-          "note": "Acısız",
-          "price": 150,
-          "quantity": 1,
-          "total": 150,
-          "addedAt": 1793475261972
-        },
-        {
-          "id": "item_1793475353357_2876",
-          "productId": "",
-          "name": "Ekmek Arası Tavuk",
-          "portion": "Standart",
-          "note": "",
-          "price": 140,
-          "quantity": 1,
-          "total": 140,
-          "addedAt": 1793475353357
-        },
-        {
-          "id": "item_1793475390832_4571",
-          "productId": "",
-          "name": "Ekmek Arası Tavuk",
-          "portion": "Standart",
-          "note": "",
-          "price": 140,
-          "quantity": 1,
-          "total": 140,
-          "addedAt": 1793475390832
-        }
-      ],
-      "totalAmount": 430,
-      "totalItems": 3
-    },
     "99": {
       "tableId": "99",
       "tableName": "Masa 99",
@@ -960,25 +917,57 @@
       "totalAmount": 0,
       "totalItems": 1
     },
+    "08": {
+      "tableId": "08",
+      "tableName": "Masa 8",
+      "openedAt": 1793478318923,
+      "updatedAt": 1793478353413,
+      "items": [
+        {
+          "id": "item_1793478353413_7060",
+          "productId": "prod_7",
+          "name": "Karışık Tost",
+          "portion": "Sucuk &amp;amp; Kaşar Birlikte",
+          "note": "",
+          "price": 140,
+          "quantity": 1,
+          "total": 140,
+          "addedAt": 1793478353413
+        }
+      ],
+      "totalAmount": 140,
+      "totalItems": 1
+    },
     "01": {
       "tableId": "01",
       "tableName": "Masa 1",
-      "openedAt": 1793477472669,
-      "updatedAt": 1793477502477,
+      "openedAt": 1793478405201,
+      "updatedAt": 1793478637687,
       "items": [
         {
-          "id": "item_1793477472669_7989",
-          "productId": "prod_1793296504216",
-          "name": "Martini",
-          "portion": "200ml",
+          "id": "item_1793478405201_3889",
+          "productId": "prod_1792953406798",
+          "name": "Psikopat",
+          "portion": "200",
           "note": "",
-          "price": 500,
+          "price": 200,
           "quantity": 1,
-          "total": 500,
-          "addedAt": 1793477472669
+          "total": 200,
+          "addedAt": 1793478405201
         },
         {
-          "id": "item_1793477501059_8920",
+          "id": "item_1793478533694_6264",
+          "productId": "prod_1",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "100g Tavuk Döner / Lavaş",
+          "note": "",
+          "price": 150,
+          "quantity": 3,
+          "total": 450,
+          "addedAt": 1793478533694
+        },
+        {
+          "id": "item_1793478637687_9935",
           "productId": "prod_2",
           "name": "Et Döner Dürüm",
           "portion": "110g Yaprak Et Döner",
@@ -986,22 +975,11 @@
           "price": 240,
           "quantity": 1,
           "total": 240,
-          "addedAt": 1793477501059
-        },
-        {
-          "id": "item_1793477502477_2447",
-          "productId": "prod_3",
-          "name": "Ekmek Arası Tavuk Döner",
-          "portion": "Yarım Somun Ekmek",
-          "note": "",
-          "price": 130,
-          "quantity": 1,
-          "total": 130,
-          "addedAt": 1793477502477
+          "addedAt": 1793478637687
         }
       ],
-      "totalAmount": 870,
-      "totalItems": 3
+      "totalAmount": 890,
+      "totalItems": 5
     }
   },
   "orderHistory": [
@@ -2966,6 +2944,313 @@
   ],
   "kitchenOrders": [
     {
+      "id": "kds_1793478637688_5321",
+      "ticketNumber": "#162",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793478637688_5781",
+          "productId": "",
+          "name": "Et Döner Dürüm",
+          "portion": "110g Yaprak Et Döner",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793478637688,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793478610347_6514",
+      "ticketNumber": "#161",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793478610347_6559",
+          "productId": "",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "100g Tavuk Döner / Lavaş",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793478610347,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793478607661_6401",
+      "ticketNumber": "#160",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793478607661_1455",
+          "productId": "",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "100g Tavuk Döner / Lavaş",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793478607661,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793478589378_8267",
+      "ticketNumber": "#159",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793478589378_4638",
+          "productId": "",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "100g Tavuk Döner / Lavaş",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793478589378,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793478533696_7541",
+      "ticketNumber": "#158",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793478533696_9115",
+          "productId": "",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "100g Tavuk Döner / Lavaş",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793478533696,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793478455964_9781",
+      "ticketNumber": "#157",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793478455964_2449",
+          "productId": "",
+          "name": "Psikopat",
+          "portion": "200",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793478455964,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793478405203_7393",
+      "ticketNumber": "#156",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793478405203_7068",
+          "productId": "",
+          "name": "Psikopat",
+          "portion": "200",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793478405203,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793478380371_8416",
+      "ticketNumber": "#155",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793478380371_9883",
+          "productId": "",
+          "name": "Psikopat",
+          "portion": "200",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "cancelled",
+      "createdAt": 1793478380371,
+      "startedAt": null,
+      "completedAt": null,
+      "cancelReason": "Yanlış Ürün Girildi",
+      "cancelledAt": 1793478385800
+    },
+    {
+      "id": "kds_1793478353415_5818",
+      "ticketNumber": "#154",
+      "tableId": "08",
+      "tableName": "Masa 8",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793478353415_7260",
+          "productId": "",
+          "name": "Karışık Tost",
+          "portion": "Sucuk &amp;amp;amp; Kaşar Birlikte",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793478353415,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793478318925_5897",
+      "ticketNumber": "#153",
+      "tableId": "08",
+      "tableName": "Masa 8",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793478318925_2829",
+          "productId": "",
+          "name": "Psikopat",
+          "portion": "200",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793478318925,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793478297103_3905",
+      "ticketNumber": "#152",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793478297104_3236",
+          "productId": "",
+          "name": "Psikopat",
+          "portion": "200",
+          "quantity": 1,
+          "note": "",
+          "completed": true
+        }
+      ],
+      "note": "",
+      "status": "cancelled",
+      "createdAt": 1793478297103,
+      "startedAt": null,
+      "completedAt": null,
+      "cancelReason": "Müşteri Vazgeçti",
+      "cancelledAt": 1793478300539
+    },
+    {
+      "id": "kds_1793478274750_6657",
+      "ticketNumber": "#151",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793478274750_9249",
+          "productId": "",
+          "name": "Psikopat",
+          "portion": "200",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "cancelled",
+      "createdAt": 1793478274750,
+      "startedAt": null,
+      "completedAt": null,
+      "cancelReason": "Mutfaktan iptal edildi",
+      "cancelledAt": 1793478292574
+    },
+    {
+      "id": "kds_1793478240843_4902",
+      "ticketNumber": "#150",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793478240843_5969",
+          "productId": "",
+          "name": "Martini",
+          "portion": "200ml",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "cancelled",
+      "createdAt": 1793478240843,
+      "startedAt": null,
+      "completedAt": null,
+      "cancelReason": "Müşteri Vazgeçti",
+      "cancelledAt": 1793478245183
+    },
+    {
       "id": "kds_1793478057318_6596",
       "ticketNumber": "#149",
       "tableId": "20",
@@ -3052,10 +3337,12 @@
         }
       ],
       "note": "",
-      "status": "pending",
+      "status": "cancelled",
       "createdAt": 1793477777690,
       "startedAt": null,
-      "completedAt": null
+      "completedAt": null,
+      "cancelReason": "Müşteri Vazgeçti",
+      "cancelledAt": 1793478237092
     },
     {
       "id": "kds_1793477655800_9571",
@@ -3146,10 +3433,12 @@
         }
       ],
       "note": "",
-      "status": "pending",
+      "status": "cancelled",
       "createdAt": 1793477501061,
       "startedAt": null,
-      "completedAt": null
+      "completedAt": null,
+      "cancelReason": "Müşteri Vazgeçti",
+      "cancelledAt": 1793478237092
     },
     {
       "id": "kds_1793477472671_5912",
@@ -3169,10 +3458,12 @@
         }
       ],
       "note": "",
-      "status": "pending",
+      "status": "cancelled",
       "createdAt": 1793477472671,
       "startedAt": null,
-      "completedAt": null
+      "completedAt": null,
+      "cancelReason": "Müşteri Vazgeçti",
+      "cancelledAt": 1793478237092
     },
     {
       "id": "kds_1793475400619_5192",
@@ -3230,31 +3521,6 @@
       "completedAt": 1793475400621
     },
     {
-      "id": "kds_1793475390832_6965",
-      "ticketNumber": "#138",
-      "tableId": "18",
-      "tableName": "Masa 18",
-      "source": "garson",
-      "items": [
-        {
-          "id": "k_item_1793475390832_6425",
-          "productId": "",
-          "name": "Ekmek Arası Tavuk",
-          "portion": "Standart",
-          "quantity": 1,
-          "note": "",
-          "completed": false
-        }
-      ],
-      "note": "",
-      "status": "pending",
-      "createdAt": 1793475390832,
-      "startedAt": null,
-      "completedAt": null,
-      "isRevised": true,
-      "revisedAt": 1793475390834
-    },
-    {
       "id": "kds_1793475390821_8314",
       "ticketNumber": "#137",
       "tableId": "19",
@@ -3305,31 +3571,6 @@
       "cancelledAt": 1793475390815
     },
     {
-      "id": "kds_1793475353358_7478",
-      "ticketNumber": "#135",
-      "tableId": "18",
-      "tableName": "Masa 18",
-      "source": "garson",
-      "items": [
-        {
-          "id": "k_item_1793475353358_64",
-          "productId": "",
-          "name": "Ekmek Arası Tavuk",
-          "portion": "Standart",
-          "quantity": 1,
-          "note": "",
-          "completed": false
-        }
-      ],
-      "note": "",
-      "status": "pending",
-      "createdAt": 1793475353358,
-      "startedAt": null,
-      "completedAt": null,
-      "isRevised": true,
-      "revisedAt": 1793475353360
-    },
-    {
       "id": "kds_1793475353345_3931",
       "ticketNumber": "#134",
       "tableId": "19",
@@ -3378,31 +3619,6 @@
       "completedAt": null,
       "cancelReason": "Müşteri Masadan Ayrıldı",
       "cancelledAt": 1793475353338
-    },
-    {
-      "id": "kds_1793475261973_8415",
-      "ticketNumber": "#132",
-      "tableId": "18",
-      "tableName": "Masa 18",
-      "source": "garson",
-      "items": [
-        {
-          "id": "k_item_1793475261973_7444",
-          "productId": "",
-          "name": "Ekmek Arası Tavuk",
-          "portion": "Standart",
-          "quantity": 1,
-          "note": "",
-          "completed": false
-        }
-      ],
-      "note": "",
-      "status": "pending",
-      "createdAt": 1793475261973,
-      "startedAt": null,
-      "completedAt": null,
-      "isRevised": true,
-      "revisedAt": 1793475261976
     },
     {
       "id": "kds_1793475261961_4585",
@@ -4076,6 +4292,18 @@
   "kitchenTickets": [],
   "wasteLogs": [
     {
+      "id": "waste_1793478852270_240",
+      "tableId": "18",
+      "tableName": "Masa 18",
+      "ticketNumber": "#165",
+      "name": "Ayran",
+      "portion": "300ml",
+      "quantity": 1,
+      "price": 35,
+      "reason": "Personel Hatası / Zayi (Hazırlık Sırasında Adisyondan Silindi - Müşteri Beklemek İstemedi)",
+      "loggedAt": 1793478852270
+    },
+    {
       "id": "waste_1793475390828_855",
       "tableId": "19",
       "tableName": "Masa 19",
@@ -4113,6 +4341,210 @@
     }
   ],
   "cancellationLogs": [
+    {
+      "id": "canc_1793478852270_742",
+      "ticketNumber": "#165",
+      "tableId": "18",
+      "tableName": "Masa 18",
+      "reason": "Müşteri Beklemek İstemedi",
+      "items": [
+        {
+          "productId": "",
+          "name": "Ayran",
+          "portion": "300ml",
+          "quantity": 1,
+          "note": ""
+        }
+      ],
+      "wasPreparing": true,
+      "managerApproved": true,
+      "cancelledAt": 1793478852270
+    },
+    {
+      "id": "canc_1793478852264_628",
+      "ticketNumber": "#164",
+      "tableId": "18",
+      "tableName": "Masa 18",
+      "reason": "Adisyondan Silindi",
+      "items": [
+        {
+          "productId": "",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "Standart",
+          "quantity": 1,
+          "note": ""
+        }
+      ],
+      "wasPreparing": false,
+      "managerApproved": false,
+      "cancelledAt": 1793478852264
+    },
+    {
+      "id": "canc_1793478852247_986",
+      "ticketNumber": "#163",
+      "tableId": "18",
+      "tableName": "Masa 18",
+      "reason": "Müşteri Vazgeçti",
+      "items": [
+        {
+          "productId": "",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "Standart",
+          "quantity": 1,
+          "note": ""
+        }
+      ],
+      "wasPreparing": false,
+      "managerApproved": false,
+      "cancelledAt": 1793478852247
+    },
+    {
+      "id": "canc_1793478385800_513",
+      "ticketNumber": "#155",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "reason": "Yanlış Ürün Girildi",
+      "items": [
+        {
+          "id": "k_item_1793478380371_9883",
+          "productId": "",
+          "name": "Psikopat",
+          "portion": "200",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "wasPreparing": false,
+      "managerApproved": false,
+      "cancelledAt": 1793478385800
+    },
+    {
+      "id": "canc_1793478300539_50",
+      "ticketNumber": "#152",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "reason": "Müşteri Vazgeçti",
+      "items": [
+        {
+          "id": "k_item_1793478297104_3236",
+          "productId": "",
+          "name": "Psikopat",
+          "portion": "200",
+          "quantity": 1,
+          "note": "",
+          "completed": true
+        }
+      ],
+      "wasPreparing": false,
+      "managerApproved": false,
+      "cancelledAt": 1793478300539
+    },
+    {
+      "id": "canc_1793478279882_336",
+      "ticketNumber": "#151",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "reason": "Müşteri Vazgeçti",
+      "items": [
+        {
+          "id": "k_item_1793478274750_9249",
+          "productId": "",
+          "name": "Psikopat",
+          "portion": "200",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "wasPreparing": false,
+      "managerApproved": false,
+      "cancelledAt": 1793478279882
+    },
+    {
+      "id": "canc_1793478245183_379",
+      "ticketNumber": "#150",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "reason": "Müşteri Vazgeçti",
+      "items": [
+        {
+          "id": "k_item_1793478240843_5969",
+          "productId": "",
+          "name": "Martini",
+          "portion": "200ml",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "wasPreparing": false,
+      "managerApproved": false,
+      "cancelledAt": 1793478245183
+    },
+    {
+      "id": "canc_1793478237092_559",
+      "ticketNumber": "#141",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "reason": "Müşteri Vazgeçti",
+      "items": [
+        {
+          "id": "k_item_1793477472671_7024",
+          "productId": "",
+          "name": "Martini",
+          "portion": "200ml",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "wasPreparing": false,
+      "managerApproved": false,
+      "cancelledAt": 1793478237092
+    },
+    {
+      "id": "canc_1793478237092_785",
+      "ticketNumber": "#142",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "reason": "Müşteri Vazgeçti",
+      "items": [
+        {
+          "id": "k_item_1793477501061_8395",
+          "productId": "",
+          "name": "Et Döner Dürüm",
+          "portion": "110g Yaprak Et Döner",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "wasPreparing": false,
+      "managerApproved": false,
+      "cancelledAt": 1793478237092
+    },
+    {
+      "id": "canc_1793478237092_159",
+      "ticketNumber": "#146",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "reason": "Müşteri Vazgeçti",
+      "items": [
+        {
+          "id": "k_item_1793477777690_3598",
+          "productId": "",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "1 posiyon",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "wasPreparing": false,
+      "managerApproved": false,
+      "cancelledAt": 1793478237092
+    },
     {
       "id": "canc_1793475390828_734",
       "ticketNumber": "#137",

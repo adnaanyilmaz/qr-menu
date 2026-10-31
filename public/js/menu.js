@@ -443,51 +443,37 @@ function openProductModalById(prodId) {
   // Adapt Portion Labels & Dynamic Portions
   const portionGrid = document.querySelector('.portion-grid');
   if (portionGrid) {
-    let portionsList = [];
     if (product.portions && Array.isArray(product.portions) && product.portions.length > 0) {
-      portionsList = product.portions.map(pt => ({
-        name: pt.name,
-        price: parseFloat(pt.price) || (parseFloat(product.price) || 0)
-      }));
+      dom.modalPortionLabel.textContent = product.type === 'drink' ? 'Boyut Seçenekleri' : 'Porsiyon Seçenekleri';
+      portionGrid.innerHTML = product.portions.map((pt, idx) => `
+        <button class="portion-btn ${idx === 0 ? 'active' : ''}" type="button" data-portion-name="${escapeHtml(pt.name)}" data-portion-price="${pt.price}">
+          ${escapeHtml(pt.name)} (${pt.price} ${product.currency || menuState.settings.currency || '₺'})
+        </button>
+      `).join('');
+      // Set active default price and portion text
+      dom.modalProductPrice.textContent = `${product.portions[0].price} ${product.currency || menuState.settings.currency || '₺'}`;
+      dom.modalProductPortion.textContent = product.portions[0].name;
     } else {
-      // Proportional defaults if admin has not configured specific portions
-      const base = parseFloat(product.price) || 0;
       if (product.type === 'drink') {
-        const pDesc = (product.portion || '').toLowerCase();
-        if (pDesc.includes('kutu') || pDesc.includes('şişe') || pDesc.includes('330') || pDesc.includes('250')) {
-          portionsList = [{ name: product.portion || 'Standart', price: base }];
-        } else {
-          portionsList = [
-            { name: 'Küçük Boy', price: Math.max(10, Math.round(base * 0.85 / 5) * 5) },
-            { name: 'Orta Boy', price: base },
-            { name: 'Büyük Boy', price: Math.round(base * 1.35 / 5) * 5 }
-          ];
-        }
+        dom.modalPortionLabel.textContent = 'Boyut Seçenekleri';
+        const drinkLabels = ['Küçük', 'Orta', 'Büyük'];
+        portionGrid.innerHTML = drinkLabels.map((lbl, idx) => `
+          <button class="portion-btn ${idx === 0 ? 'active' : ''}" type="button" data-portion-name="${lbl}" data-portion-price="${product.price}">
+            ${lbl}
+          </button>
+        `).join('');
       } else {
-        portionsList = [
-          { name: 'Standart', price: base },
-          { name: '1.5 Porsiyon', price: Math.round(base * 1.45 / 5) * 5 },
-          { name: 'Duble', price: Math.round(base * 1.9 / 5) * 5 }
-        ];
+        dom.modalPortionLabel.textContent = 'Porsiyon Seçenekleri';
+        const foodLabels = ['Standart', '1.5 Porsiyon', 'Duble'];
+        portionGrid.innerHTML = foodLabels.map((lbl, idx) => `
+          <button class="portion-btn ${idx === 0 ? 'active' : ''}" type="button" data-portion-name="${lbl}" data-portion-price="${product.price}">
+            ${lbl}
+          </button>
+        `).join('');
       }
+      dom.modalProductPrice.textContent = `${product.price} ${product.currency || menuState.settings.currency || '₺'}`;
+      dom.modalProductPortion.textContent = product.portion || 'Standart Servis';
     }
-
-    const initialPortion = portionsList[0];
-    currentSelectedProduct._effectivePrice = initialPortion.price;
-    currentSelectedProduct._effectivePortion = initialPortion.name;
-
-    dom.modalProductPrice.textContent = `${initialPortion.price} ${product.currency || menuState.settings.currency || '₺'}`;
-    dom.modalProductPortion.textContent = initialPortion.name;
-    dom.modalPortionLabel.textContent = product.type === 'drink' ? 'Boyut / Porsiyon Seçenekleri' : 'Porsiyon Seçenekleri';
-
-    portionGrid.innerHTML = portionsList.map((pt, idx) => `
-      <button class="portion-btn ${idx === 0 ? 'active' : ''}" type="button" 
-              data-portion-name="${escapeHtml(pt.name)}" 
-              data-portion-price="${pt.price}">
-        <span class="portion-btn-name">${escapeHtml(pt.name)}</span>
-        <span class="portion-btn-price">${pt.price} ${product.currency || menuState.settings.currency || '₺'}</span>
-      </button>
-    `).join('');
 
     // Attach click listeners to portion buttons
     const btns = portionGrid.querySelectorAll('.portion-btn');
@@ -495,19 +481,12 @@ function openProductModalById(prodId) {
       btn.addEventListener('click', () => {
         btns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        const price = parseFloat(btn.getAttribute('data-portion-price'));
+        const price = btn.getAttribute('data-portion-price');
         const name = btn.getAttribute('data-portion-name');
-        
-        if (!isNaN(price)) {
-          currentSelectedProduct._effectivePrice = price;
-          // Smooth pulse animation on price element
-          dom.modalProductPrice.classList.remove('price-bump');
-          void dom.modalProductPrice.offsetWidth; // reflow
-          dom.modalProductPrice.classList.add('price-bump');
+        if (price) {
           dom.modalProductPrice.textContent = `${price} ${product.currency || menuState.settings.currency || '₺'}`;
         }
         if (name) {
-          currentSelectedProduct._effectivePortion = name;
           dom.modalProductPortion.textContent = name;
         }
       });
@@ -565,9 +544,9 @@ function openOrderConfirmModal() {
   const table = menuState.currentTable || '04';
   const currency = menuState.settings.currency || '₺';
   const selectedPortion = document.querySelector('.portion-grid .portion-btn.active');
+  const portionText = selectedPortion ? (selectedPortion.getAttribute('data-portion-name') || selectedPortion.textContent.trim()) : 'Standart Porsiyon';
   const portionPriceAttr = selectedPortion ? selectedPortion.getAttribute('data-portion-price') : null;
-  const portionText = selectedPortion ? (selectedPortion.getAttribute('data-portion-name') || selectedPortion.querySelector('.portion-btn-name')?.textContent.trim() || 'Standart') : (currentSelectedProduct._effectivePortion || 'Standart');
-  const effectivePrice = portionPriceAttr ? parseFloat(portionPriceAttr) : ((currentSelectedProduct._effectivePrice !== undefined) ? currentSelectedProduct._effectivePrice : (parseFloat(currentSelectedProduct.price) || 0));
+  const effectivePrice = portionPriceAttr ? parseFloat(portionPriceAttr) : (parseFloat(currentSelectedProduct.price) || 0);
 
   currentSelectedProduct._effectivePrice = effectivePrice;
   currentSelectedProduct._effectivePortion = portionText;
@@ -795,10 +774,10 @@ async function confirmAndSendOrder() {
     if (drinkNames.length > 0) {
       const drinksStr = drinkNames.join(', ');
       note = `${currentSelectedProduct.name}${portionText ? ' (' + portionText + ')' : ''} + İçecek: ${drinksStr} - Toplam: ${totalOrderPrice} ${currency}`;
-      toastMsg = `Masa ${table} için "${currentSelectedProduct.name} (${portionText})" ve "${drinksStr}" siparişiniz mutfağa iletildi!`;
+      toastMsg = `Masa ${table} için "${currentSelectedProduct.name}" ve "${drinksStr}" siparişiniz mutfağa iletildi!`;
     } else {
-      note = `${currentSelectedProduct.name}${portionText ? ' (' + portionText + ')' : ''} - ${effectiveBasePrice} ${currency}`;
-      toastMsg = `Masa ${table} için "${currentSelectedProduct.name} (${portionText})" siparişiniz mutfağa iletildi!`;
+      note = `${currentSelectedProduct.name}${portionText ? ' (' + portionText + ')' : ''} - ${currentSelectedProduct.price} ${currency}`;
+      toastMsg = `Masa ${table} için "${currentSelectedProduct.name}" siparişiniz mutfağa iletildi!`;
     }
 
     const res = await fetch('/api/call-waiter', {

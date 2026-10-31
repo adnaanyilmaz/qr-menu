@@ -75,12 +75,18 @@ async function checkAuth() {
 
 async function handleLogin(e) {
   if (e) e.preventDefault();
+  const usernameInput = document.getElementById('login-username');
   const pinInput = document.getElementById('login-pin');
   const errorMsg = document.getElementById('login-error');
+  const username = usernameInput ? usernameInput.value.trim() : 'admin';
   const pin = pinInput ? pinInput.value.trim() : '';
 
+  if (!username) {
+    if (errorMsg) errorMsg.textContent = 'Lütfen kullanıcı adınızı girin.';
+    return;
+  }
   if (!pin) {
-    if (errorMsg) errorMsg.textContent = 'Lütfen PIN veya şifrenizi girin.';
+    if (errorMsg) errorMsg.textContent = 'Lütfen şifrenizi girin.';
     return;
   }
 
@@ -88,7 +94,7 @@ async function handleLogin(e) {
     const res = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin: pin, password: pin })
+      body: JSON.stringify({ username: username, pin: pin, password: pin })
     });
 
     const data = await res.json();
@@ -101,7 +107,7 @@ async function handleLogin(e) {
       startNotificationPolling();
       showAdminToast('Giriş başarılı!');
     } else {
-      if (errorMsg) errorMsg.textContent = data.message || 'Geçersiz PIN veya şifre!';
+      if (errorMsg) errorMsg.textContent = data.message || 'Geçersiz kullanıcı adı veya şifre!';
     }
   } catch (err) {
     if (errorMsg) errorMsg.textContent = 'Sunucuya bağlanılamadı. Lütfen sunucunun çalıştığından emin olun.';
@@ -207,11 +213,28 @@ function switchTab(tabId) {
 
 // Update Topbar and Branding
 function updateBrandUI() {
-  const s = adminData.settings;
+  const s = adminData.settings || {};
   const brandTitle = document.getElementById('sidebar-brand-name');
   const brandLogo = document.getElementById('sidebar-logo');
+  const loginLogo = document.getElementById('login-logo');
+
   if (brandTitle && s.restaurantName) brandTitle.textContent = s.restaurantName;
-  if (brandLogo && s.logoInitials) brandLogo.textContent = s.logoInitials;
+
+  if (brandLogo) {
+    if (s.logoImage) {
+      brandLogo.innerHTML = `<img src="${s.logoImage}" style="width:100%; height:100%; object-fit:contain; border-radius:8px;" alt="Logo" />`;
+    } else if (s.logoInitials) {
+      brandLogo.textContent = s.logoInitials;
+    }
+  }
+
+  if (loginLogo) {
+    if (s.logoImage) {
+      loginLogo.innerHTML = `<img src="${s.logoImage}" style="width:100%; height:100%; object-fit:contain; border-radius:12px;" alt="Logo" />`;
+    } else if (s.logoInitials) {
+      loginLogo.textContent = s.logoInitials;
+    }
+  }
 }
 
 // ==========================================================================
@@ -909,6 +932,10 @@ function openAddProductModal() {
   document.getElementById('product-form').reset();
   document.getElementById('form-prod-instock').checked = true;
   document.getElementById('form-prod-featured').checked = false;
+  const recEl = document.getElementById('form-prod-recommendation');
+  if (recEl) recEl.checked = false;
+  const portionsEl = document.getElementById('form-prod-portions');
+  if (portionsEl) portionsEl.value = '';
   const preview = document.getElementById('img-upload-preview');
   if (preview) preview.style.display = 'none';
 
@@ -936,6 +963,18 @@ function openEditProductModal(id) {
   document.getElementById('form-prod-img-url').value = p.img || '';
   document.getElementById('form-prod-instock').checked = p.inStock !== false;
   document.getElementById('form-prod-featured').checked = Boolean(p.featured);
+
+  const recEl = document.getElementById('form-prod-recommendation');
+  if (recEl) recEl.checked = Boolean(p.isRecommendation);
+
+  const portionsEl = document.getElementById('form-prod-portions');
+  if (portionsEl) {
+    if (p.portions && Array.isArray(p.portions) && p.portions.length > 0) {
+      portionsEl.value = p.portions.map(pt => `${pt.name}: ${pt.price}`).join(', ');
+    } else {
+      portionsEl.value = '';
+    }
+  }
 
   const preview = document.getElementById('img-upload-preview');
   if (preview) {
@@ -1015,9 +1054,28 @@ async function saveProductForm(e) {
     return;
   }
 
+  // Parse multi-portions if provided (e.g. "Standart: 150, 1.5 Porsiyon: 210, Duble: 270")
+  const portionsInput = document.getElementById('form-prod-portions')?.value.trim() || '';
+  let portions = [];
+  if (portionsInput) {
+    portionsInput.split(',').forEach(part => {
+      const seg = part.split(':');
+      if (seg.length === 2) {
+        const pName = seg[0].trim();
+        const pPrice = parseFloat(seg[1].replace('₺', '').replace(/,/g, '.').trim());
+        if (pName && !isNaN(pPrice)) {
+          portions.push({ name: pName, price: pPrice });
+        }
+      }
+    });
+  }
+
+  const isRecommendation = Boolean(document.getElementById('form-prod-recommendation')?.checked);
+
   const payload = {
     name, category, price: cleanPrice, portion, type, badge,
     allergens, desc, img, inStock, featured,
+    portions, isRecommendation,
     currency: adminData.settings.currency || '₺'
   };
 
@@ -1111,22 +1169,41 @@ function renderCategoriesList() {
   const container = document.getElementById('categories-list-container');
   if (!container) return;
 
+  // Sort by order ascending
+  adminData.categories.sort((a, b) => (a.order || 999) - (b.order || 999));
+
   let html = '';
-  adminData.categories.forEach(cat => {
+  adminData.categories.forEach((cat, idx) => {
     const prodCount = adminData.products.filter(p => p.category === cat.id).length;
+    const isActive = cat.active !== false;
 
     html += `
-      <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; display:flex; align-items:center; justify-content:space-between; box-shadow:var(--shadow-sm);">
+      <div style="background:#fff; border:1px solid ${isActive ? '#e2e8f0' : '#fecaca'}; opacity:${isActive ? '1' : '0.75'}; border-radius:12px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; box-shadow:var(--shadow-sm); margin-bottom:8px;">
         <div style="display:flex; align-items:center; gap:12px;">
+          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:#f1f5f9; border-radius:6px; padding:4px 8px; min-width:32px;">
+            <span style="font-size:10px; font-weight:800; color:#64748b;">SIRA</span>
+            <span style="font-size:14px; font-weight:800; color:#0f172a;">${cat.order || (idx + 1)}</span>
+          </div>
           <div style="width:38px; height:38px; border-radius:8px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#b91c1c;">
             <span class="material-symbols-outlined">${escapeHtml(cat.icon || 'restaurant')}</span>
           </div>
           <div>
-            <h4 style="font-size:14px; font-weight:800; color:#0f172a;">${escapeHtml(cat.name)}</h4>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <h4 style="font-size:14px; font-weight:800; color:#0f172a; margin:0;">${escapeHtml(cat.name)}</h4>
+              <button type="button" onclick="toggleCategoryActive('${escapeHtml(cat.id)}')" style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:12px; border:none; cursor:pointer; background:${isActive ? '#dcfce7; color:#15803d;' : '#fee2e2; color:#b91c1c;'}">
+                ${isActive ? '✓ Aktif' : '✕ Pasif'}
+              </button>
+            </div>
             <span style="font-size:11.5px; color:#64748b;">${prodCount} Ürün • Kod: ${escapeHtml(cat.id)}</span>
           </div>
         </div>
-        <div class="action-btns">
+        <div class="action-btns" style="display:flex; align-items:center; gap:4px;">
+          <button class="icon-action-btn" onclick="moveCategoryUp('${escapeHtml(cat.id)}')" title="Yukarı Taşı" ${idx === 0 ? 'disabled style="opacity:0.3;"' : ''}>
+            <span class="material-symbols-outlined" style="font-size:18px;">arrow_upward</span>
+          </button>
+          <button class="icon-action-btn" onclick="moveCategoryDown('${escapeHtml(cat.id)}')" title="Aşağı Taşı" ${idx === adminData.categories.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>
+            <span class="material-symbols-outlined" style="font-size:18px;">arrow_downward</span>
+          </button>
           <button class="icon-action-btn" onclick="openEditCategoryModal('${escapeHtml(cat.id)}')" title="Düzenle">
             <span class="material-symbols-outlined" style="font-size:17px;">edit</span>
           </button>
@@ -1145,6 +1222,10 @@ function openAddCategoryModal() {
   adminData.editingCategoryId = null;
   document.getElementById('modal-cat-form-title').textContent = 'Yeni Kategori Ekle';
   document.getElementById('form-cat-name').value = '';
+  const orderEl = document.getElementById('form-cat-order');
+  if (orderEl) orderEl.value = adminData.categories.length + 1;
+  const activeEl = document.getElementById('form-cat-active');
+  if (activeEl) activeEl.checked = true;
   openAdminModal('category-modal');
 }
 
@@ -1155,6 +1236,10 @@ function openEditCategoryModal(id) {
   adminData.editingCategoryId = id;
   document.getElementById('modal-cat-form-title').textContent = 'Kategoriyi Düzenle: ' + cat.name;
   document.getElementById('form-cat-name').value = cat.name;
+  const orderEl = document.getElementById('form-cat-order');
+  if (orderEl) orderEl.value = cat.order || 1;
+  const activeEl = document.getElementById('form-cat-active');
+  if (activeEl) activeEl.checked = cat.active !== false;
   openAdminModal('category-modal');
 }
 
@@ -1165,6 +1250,8 @@ async function saveCategoryForm(e) {
     alert('Lütfen kategori adını giriniz.');
     return;
   }
+  const order = parseInt(document.getElementById('form-cat-order')?.value, 10) || (adminData.categories.length + 1);
+  const active = Boolean(document.getElementById('form-cat-active')?.checked);
 
   try {
     let res, result;
@@ -1172,19 +1259,23 @@ async function saveCategoryForm(e) {
       res = await fetchWithAuth(`/api/categories/${adminData.editingCategoryId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
+        body: JSON.stringify({ name, order, active })
       });
       result = await res.json();
       if (result.success) {
         const c = adminData.categories.find(x => x.id === adminData.editingCategoryId);
-        if (c) c.name = name;
+        if (c) {
+          c.name = name;
+          c.order = order;
+          c.active = active;
+        }
         showAdminToast('Kategori güncellendi.');
       }
     } else {
       res = await fetchWithAuth('/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
+        body: JSON.stringify({ name, order, active })
       });
       result = await res.json();
       if (result.success) {
@@ -1199,6 +1290,56 @@ async function saveCategoryForm(e) {
     renderDashboard();
   } catch (err) {
     showAdminToast('Kategori kaydedilemedi.');
+  }
+}
+
+async function toggleCategoryActive(id) {
+  try {
+    const res = await fetchWithAuth(`/api/categories/${id}/toggle-active`, { method: 'PATCH' });
+    const result = await res.json();
+    if (result.success) {
+      const c = adminData.categories.find(x => x.id === id);
+      if (c) c.active = result.active;
+      renderCategoriesList();
+      populateCategoryDropdowns();
+      showAdminToast(result.message);
+    }
+  } catch (e) {
+    showAdminToast('Kategori durumu güncellenemedi.');
+  }
+}
+
+async function moveCategoryUp(id) {
+  const idx = adminData.categories.findIndex(c => c.id === id);
+  if (idx <= 0) return;
+  const temp = adminData.categories[idx];
+  adminData.categories[idx] = adminData.categories[idx - 1];
+  adminData.categories[idx - 1] = temp;
+  adminData.categories.forEach((c, i) => c.order = i + 1);
+  await saveCategoriesOrder();
+}
+
+async function moveCategoryDown(id) {
+  const idx = adminData.categories.findIndex(c => c.id === id);
+  if (idx === -1 || idx >= adminData.categories.length - 1) return;
+  const temp = adminData.categories[idx];
+  adminData.categories[idx] = adminData.categories[idx + 1];
+  adminData.categories[idx + 1] = temp;
+  adminData.categories.forEach((c, i) => c.order = i + 1);
+  await saveCategoriesOrder();
+}
+
+async function saveCategoriesOrder() {
+  renderCategoriesList();
+  try {
+    await fetchWithAuth('/api/categories/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderedIds: adminData.categories.map(c => c.id) })
+    });
+    showAdminToast('Kategori sıralaması güncellendi.');
+  } catch (e) {
+    showAdminToast('Sıralama sunucuya kaydedilemedi.');
   }
 }
 
@@ -1362,11 +1503,56 @@ function populateSettingsForm() {
   getSet('set-waiter-pin', s.waiterPin || '1234');
   getSet('set-cashier-pin', s.cashierPin || '1234');
   getSet('set-kitchen-pin', s.kitchenPin || '1234');
+  getSet('set-admin-username', s.adminUsername || 'admin');
+
+  const logoImgInput = document.getElementById('set-logo-image');
+  if (logoImgInput) logoImgInput.value = s.logoImage || '';
+  const logoPreview = document.getElementById('settings-logo-preview');
+  if (logoPreview) {
+    if (s.logoImage) {
+      logoPreview.innerHTML = `<img src="${s.logoImage}" style="width:100%; height:100%; object-fit:contain; border-radius:8px;" alt="Logo" />`;
+    } else {
+      logoPreview.innerHTML = `<span class="material-symbols-outlined" style="color:#94a3b8; font-size:28px;">image</span>`;
+    }
+  }
 
   const pinEl = document.getElementById('set-admin-pin');
   if (pinEl) pinEl.value = '';
   const passEl = document.getElementById('set-admin-password');
   if (passEl) passEl.value = '';
+}
+
+async function handleLogoUpload(file) {
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    showAdminToast('Hata: Logo boyutu en fazla 5 MB olabilir.');
+    return;
+  }
+  const formData = new FormData();
+  formData.append('image', file);
+  showAdminToast('Logo yükleniyor...');
+  try {
+    const res = await fetchWithAuth('/api/admin/upload-logo', {
+      method: 'POST',
+      body: formData
+    });
+    const result = await res.json();
+    if (result.success && result.url) {
+      const hiddenInput = document.getElementById('set-logo-image');
+      if (hiddenInput) hiddenInput.value = result.url;
+      const preview = document.getElementById('settings-logo-preview');
+      if (preview) {
+        preview.innerHTML = `<img src="${result.url}" style="width:100%; height:100%; object-fit:contain; border-radius:8px;" alt="Logo" />`;
+      }
+      adminData.settings.logoImage = result.url;
+      updateBrandUI();
+      showAdminToast('Logo başarıyla yüklendi!');
+    } else {
+      showAdminToast(result.message || 'Logo yüklenemedi.');
+    }
+  } catch (err) {
+    showAdminToast('Logo yüklenirken hata oluştu.');
+  }
 }
 
 async function saveSettings(e) {
@@ -1387,8 +1573,12 @@ async function saveSettings(e) {
     instagramHandle: document.getElementById('set-instagram')?.value.trim() || '',
     currency: document.getElementById('set-currency')?.value.trim() || '₺',
     tableCount: parseInt(document.getElementById('set-table-count')?.value, 10) || 20,
-    baseUrl: document.getElementById('set-base-url')?.value.trim().replace(/\/+$/, '') || ''
+    baseUrl: document.getElementById('set-base-url')?.value.trim().replace(/\/+$/, '') || '',
+    logoImage: document.getElementById('set-logo-image')?.value.trim() || ''
   };
+
+  const adminUsername = document.getElementById('set-admin-username')?.value.trim();
+  if (adminUsername) payload.adminUsername = adminUsername;
 
   const waiterPin = document.getElementById('set-waiter-pin')?.value.trim();
   if (waiterPin) payload.waiterPin = waiterPin;
@@ -1678,8 +1868,9 @@ function renderAdminReportsTable() {
 }
 
 function exportSalesCsv() {
-  const token = adminData.token || localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token') || '';
-  const url = `/api/admin/reports/export-csv?token=${encodeURIComponent(token)}`;
+  const token = sessionStorage.getItem('alibaba_admin_token') || adminData.token || '';
+  const range = (adminReportsState && adminReportsState.range) ? adminReportsState.range : 'all';
+  const url = `/api/admin/reports/export-csv?token=${encodeURIComponent(token)}&range=${encodeURIComponent(range)}`;
   window.open(url, '_blank');
   showAdminToast('Excel / CSV satış raporu indiriliyor...');
 }
@@ -1688,3 +1879,7 @@ window.setAdminReportRange = setAdminReportRange;
 window.filterAdminReports = filterAdminReports;
 window.exportSalesCsv = exportSalesCsv;
 window.fetchDashboardStats = fetchDashboardStats;
+window.handleLogoUpload = handleLogoUpload;
+window.moveCategoryUp = moveCategoryUp;
+window.moveCategoryDown = moveCategoryDown;
+window.toggleCategoryActive = toggleCategoryActive;

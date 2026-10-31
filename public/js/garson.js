@@ -337,6 +337,8 @@ async function loadState() {
       const d = json.data;
       state.restaurantName = d.restaurantName || state.restaurantName;
       state.currency = d.currency || '₺';
+      state.logoImage = d.logoImage || '';
+      state.logoInitials = d.logoInitials || 'AB';
       state.tableCount = d.tableCount || 20;
       state.tables = d.tables || [];
       state.adisyons = d.adisyons || {};
@@ -443,6 +445,16 @@ function initSSE() {
 // 1. Header Rendering
 function renderHeader() {
   dom.headerRestaurantName.textContent = state.restaurantName;
+
+  const brandLogos = document.querySelectorAll('.brand-logo, .pin-logo');
+  if (state.logoImage) {
+    brandLogos.forEach(el => {
+      el.innerHTML = `<img src="${state.logoImage}" style="width:100%; height:100%; object-fit:contain; border-radius:8px;" alt="Logo"/>`;
+    });
+  } else if (state.logoInitials) {
+    brandLogos.forEach(el => el.textContent = state.logoInitials);
+  }
+
   const currentTableNum = parseInt(state.selectedTableId, 10);
   dom.headerTableName.textContent = `Masa ${currentTableNum}`;
   dom.catalogCurrentTableName.textContent = `Masa ${currentTableNum}`;
@@ -786,33 +798,49 @@ function renderAdisyon() {
   dom.adisyonTotalCount.textContent = `${adisyon.totalItems || 0} Adet`;
   dom.adisyonTotalPrice.textContent = formatMoney(adisyon.totalAmount || 0);
 
-  dom.adisyonItemsList.innerHTML = items.map(item => `
-    <div class="adisyon-item-row">
-      <div class="item-row-top">
-        <div class="item-info">
-          <div class="item-name">${escapeHtml(item.name)}</div>
-          <div class="item-portion">${escapeHtml(item.portion || 'Standart')}</div>
-          ${item.note ? `<div class="item-note-badge">Not: ${escapeHtml(item.note)}</div>` : ''}
-        </div>
-        <button type="button" class="btn-remove-item" onclick="removeItem('${item.id}')" title="Ürünü Sil">
-          <span class="material-symbols-outlined" style="font-size:18px;">delete</span>
-        </button>
-      </div>
+  // Default selected item to last item if not selected
+  if (!state.selectedItemId || !items.some(it => it.id === state.selectedItemId)) {
+    state.selectedItemId = items.length > 0 ? items[items.length - 1].id : null;
+  }
 
-      <div class="item-row-bottom">
-        <div class="qty-stepper">
-          <button type="button" class="stepper-btn" onclick="updateItemDelta('${item.id}', -1)">-</button>
-          <span class="stepper-qty">${item.quantity}</span>
-          <button type="button" class="stepper-btn" onclick="updateItemDelta('${item.id}', 1)">+</button>
+  dom.adisyonItemsList.innerHTML = items.map(item => {
+    const isSelected = item.id === state.selectedItemId;
+    return `
+      <div class="adisyon-item-row ${isSelected ? 'selected-item' : ''}" onclick="selectAdisyonItem('${item.id}', event)" style="cursor:pointer;">
+        <div class="item-row-top">
+          <div class="item-info">
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <span class="item-name">${escapeHtml(item.name)}</span>
+              ${isSelected ? `<span class="item-selected-badge"><span class="material-symbols-outlined" style="font-size:12px;">check_circle</span> Seçili (Not Buraya)</span>` : ''}
+            </div>
+            <div class="item-portion">${escapeHtml(item.portion || 'Standart')}</div>
+            ${item.note ? `<div class="item-note-badge">Not: ${escapeHtml(item.note)}</div>` : ''}
+          </div>
+          <div style="display:flex; align-items:center; gap:4px;">
+            <button type="button" class="btn-icon" style="color:#f59e0b; width:28px; height:28px;" onclick="openReviseModal('${item.id}', event)" title="Ürünü Değiştir / Revize Et">
+              <span class="material-symbols-outlined" style="font-size:16px;">edit_note</span>
+            </button>
+            <button type="button" class="btn-remove-item" onclick="removeItem('${item.id}', event)" title="Ürünü Sil">
+              <span class="material-symbols-outlined" style="font-size:18px;">delete</span>
+            </button>
+          </div>
         </div>
 
-        <div class="item-pricing">
-          <span style="font-size:11px; color:var(--text-dim);">${formatMoney(item.price)} × ${item.quantity}</span>
-          <span class="item-total-price">${formatMoney(item.total || 0)}</span>
+        <div class="item-row-bottom">
+          <div class="qty-stepper">
+            <button type="button" class="stepper-btn" onclick="updateItemDelta('${item.id}', -1, event)">-</button>
+            <span class="stepper-qty">${item.quantity}</span>
+            <button type="button" class="stepper-btn" onclick="updateItemDelta('${item.id}', 1, event)">+</button>
+          </div>
+
+          <div class="item-pricing">
+            <span style="font-size:11px; color:var(--text-dim);">${formatMoney(item.price)} × ${item.quantity}</span>
+            <span class="item-total-price">${formatMoney(item.total || 0)}</span>
+          </div>
         </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 // 6. Calls Drawer Rendering (BEKLEYEN ÇAĞRILARI GÖRME & KAPATMA)
@@ -961,7 +989,8 @@ async function quickAddItem(productId, customNote = '', event = null) {
 }
 
 // Adisyon Miktar Değiştirme (+1 / -1)
-async function updateItemDelta(itemId, delta) {
+async function updateItemDelta(itemId, delta, event) {
+  if (event) event.stopPropagation();
   playTapChime();
   const tableId = normalizeTableId(state.selectedTableId);
 
@@ -985,7 +1014,8 @@ async function updateItemDelta(itemId, delta) {
 }
 
 // Adisyondan Ürün Silme
-async function removeItem(itemId) {
+async function removeItem(itemId, event) {
+  if (event) event.stopPropagation();
   playTapChime();
   const tableId = normalizeTableId(state.selectedTableId);
 
@@ -997,6 +1027,9 @@ async function removeItem(itemId) {
     const json = await res.json();
     if (json.success && json.data) {
       state.adisyons[tableId] = json.data;
+      if (state.selectedItemId === itemId) {
+        state.selectedItemId = null;
+      }
       renderHeader();
       renderTables();
       renderAdisyon();
@@ -1008,7 +1041,16 @@ async function removeItem(itemId) {
   }
 }
 
-// Hızlı Not Ekleme Çipi
+// Select Item in Adisyon for Targeted Notes and Revisions
+function selectAdisyonItem(itemId, event) {
+  if (event && event.target && event.target.closest('button')) {
+    return;
+  }
+  state.selectedItemId = itemId;
+  renderAdisyon();
+}
+
+// Hızlı Not Ekleme Çipi (Seçili ürüne ekler)
 function applyQuickNote(note) {
   const normId = normalizeTableId(state.selectedTableId);
   const adisyon = state.adisyons[normId];
@@ -1016,11 +1058,20 @@ function applyQuickNote(note) {
     showToast('Önce adisyona bir ürün ekleyin.', 'error');
     return;
   }
-  // Attach note to the most recently added item
-  const lastItem = adisyon.items[adisyon.items.length - 1];
-  const combinedNote = lastItem.note ? `${lastItem.note}, ${note}` : note;
 
-  fetch(`/api/garson/tables/${normId}/items/${lastItem.id}`, {
+  // Requirement 7: Attach note to selected item or fallback to last item
+  let targetItem = null;
+  if (state.selectedItemId) {
+    targetItem = adisyon.items.find(it => it.id === state.selectedItemId);
+  }
+  if (!targetItem) {
+    targetItem = adisyon.items[adisyon.items.length - 1];
+    state.selectedItemId = targetItem.id;
+  }
+
+  const combinedNote = targetItem.note ? `${targetItem.note}, ${note}` : note;
+
+  fetch(`/api/garson/tables/${normId}/items/${targetItem.id}`, {
     method: 'PATCH',
     headers: getAuthHeaders(),
     body: JSON.stringify({ note: combinedNote })
@@ -1028,7 +1079,7 @@ function applyQuickNote(note) {
     if (json.success && json.data) {
       state.adisyons[normId] = json.data;
       renderAdisyon();
-      showToast(`Not eklendi: ${note}`, 'success');
+      showToast(`"${targetItem.name}" için not eklendi: ${note}`, 'success');
     }
   });
 }
@@ -1376,31 +1427,155 @@ async function submitPayment() {
   }
 }
 
-// Adisyon İptal Et
-async function clearAdisyonWithConfirm() {
+// ==================== SİPARİŞ İPTALİ & MÜDÜR PIN YÖNETİMİ ====================
+function openCancelOrderModal() {
   const normId = normalizeTableId(state.selectedTableId);
   const adisyon = state.adisyons[normId];
-  if (!adisyon || !adisyon.items || adisyon.items.length === 0) return;
-
-  if (!confirm(`Masa ${parseInt(normId, 10)} adisyonunu tamamen iptal etmek ve masayı boşaltmak istiyor musunuz?`)) {
+  if (!adisyon || !adisyon.items || adisyon.items.length === 0) {
+    showToast('İptal edilecek açık adisyon bulunmuyor.', 'error');
     return;
   }
 
+  const tableSub = document.getElementById('cancel-modal-table-sub');
+  if (tableSub) tableSub.textContent = `Masa ${parseInt(normId, 10)} Adisyonu (${adisyon.totalItems} Ürün, ${formatMoney(adisyon.totalAmount || 0)})`;
+
+  const pinGroup = document.getElementById('cancel-manager-pin-group');
+  if (pinGroup) pinGroup.style.display = 'none';
+
+  const pinInput = document.getElementById('cancel-manager-pin');
+  if (pinInput) pinInput.value = '';
+
+  const errEl = document.getElementById('cancel-error-msg');
+  if (errEl) errEl.textContent = '';
+
+  const modal = document.getElementById('cancel-order-modal');
+  if (modal) modal.classList.add('active');
+}
+
+function closeCancelOrderModal() {
+  const modal = document.getElementById('cancel-order-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+async function submitCancelOrder() {
+  const normId = normalizeTableId(state.selectedTableId);
+  const reasonSelect = document.getElementById('cancel-reason-select');
+  const reason = reasonSelect ? reasonSelect.value : 'Müşteri Vazgeçti';
+  const managerPinInput = document.getElementById('cancel-manager-pin');
+  const managerPin = managerPinInput ? managerPinInput.value.trim() : '';
+  const errEl = document.getElementById('cancel-error-msg');
+
   try {
-    const res = await fetch(`/api/garson/tables/${normId}/clear`, {
+    const res = await fetch(`/api/garson/tables/${normId}/cancel-order`, {
       method: 'POST',
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ reason, managerPin })
     });
     const json = await res.json();
+
     if (json.success) {
       delete state.adisyons[normId];
       renderHeader();
       renderTables();
       renderAdisyon();
-      showToast('Adisyon iptal edildi, masa hazır.', 'success');
+      closeCancelOrderModal();
+      showToast(`Masa ${parseInt(normId, 10)} siparişi iptal edildi. (${reason})`, 'success');
+    } else {
+      if (json.requiresManagerPin) {
+        const pinGroup = document.getElementById('cancel-manager-pin-group');
+        if (pinGroup) pinGroup.style.display = 'block';
+        if (managerPinInput) managerPinInput.focus();
+        if (errEl) errEl.textContent = json.message || 'Aşçı hazırlamaya başladığı için müdür PIN kodu zorunludur.';
+      } else {
+        if (errEl) errEl.textContent = json.message || 'İptal işlemi gerçekleştirilemedi.';
+      }
     }
   } catch (err) {
-    showToast('İptal işlemi başarısız.', 'error');
+    if (errEl) errEl.textContent = 'Sunucuya bağlanılamadı.';
+  }
+}
+
+async function clearAdisyonWithConfirm() {
+  openCancelOrderModal();
+}
+
+// ==================== ÜRÜN REVİZE ET / DEĞİŞTİR ====================
+function openReviseModal(itemId, event) {
+  if (event) event.stopPropagation();
+  const normId = normalizeTableId(state.selectedTableId);
+  const adisyon = state.adisyons[normId];
+  if (!adisyon || !adisyon.items) return;
+
+  const item = adisyon.items.find(it => it.id === itemId);
+  if (!item) return;
+
+  document.getElementById('revise-item-id').value = itemId;
+  document.getElementById('revise-modal-item-name').textContent = `${item.name} (${item.portion || 'Standart'})`;
+  document.getElementById('revise-portion-input').value = item.portion || 'Standart';
+  document.getElementById('revise-qty-input').value = item.quantity || 1;
+  document.getElementById('revise-note-input').value = item.note || '';
+
+  const select = document.getElementById('revise-product-select');
+  if (select) {
+    select.innerHTML = state.products.map(p => `
+      <option value="${p.id}" ${p.name === item.name ? 'selected' : ''}>
+        ${escapeHtml(p.name)} - ${p.price} ₺
+      </option>
+    `).join('');
+  }
+
+  const modal = document.getElementById('revise-item-modal');
+  if (modal) modal.classList.add('active');
+}
+
+function closeReviseModal() {
+  const modal = document.getElementById('revise-item-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+function handleReviseProductChange(prodId) {
+  const prod = state.products.find(p => p.id === prodId);
+  if (prod) {
+    const portionInput = document.getElementById('revise-portion-input');
+    if (portionInput && (!portionInput.value || portionInput.value === 'Standart')) {
+      portionInput.value = prod.portion || 'Standart';
+    }
+  }
+}
+
+async function submitReviseItem() {
+  const normId = normalizeTableId(state.selectedTableId);
+  const itemId = document.getElementById('revise-item-id').value;
+  const prodId = document.getElementById('revise-product-select').value;
+  const prod = state.products.find(p => p.id === prodId);
+  const newName = prod ? prod.name : '';
+  const newPrice = prod ? prod.price : undefined;
+  const newPortion = document.getElementById('revise-portion-input').value.trim() || 'Standart';
+  const newQuantity = parseInt(document.getElementById('revise-qty-input').value, 10) || 1;
+  const newNote = document.getElementById('revise-note-input').value.trim();
+
+  try {
+    const res = await fetch(`/api/garson/tables/${normId}/items/${itemId}/revise`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        newName,
+        newPrice,
+        newPortion,
+        newQuantity,
+        newNote
+      })
+    });
+    const json = await res.json();
+    if (json.success) {
+      closeReviseModal();
+      showToast(json.message, 'success');
+      loadInitialState();
+    } else {
+      showToast(json.message || 'Revize talebi gönderilemedi.', 'error');
+    }
+  } catch (err) {
+    showToast('Sunucu hatası oluştu.', 'error');
   }
 }
 
@@ -1548,4 +1723,45 @@ function showToast(message, type = 'info') {
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 }
+
+// Window global bindings for inline handlers
+window.openCancelOrderModal = openCancelOrderModal;
+window.closeCancelOrderModal = closeCancelOrderModal;
+window.submitCancelOrder = submitCancelOrder;
+window.openReviseModal = openReviseModal;
+window.closeReviseModal = closeReviseModal;
+window.handleReviseProductChange = handleReviseProductChange;
+window.submitReviseItem = submitReviseItem;
+window.selectAdisyonItem = selectAdisyonItem;
+window.clearAdisyonWithConfirm = clearAdisyonWithConfirm;
+window.applyQuickNote = applyQuickNote;
+window.openCustomNoteModal = openCustomNoteModal;
+window.openReceiptModal = openReceiptModal;
+window.closeReceiptModal = closeReceiptModal;
+window.openPaymentModal = openPaymentModal;
+window.closePaymentModal = closePaymentModal;
+window.openTableTransferModal = openTableTransferModal;
+window.closeTableTransferModal = closeTableTransferModal;
+window.submitTableTransfer = submitTableTransfer;
+window.toggleCallsDrawer = toggleCallsDrawer;
+window.dismissAllCalls = dismissAllCalls;
+window.dismissSingleCall = dismissSingleCall;
+window.approveOrder = approveOrder;
+window.jumpToTableFromCall = jumpToTableFromCall;
+window.handleCurrentTableCallAction = handleCurrentTableCallAction;
+window.toggleSound = toggleSound;
+window.toggleFullScreen = toggleFullScreen;
+window.logout = logout;
+window.pressKey = pressKey;
+window.clearPin = clearPin;
+window.deletePin = deletePin;
+window.quickFillPin = quickFillPin;
+window.switchView = switchView;
+window.filterTables = filterTables;
+window.filterCatalogCategory = filterCatalogCategory;
+window.handleCatalogSearch = handleCatalogSearch;
+window.clearCatalogSearch = clearCatalogSearch;
+window.addProductToAdisyon = addProductToAdisyon;
+window.removeItem = removeItem;
+window.updateItemDelta = updateItemDelta;
 

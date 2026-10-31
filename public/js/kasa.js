@@ -347,6 +347,8 @@ async function loadKasaState() {
 function applyStateData(d) {
   state.restaurantName = d.restaurantName || state.restaurantName;
   state.currency = d.currency || '₺';
+  state.logoImage = d.logoImage || '';
+  state.logoInitials = d.logoInitials || 'AB';
   state.tableCount = d.tableCount || 20;
   state.taxRate = d.taxRate || 10;
   state.tables = d.tables || [];
@@ -356,6 +358,15 @@ function applyStateData(d) {
   state.recentHistory = d.recentHistory || state.recentHistory;
 
   dom.headerRestaurantName.textContent = state.restaurantName;
+
+  const brandLogos = document.querySelectorAll('.brand-logo, .pin-logo');
+  if (state.logoImage) {
+    brandLogos.forEach(el => {
+      el.innerHTML = `<img src="${state.logoImage}" style="width:100%; height:100%; object-fit:contain; border-radius:8px;" alt="Logo"/>`;
+    });
+  } else if (state.logoInitials) {
+    brandLogos.forEach(el => el.textContent = state.logoInitials);
+  }
 
   renderTables();
   renderAdisyon();
@@ -1074,6 +1085,14 @@ function previewThermalReceipt(customOrderData = null) {
 
   // Populate receipt DOM
   dom.receiptRestaurantName.textContent = state.restaurantName.toUpperCase();
+  const logoMark = document.querySelector('.receipt-logo-mark');
+  if (logoMark) {
+    if (state.logoImage) {
+      logoMark.innerHTML = `<img src="${state.logoImage}" style="width:100%; height:100%; object-fit:contain; border-radius:4px;" alt="Logo"/>`;
+    } else {
+      logoMark.textContent = state.logoInitials || 'AB';
+    }
+  }
   dom.rcReceiptNum.textContent = order.receiptNumber || 'AB-20261028-001';
   dom.rcDatetime.textContent = new Date(order.closedAt || Date.now()).toLocaleString('tr-TR', {
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'

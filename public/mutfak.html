@@ -60,7 +60,7 @@
     <!-- TOP HEADER -->
     <header class="kds-header">
       <div class="header-left">
-        <div class="brand-badge">
+        <div class="brand-badge" id="kds-brand-badge">
           <span class="material-symbols-outlined brand-icon">restaurant</span>
         </div>
         <div class="brand-info">
@@ -196,6 +196,12 @@
           <span class="legend-chip legend-urgent">● &gt; 10 dk Acil</span>
         </div>
 
+        <!-- Auto-Print Toggle (Requirement 8) -->
+        <label class="auto-print-toggle" style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; font-weight:700; color:var(--kds-text); background:rgba(255,255,255,0.06); border:1px solid var(--kds-border); padding:6px 12px; border-radius:8px; user-select:none;">
+          <input type="checkbox" id="kds-auto-print-toggle" onchange="toggleAutoPrint(this.checked)" style="width:16px; height:16px; accent-color:#10b981; cursor:pointer;"/>
+          <span>🖨️ Otomatik Yazdır</span>
+        </label>
+
         <!-- Quick Manual Ticket Button -->
         <button type="button" class="btn-toolbar-action" onclick="openNewTicketModal()">
           <span class="material-symbols-outlined">add_task</span>
@@ -284,6 +290,34 @@
       </div>
     </div>
   </div>
+
+  <!-- ======================== CHANGE REQUEST MODAL (Ürün Değişiklik Talebi) ======================== -->
+  <div class="modal-backdrop" id="modal-change-request">
+    <div class="kds-modal" style="max-width:440px; border-top:4px solid #f59e0b;">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="material-symbols-outlined modal-icon" style="color:#f59e0b;">published_with_changes</span>
+          <h3 style="color:#f59e0b;">Ürün Değişiklik Talebi</h3>
+        </div>
+      </div>
+      <div class="modal-body" id="change-request-body" style="padding:16px 20px;">
+        <!-- Injected via JS -->
+      </div>
+      <div class="modal-footer" style="display:flex; justify-content:space-between; width:100%; padding:14px 20px;">
+        <button type="button" class="btn-modal-cancel" style="background:#dc2626; color:#fff;" onclick="respondChangeRequest(false)">
+          <span class="material-symbols-outlined" style="font-size:16px;">close</span>
+          <span>Reddet</span>
+        </button>
+        <button type="button" class="btn-modal-submit" style="background:#10b981;" onclick="respondChangeRequest(true)">
+          <span class="material-symbols-outlined" style="font-size:16px;">check</span>
+          <span>Onayla & Değiştir</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HIDDEN 80MM THERMAL TICKET PRINT AREA -->
+  <div id="kitchen-print-area" style="display:none;"></div>
 
   <!-- ======================== TOAST NOTIFICATION CONTAINER ======================== -->
   <div class="kds-toast-container" id="kds-toast-container"></div>

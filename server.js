@@ -140,13 +140,14 @@ function saveData(data) {
 let db = loadData();
 
 // Multer Storage Configuration for Image Uploads
+const UPLOAD_DIR = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, 'public', 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
+    cb(null, UPLOAD_DIR);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -267,11 +268,19 @@ function requireWaiterOrAdminAuth(req, res, next) {
 
 // 1. Get Entire Public Menu Data (No admin credentials leaked)
 app.get('/api/menu', (req, res) => {
+  const activeCategories = (db.categories || [])
+    .filter(c => c.active !== false)
+    .sort((a, b) => (parseInt(a.order, 10) || 999) - (parseInt(b.order, 10) || 999));
+
+  const activeCategoryIds = new Set(activeCategories.map(c => c.id));
+  const activeProducts = (db.products || []).filter(p => activeCategoryIds.has(p.category));
+
   const publicData = {
     settings: {
       restaurantName: db.settings.restaurantName || 'Ali Baba Döner Kafe',
       slogan: db.settings.slogan || '',
       logoInitials: db.settings.logoInitials || 'AB',
+      logoImage: db.settings.logoImage || '',
       heroBadge: db.settings.heroBadge || '',
       heroTitle: db.settings.heroTitle || '',
       heroSubtitle: db.settings.heroSubtitle || '',
@@ -285,13 +294,13 @@ app.get('/api/menu', (req, res) => {
       tableCount: db.settings.tableCount || 20,
       baseUrl: db.settings.baseUrl || ''
     },
-    categories: db.categories || [],
-    products: db.products || []
+    categories: activeCategories,
+    products: activeProducts
   };
   res.json({ success: true, data: publicData });
 });
 
-// 2. Authentication Login
+// 2. Authentication Login (Username and Password / PIN)
 app.post('/api/login', (req, res) => {
   const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
   const now = Date.now();
@@ -310,21 +319,24 @@ app.post('/api/login', (req, res) => {
     }
   }
 
-  const { pin, password } = req.body || {};
+  const { username, pin, password } = req.body || {};
+  const enteredUser = (username ? String(username) : '').trim();
   const enteredPin = (pin ? String(pin) : '').trim();
   const enteredPass = (password ? String(password) : '').trim();
 
-  if (!enteredPin && !enteredPass) {
-    return res.status(400).json({ success: false, message: 'Lütfen PIN veya şifre girin.' });
+  if (!enteredUser && !enteredPin && !enteredPass) {
+    return res.status(400).json({ success: false, message: 'Lütfen kullanıcı adı ve şifre girin.' });
   }
 
+  const currentUsername = (db.admin && db.admin.username) ? String(db.admin.username).trim() : 'admin';
   const currentPin = (db.admin && db.admin.pin) ? String(db.admin.pin).trim() : '1234';
   const currentPass = (db.admin && db.admin.password) ? String(db.admin.password).trim() : 'admin';
 
+  const isUserMatch = !enteredUser || (enteredUser.toLowerCase() === currentUsername.toLowerCase());
   const isPinMatch = enteredPin && (enteredPin === currentPin || enteredPin === currentPass);
   const isPassMatch = enteredPass && (enteredPass === currentPass || enteredPass === currentPin);
 
-  if (isPinMatch || isPassMatch) {
+  if (isUserMatch && (isPinMatch || isPassMatch)) {
     // Clear failed attempts on success
     loginAttempts.delete(clientIp);
 
@@ -353,7 +365,7 @@ app.post('/api/login', (req, res) => {
 
   return res.status(401).json({
     success: false,
-    message: 'Hatalı PIN veya şifre!' + warnText
+    message: 'Hatalı kullanıcı adı veya şifre!' + warnText
   });
 });
 
@@ -376,10 +388,12 @@ app.post('/api/logout', (req, res) => {
 app.get('/api/settings', requireAdminAuth, (req, res) => {
   const settingsData = {
     ...db.settings,
+    adminUsername: (db.admin && db.admin.username) || 'admin',
     adminPin: (db.admin && db.admin.pin) || '1234',
     waiterPin: (db.admin && db.admin.waiterPin) || '1234',
     cashierPin: (db.admin && db.admin.cashierPin) || '1234',
-    kitchenPin: (db.admin && db.admin.kitchenPin) || '1234'
+    kitchenPin: (db.admin && db.admin.kitchenPin) || '1234',
+    logoImage: (db.settings && db.settings.logoImage) || ''
   };
   res.json({ success: true, data: settingsData });
 });
@@ -390,8 +404,12 @@ app.put('/api/settings', requireAdminAuth, (req, res) => {
     return res.status(400).json({ success: false, message: 'Geçersiz ayar verisi.' });
   }
 
-  // PIN / Password updates
+  // PIN / Password / Username updates
   db.admin = db.admin || {};
+  if (newSettings.adminUsername !== undefined && String(newSettings.adminUsername).trim()) {
+    db.admin.username = sanitizeString(String(newSettings.adminUsername).trim());
+    delete newSettings.adminUsername;
+  }
   if (newSettings.adminPin && String(newSettings.adminPin).trim()) {
     db.admin.pin = String(newSettings.adminPin).trim();
     delete newSettings.adminPin;
@@ -418,6 +436,7 @@ app.put('/api/settings', requireAdminAuth, (req, res) => {
     restaurantName: sanitizeString(newSettings.restaurantName || db.settings.restaurantName || 'Ali Baba Döner Kafe'),
     slogan: sanitizeString(newSettings.slogan || ''),
     logoInitials: sanitizeString(newSettings.logoInitials || 'AB').slice(0, 4),
+    logoImage: String(newSettings.logoImage || db.settings.logoImage || '').trim(),
     heroBadge: sanitizeString(newSettings.heroBadge || ''),
     heroTitle: sanitizeString(newSettings.heroTitle || ''),
     heroSubtitle: sanitizeString(newSettings.heroSubtitle || ''),
@@ -434,16 +453,77 @@ app.put('/api/settings', requireAdminAuth, (req, res) => {
 
   db.settings = { ...db.settings, ...sanitized };
   saveData(db);
+  broadcastNotificationEvent('settings_updated', db.settings);
   res.json({ success: true, message: 'Ayarlar başarıyla güncellendi.', data: db.settings });
+});
+
+// Logo Upload Handler (Protected)
+app.post('/api/admin/upload-logo', requireAdminAuth, (req, res) => {
+  // Check if sent as base64 JSON
+  if (req.body && (req.body.logoBase64 || req.body.logoImage || req.body.image)) {
+    const rawData = req.body.logoBase64 || req.body.logoImage || req.body.image;
+    let fileUrl = rawData;
+    if (typeof rawData === 'string' && rawData.startsWith('data:image')) {
+      const matches = rawData.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+      if (matches) {
+        const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+        const buffer = Buffer.from(matches[2], 'base64');
+        const fileName = `logo-${Date.now()}.${ext}`;
+        const filePath = path.join(UPLOAD_DIR, fileName);
+        fs.writeFileSync(filePath, buffer);
+        fileUrl = '/uploads/' + fileName;
+      }
+    }
+    db.settings.logoImage = fileUrl;
+    saveData(db);
+    broadcastNotificationEvent('settings_updated', db.settings);
+    return res.json({
+      success: true,
+      url: fileUrl,
+      message: 'Restoran logosu başarıyla yüklendi.'
+    });
+  }
+
+  upload.any()(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ success: false, message: 'Logo boyutu çok büyük (Maksimum 5 MB).' });
+      }
+      return res.status(400).json({ success: false, message: 'Logo yükleme hatası: ' + err.message });
+    } else if (err) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+
+    const file = (req.files && req.files.length > 0) ? req.files[0] : req.file;
+    if (!file) {
+      return res.status(400).json({ success: false, message: 'Lütfen bir logo görseli seçin.' });
+    }
+
+    const fileUrl = '/uploads/' + file.filename;
+    db.settings.logoImage = fileUrl;
+    saveData(db);
+    broadcastNotificationEvent('settings_updated', db.settings);
+
+    res.json({
+      success: true,
+      url: fileUrl,
+      message: 'Restoran logosu başarıyla yüklendi.'
+    });
+  });
 });
 
 // 4. Category Management (Protected)
 app.get('/api/categories', (req, res) => {
-  res.json({ success: true, data: db.categories });
+  const categories = (db.categories || []).map((c, idx) => ({
+    ...c,
+    order: c.order !== undefined ? parseInt(c.order, 10) : (idx + 1),
+    active: c.active !== false
+  })).sort((a, b) => (a.order || 999) - (b.order || 999));
+  res.json({ success: true, data: categories });
 });
 
 app.post('/api/categories', requireAdminAuth, (req, res) => {
-  const { id, name, icon } = req.body || {};
+  const { id, name, icon, order, active } = req.body || {};
   if (!name || !name.trim()) {
     return res.status(400).json({ success: false, message: 'Kategori adı zorunludur.' });
   }
@@ -462,7 +542,9 @@ app.post('/api/categories', requireAdminAuth, (req, res) => {
   const newCat = {
     id: slug,
     name: cleanName,
-    icon: sanitizeString(icon || 'restaurant')
+    icon: sanitizeString(icon || 'restaurant'),
+    order: parseInt(order, 10) || (db.categories.length + 1),
+    active: active !== false
   };
 
   db.categories.push(newCat);
@@ -472,7 +554,7 @@ app.post('/api/categories', requireAdminAuth, (req, res) => {
 
 app.put('/api/categories/:id', requireAdminAuth, (req, res) => {
   const { id } = req.params;
-  const { name, icon } = req.body || {};
+  const { name, icon, order, active } = req.body || {};
 
   const catIndex = db.categories.findIndex(c => c.id === id);
   if (catIndex === -1) {
@@ -481,9 +563,38 @@ app.put('/api/categories/:id', requireAdminAuth, (req, res) => {
 
   if (name && name.trim()) db.categories[catIndex].name = sanitizeString(name.trim());
   if (icon) db.categories[catIndex].icon = sanitizeString(icon.trim());
+  if (order !== undefined) db.categories[catIndex].order = parseInt(order, 10) || 1;
+  if (active !== undefined) db.categories[catIndex].active = Boolean(active);
 
   saveData(db);
   res.json({ success: true, message: 'Kategori güncellendi.', data: db.categories[catIndex] });
+});
+
+// Quick toggle category active/passive
+app.patch('/api/categories/:id/toggle-active', requireAdminAuth, (req, res) => {
+  const { id } = req.params;
+  const cat = db.categories.find(c => c.id === id);
+  if (!cat) return res.status(404).json({ success: false, message: 'Kategori bulunamadı.' });
+  cat.active = cat.active === false ? true : false;
+  saveData(db);
+  res.json({ success: true, active: cat.active, message: `Kategori ${cat.active ? 'aktif' : 'pasif'} duruma getirildi.`, data: cat });
+});
+
+// Reorder categories
+app.post('/api/categories/reorder', requireAdminAuth, (req, res) => {
+  const { orderedIds } = req.body || {};
+  if (!Array.isArray(orderedIds)) {
+    return res.status(400).json({ success: false, message: 'orderedIds bir dizi olmalıdır.' });
+  }
+  orderedIds.forEach((id, index) => {
+    const cat = db.categories.find(c => c.id === id);
+    if (cat) {
+      cat.order = index + 1;
+    }
+  });
+  db.categories.sort((a, b) => (a.order || 999) - (b.order || 999));
+  saveData(db);
+  res.json({ success: true, message: 'Kategori sıralaması güncellendi.', data: db.categories });
 });
 
 app.delete('/api/categories/:id', requireAdminAuth, (req, res) => {
@@ -507,6 +618,35 @@ app.delete('/api/categories/:id', requireAdminAuth, (req, res) => {
   res.json({ success: true, message: 'Kategori silindi, ürünleri varsayılan kategoriye aktarıldı.' });
 });
 
+// Helper: parse portions array from request
+function parsePortionsInput(portionsInput) {
+  if (Array.isArray(portionsInput)) {
+    return portionsInput.map(p => ({
+      name: sanitizeString(p.name || 'Porsiyon'),
+      price: parseFloat(String(p.price || '0').replace('₺', '').replace(/,/g, '.')) || 0
+    })).filter(p => p.name.trim().length > 0);
+  }
+  if (typeof portionsInput === 'string' && portionsInput.trim()) {
+    try {
+      const parsed = JSON.parse(portionsInput);
+      if (Array.isArray(parsed)) {
+        return parsed.map(p => ({
+          name: sanitizeString(p.name || 'Porsiyon'),
+          price: parseFloat(String(p.price || '0').replace('₺', '').replace(/,/g, '.')) || 0
+        })).filter(p => p.name.trim().length > 0);
+      }
+    } catch (e) {
+      return portionsInput.split(',').map(s => {
+        const parts = s.split(':');
+        const pName = sanitizeString((parts[0] || '').trim());
+        const pPrice = parseFloat(String(parts[1] || '0').replace('₺', '').replace(/,/g, '.')) || 0;
+        return { name: pName, price: pPrice };
+      }).filter(p => p.name.length > 0);
+    }
+  }
+  return [];
+}
+
 // 5. Products Management (Protected)
 app.get('/api/products', (req, res) => {
   res.json({ success: true, data: db.products });
@@ -514,8 +654,9 @@ app.get('/api/products', (req, res) => {
 
 app.post('/api/products', requireAdminAuth, (req, res) => {
   const {
-    name, price, currency, desc, portion,
-    allergens, type, category, badge, featured, inStock, img, icon
+    name, price, currency, desc, portion, portions,
+    allergens, type, category, badge, featured, inStock, img, icon,
+    isRecommendation
   } = req.body || {};
 
   if (!name || !name.trim()) {
@@ -527,6 +668,8 @@ app.post('/api/products', requireAdminAuth, (req, res) => {
     return res.status(400).json({ success: false, message: 'Geçersiz fiyat değeri girdiniz.' });
   }
 
+  const cleanPortions = parsePortionsInput(portions);
+
   const newProduct = {
     id: 'prod_' + Date.now(),
     name: sanitizeString(name.trim()),
@@ -534,12 +677,14 @@ app.post('/api/products', requireAdminAuth, (req, res) => {
     currency: sanitizeString(currency || db.settings.currency || '₺'),
     desc: sanitizeString(desc || ''),
     portion: sanitizeString(portion || 'Standart Porsiyon'),
+    portions: cleanPortions,
     allergens: sanitizeString(allergens || ''),
     type: type === 'drink' ? 'drink' : 'food',
     category: category || (db.categories[0] ? db.categories[0].id : 'diger'),
     badge: sanitizeString(badge || ''),
     featured: Boolean(featured),
     inStock: inStock !== undefined ? Boolean(inStock) : true,
+    isRecommendation: Boolean(isRecommendation),
     img: String(img || '').trim(),
     icon: sanitizeString(icon || '')
   };
@@ -565,17 +710,35 @@ app.put('/api/products/:id', requireAdminAuth, (req, res) => {
     name: payload.name ? sanitizeString(payload.name.trim()) : current.name,
     desc: payload.desc !== undefined ? sanitizeString(payload.desc) : current.desc,
     portion: payload.portion !== undefined ? sanitizeString(payload.portion) : current.portion,
+    portions: payload.portions !== undefined ? parsePortionsInput(payload.portions) : (current.portions || []),
     allergens: payload.allergens !== undefined ? sanitizeString(payload.allergens) : current.allergens,
     badge: payload.badge !== undefined ? sanitizeString(payload.badge) : current.badge,
     price: payload.price !== undefined ? String(payload.price).replace('₺', '').replace(/,/g, '.').trim() : current.price,
     img: payload.img !== undefined ? String(payload.img).trim() : current.img,
     featured: payload.featured !== undefined ? Boolean(payload.featured) : current.featured,
-    inStock: payload.inStock !== undefined ? Boolean(payload.inStock) : current.inStock
+    inStock: payload.inStock !== undefined ? Boolean(payload.inStock) : current.inStock,
+    isRecommendation: payload.isRecommendation !== undefined ? Boolean(payload.isRecommendation) : Boolean(current.isRecommendation)
   };
 
   db.products[pIndex] = updated;
   saveData(db);
   res.json({ success: true, message: 'Ürün güncellendi.', data: updated });
+});
+
+// Quick toggle recommendation (Protected)
+app.patch('/api/products/:id/toggle-recommendation', requireAdminAuth, (req, res) => {
+  const { id } = req.params;
+  const product = db.products.find(p => p.id === id);
+  if (!product) return res.status(404).json({ success: false, message: 'Ürün bulunamadı.' });
+
+  product.isRecommendation = !product.isRecommendation;
+  saveData(db);
+  res.json({
+    success: true,
+    isRecommendation: product.isRecommendation,
+    message: `Ürün ${product.isRecommendation ? 'önerilen içecek olarak işaretlendi' : 'önerilerden kaldırıldı'}.`,
+    data: product
+  });
 });
 
 // Quick toggle stock (Protected)
@@ -961,6 +1124,8 @@ app.get('/api/garson/state', requireWaiterOrAdminAuth, (req, res) => {
     data: {
       restaurantName: db.settings.restaurantName || 'Ali Baba Döner Kafe',
       currency: db.settings.currency || '₺',
+      logoImage: db.settings.logoImage || '',
+      logoInitials: db.settings.logoInitials || 'AB',
       tableCount: tableCount,
       tables: tables,
       adisyons: db.adisyons,
@@ -1128,6 +1293,324 @@ app.delete('/api/garson/tables/:tableId/items/:itemId', requireWaiterOrAdminAuth
   broadcastNotificationEvent('adisyon_updated', { tableId, adisyon: tableAdisyon });
 
   res.json({ success: true, message: 'Ürün adisyondan silindi.', data: tableAdisyon });
+});
+
+// 5.1 Cancel Order Scenario with Status Control & Manager PIN (Requirement 9)
+app.post('/api/garson/tables/:tableId/cancel-order', requireWaiterOrAdminAuth, (req, res) => {
+  const tableId = normalizeTableId(req.params.tableId);
+  const { reason, managerPin } = req.body || {};
+  const cleanReason = sanitizeString(reason || 'Müşteri Vazgeçti');
+
+  db.kitchenOrders = db.kitchenOrders || [];
+  db.wasteLogs = db.wasteLogs || [];
+  db.cancellationLogs = db.cancellationLogs || [];
+
+  // Find active kitchen tickets for this table (pending or preparing)
+  const tableOrders = db.kitchenOrders.filter(o =>
+    normalizeTableId(o.tableId || o.tableName) === tableId &&
+    (o.status === 'pending' || o.status === 'preparing')
+  );
+
+  // Check if any order is already in "preparing" state
+  const hasPreparing = tableOrders.some(o => o.status === 'preparing');
+  const masterPin = (db.admin && db.admin.pin) ? String(db.admin.pin).trim() : '1234';
+
+  if (hasPreparing) {
+    if (!managerPin || String(managerPin).trim() !== masterPin) {
+      return res.status(403).json({
+        success: false,
+        requiresManagerPin: true,
+        message: 'Sipariş mutfakta hazırlanıyor! İptal işlemi için müdür PIN kodu zorunludur.'
+      });
+    }
+  }
+
+  const now = Date.now();
+  for (const ord of tableOrders) {
+    const wasPreparing = ord.status === 'preparing';
+    ord.status = 'cancelled';
+    ord.cancelReason = cleanReason;
+    ord.cancelledAt = now;
+
+    // Waste / Fire logging for preparing orders
+    if (wasPreparing && Array.isArray(ord.items)) {
+      for (const it of ord.items) {
+        db.wasteLogs.unshift({
+          id: 'waste_' + now + '_' + Math.floor(Math.random() * 1000),
+          tableId: tableId,
+          tableName: ord.tableName || `Masa ${parseInt(tableId, 10)}`,
+          ticketNumber: ord.ticketNumber || '',
+          name: it.name,
+          portion: it.portion || 'Standart',
+          quantity: it.quantity || 1,
+          price: it.price || 0,
+          reason: `Personel Hatası / Zayi (Hazırlık Sırasında İptal - ${cleanReason})`,
+          loggedAt: now
+        });
+      }
+    }
+
+    // Cancellation log
+    db.cancellationLogs.unshift({
+      id: 'canc_' + now + '_' + Math.floor(Math.random() * 1000),
+      ticketNumber: ord.ticketNumber || '',
+      tableId: tableId,
+      tableName: ord.tableName || `Masa ${parseInt(tableId, 10)}`,
+      reason: cleanReason,
+      items: ord.items || [],
+      wasPreparing: wasPreparing,
+      managerApproved: hasPreparing,
+      cancelledAt: now
+    });
+
+    // Notify KDS in real-time
+    broadcastNotificationEvent('kds_order_cancelled', {
+      id: ord.id,
+      ticketNumber: ord.ticketNumber,
+      tableName: ord.tableName,
+      reason: cleanReason,
+      cancelledAt: now
+    });
+  }
+
+  // Clear table adisyon
+  if (db.adisyons && db.adisyons[tableId]) {
+    delete db.adisyons[tableId];
+    broadcastNotificationEvent('adisyon_closed', { tableId });
+  }
+
+  // Clear pending notifications for this table
+  db.notifications = (db.notifications || []).filter(n => normalizeTableId(n.table) !== tableId);
+  broadcastNotificationEvent('notifications_updated', db.notifications);
+
+  saveData(db);
+
+  res.json({
+    success: true,
+    message: `Masa ${parseInt(tableId, 10)} siparişi iptal edildi ve mutfağa bildirildi.`,
+    cancelledCount: tableOrders.length
+  });
+});
+
+// 5.2 Faulty Item / Revision Scenario (First 60s vs In-Progress) (Requirement 10)
+app.post('/api/garson/tables/:tableId/items/:itemId/revise', requireWaiterOrAdminAuth, (req, res) => {
+  const tableId = normalizeTableId(req.params.tableId);
+  const { itemId } = req.params;
+  const { newName, newPortion, newQuantity, newPrice, newNote } = req.body || {};
+
+  db.adisyons = db.adisyons || {};
+  const tableAdisyon = db.adisyons[tableId];
+  if (!tableAdisyon) {
+    return res.status(404).json({ success: false, message: 'Masa adisyonu bulunamadı.' });
+  }
+
+  const itemIndex = tableAdisyon.items.findIndex(it => it.id === itemId);
+  if (itemIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Ürün adisyonda bulunamadı.' });
+  }
+
+  const oldItem = tableAdisyon.items[itemIndex];
+
+  // Find active kitchen ticket for this table
+  db.kitchenOrders = db.kitchenOrders || [];
+  const activeTicket = db.kitchenOrders.find(o =>
+    normalizeTableId(o.tableId || o.tableName) === tableId &&
+    (o.status === 'pending' || o.status === 'preparing')
+  );
+
+  const now = Date.now();
+  const elapsedMs = activeTicket ? (now - (activeTicket.createdAt || now)) : 999999;
+  const isPendingWithin60s = activeTicket && activeTicket.status === 'pending' && elapsedMs <= 60000;
+
+  if (isPendingWithin60s || !activeTicket) {
+    // Direct change allowed! (First 60 seconds and still pending)
+    if (newName) oldItem.name = sanitizeString(newName);
+    if (newPortion) oldItem.portion = sanitizeString(newPortion);
+    if (newNote !== undefined) oldItem.note = sanitizeString(newNote);
+    if (newQuantity !== undefined) oldItem.quantity = Math.max(1, parseInt(newQuantity, 10) || 1);
+    if (newPrice !== undefined) oldItem.price = parseFloat(String(newPrice).replace('₺', '').replace(/,/g, '.')) || oldItem.price;
+    oldItem.total = Math.round(oldItem.quantity * oldItem.price * 100) / 100;
+
+    tableAdisyon.totalAmount = Math.round(tableAdisyon.items.reduce((sum, it) => sum + (it.total || 0), 0) * 100) / 100;
+    tableAdisyon.totalItems = tableAdisyon.items.reduce((sum, it) => sum + (it.quantity || 0), 0);
+    tableAdisyon.updatedAt = now;
+
+    if (activeTicket) {
+      activeTicket.isRevised = true;
+      activeTicket.revisedAt = now;
+      const kItem = (activeTicket.items || []).find(it => it.name === oldItem.name || it.id === itemId);
+      if (kItem) {
+        if (newName) kItem.name = sanitizeString(newName);
+        if (newPortion) kItem.portion = sanitizeString(newPortion);
+        if (newQuantity) kItem.quantity = oldItem.quantity;
+        if (newNote !== undefined) kItem.note = oldItem.note;
+      }
+      broadcastNotificationEvent('kds_order_updated', activeTicket);
+    }
+
+    saveData(db);
+    broadcastNotificationEvent('adisyon_updated', { tableId, adisyon: tableAdisyon });
+
+    return res.json({
+      success: true,
+      direct: true,
+      message: 'Sipariş ilk 60 saniye içinde başarıyla güncellendi (Revize edildi).'
+    });
+  }
+
+  // Elapsed > 60s OR activeTicket.status === 'preparing' -> Change Request for Cook
+  db.changeRequests = db.changeRequests || [];
+  const changeReq = {
+    id: 'cr_' + now + '_' + Math.floor(Math.random() * 1000),
+    tableId: tableId,
+    tableName: `Masa ${parseInt(tableId, 10)}`,
+    kitchenOrderId: activeTicket ? activeTicket.id : null,
+    ticketNumber: activeTicket ? activeTicket.ticketNumber : '',
+    itemId: itemId,
+    oldItem: {
+      name: oldItem.name,
+      portion: oldItem.portion,
+      quantity: oldItem.quantity,
+      price: oldItem.price,
+      note: oldItem.note
+    },
+    newItem: {
+      name: newName ? sanitizeString(newName) : oldItem.name,
+      portion: newPortion ? sanitizeString(newPortion) : oldItem.portion,
+      quantity: newQuantity ? Math.max(1, parseInt(newQuantity, 10)) : oldItem.quantity,
+      price: newPrice !== undefined ? (parseFloat(String(newPrice).replace('₺', '').replace(/,/g, '.')) || oldItem.price) : oldItem.price,
+      note: newNote !== undefined ? sanitizeString(newNote) : oldItem.note
+    },
+    status: 'pending',
+    requestedAt: now
+  };
+
+  db.changeRequests.unshift(changeReq);
+  saveData(db);
+  broadcastNotificationEvent('kds_change_request_created', changeReq);
+
+  res.json({
+    success: true,
+    requiresApproval: true,
+    changeRequestId: changeReq.id,
+    message: 'Hazırlık başladığı veya 60 saniye aşıldığı için mutfağa Değişiklik Talebi gönderildi. Aşçı onayı bekleniyor.'
+  });
+});
+
+// 5.3 Cook Responds to Change Request
+app.post('/api/kds/change-requests/:id/respond', requireWaiterOrAdminAuth, (req, res) => {
+  const { id } = req.params;
+  const { approved } = req.body || {};
+
+  db.changeRequests = db.changeRequests || [];
+  const reqIndex = db.changeRequests.findIndex(r => r.id === id);
+  if (reqIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Değişiklik talebi bulunamadı.' });
+  }
+
+  const changeReq = db.changeRequests[reqIndex];
+  changeReq.status = approved ? 'approved' : 'rejected';
+  changeReq.respondedAt = Date.now();
+
+  const tableId = normalizeTableId(changeReq.tableId);
+  db.adisyons = db.adisyons || {};
+  const tableAdisyon = db.adisyons[tableId];
+
+  if (approved) {
+    db.kitchenOrders = db.kitchenOrders || [];
+    const kOrder = db.kitchenOrders.find(o => o.id === changeReq.kitchenOrderId);
+    if (kOrder && kOrder.status === 'preparing') {
+      db.wasteLogs = db.wasteLogs || [];
+      db.wasteLogs.unshift({
+        id: 'waste_' + Date.now(),
+        tableId: tableId,
+        tableName: changeReq.tableName,
+        ticketNumber: changeReq.ticketNumber,
+        name: changeReq.oldItem.name,
+        portion: changeReq.oldItem.portion,
+        quantity: changeReq.oldItem.quantity,
+        price: changeReq.oldItem.price,
+        reason: 'Personel Hatası / Zayi (Mutfak Değişikliği Nedeniyle Zayi)',
+        loggedAt: Date.now()
+      });
+    }
+
+    // Apply change to adisyon
+    if (tableAdisyon && Array.isArray(tableAdisyon.items)) {
+      const it = tableAdisyon.items.find(i => i.id === changeReq.itemId);
+      if (it) {
+        it.name = changeReq.newItem.name;
+        it.portion = changeReq.newItem.portion;
+        it.quantity = changeReq.newItem.quantity;
+        it.price = changeReq.newItem.price;
+        it.note = changeReq.newItem.note;
+        it.total = Math.round(it.quantity * it.price * 100) / 100;
+        tableAdisyon.totalAmount = Math.round(tableAdisyon.items.reduce((sum, item) => sum + (item.total || 0), 0) * 100) / 100;
+        tableAdisyon.totalItems = tableAdisyon.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        tableAdisyon.updatedAt = Date.now();
+        broadcastNotificationEvent('adisyon_updated', { tableId, adisyon: tableAdisyon });
+      }
+    }
+
+    if (kOrder) {
+      kOrder.isRevised = true;
+      kOrder.revisedAt = Date.now();
+      const kItem = (kOrder.items || []).find(it => it.name === changeReq.oldItem.name);
+      if (kItem) {
+        kItem.name = changeReq.newItem.name;
+        kItem.portion = changeReq.newItem.portion;
+        kItem.quantity = changeReq.newItem.quantity;
+        kItem.note = changeReq.newItem.note;
+      }
+      broadcastNotificationEvent('kds_order_updated', kOrder);
+    }
+
+    // Notify waiter
+    const waiterNotif = {
+      id: 'notif_rev_' + Date.now(),
+      table: changeReq.tableName,
+      type: 'Değişiklik Onaylandı ✅',
+      note: `${changeReq.tableName} (${changeReq.ticketNumber}): "${changeReq.oldItem.name}" -> "${changeReq.newItem.name}" değişikliği mutfak tarafından onaylandı.`,
+      time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+      createdAt: Date.now()
+    };
+    db.notifications = db.notifications || [];
+    db.notifications.unshift(waiterNotif);
+    broadcastNotificationEvent('notification_created', waiterNotif);
+  } else {
+    // Notify waiter of rejection
+    const waiterNotif = {
+      id: 'notif_rej_' + Date.now(),
+      table: changeReq.tableName,
+      type: 'Değişiklik Reddedildi ❌',
+      note: `${changeReq.tableName} (${changeReq.ticketNumber}): Ürün pişirildiği için değişiklik reddedildi!`,
+      time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+      createdAt: Date.now()
+    };
+    db.notifications = db.notifications || [];
+    db.notifications.unshift(waiterNotif);
+    broadcastNotificationEvent('notification_created', waiterNotif);
+  }
+
+  saveData(db);
+  broadcastNotificationEvent('kds_change_request_responded', changeReq);
+
+  res.json({
+    success: true,
+    message: approved ? 'Değişiklik onaylandı.' : 'Değişiklik reddedildi.',
+    data: changeReq
+  });
+});
+
+// GET active change requests for KDS
+app.get('/api/kds/change-requests', requireWaiterOrAdminAuth, (req, res) => {
+  const pending = (db.changeRequests || []).filter(r => r.status === 'pending');
+  res.json({ success: true, data: pending });
+});
+
+// GET waste logs for admin
+app.get('/api/admin/waste-logs', requireAdminAuth, (req, res) => {
+  res.json({ success: true, data: db.wasteLogs || [], cancellations: db.cancellationLogs || [] });
 });
 
 // 6. Close Adisyon / Settle Payment & Free Table
@@ -1571,6 +2054,8 @@ app.get('/api/kasa/state', requireWaiterOrAdminAuth, (req, res) => {
     data: {
       restaurantName: db.settings.restaurantName || 'Ali Baba Döner Kafe',
       currency: db.settings.currency || '₺',
+      logoImage: db.settings.logoImage || '',
+      logoInitials: db.settings.logoInitials || 'AB',
       tableCount: tableCount,
       taxRate: 10,
       tables,
@@ -1696,7 +2181,17 @@ app.get('/api/kasa/history', requireWaiterOrAdminAuth, (req, res) => {
     filtered = filtered.filter(o => (o.closedAt || 0) >= startOfToday);
   } else if (range === 'yesterday') {
     filtered = filtered.filter(o => (o.closedAt || 0) >= startOfYesterday && (o.closedAt || 0) < startOfToday);
+  } else if (range === 'weekly') {
+    const startOfWeek = now.getTime() - (7 * 86400000);
+    filtered = filtered.filter(o => (o.closedAt || 0) >= startOfWeek);
+  } else if (range === 'monthly') {
+    const startOfMonth = now.getTime() - (30 * 86400000);
+    filtered = filtered.filter(o => (o.closedAt || 0) >= startOfMonth);
+  } else if (range === 'yearly') {
+    const startOfYear = now.getTime() - (365 * 86400000);
+    filtered = filtered.filter(o => (o.closedAt || 0) >= startOfYear);
   }
+  // 'all' keeps everything
 
   if (payment !== 'all') {
     const pLow = payment.toLowerCase();
@@ -1782,9 +2277,32 @@ app.get('/api/admin/dashboard-stats', requireAdminAuth, (req, res) => {
 
 // 2. Export Order History as Excel/CSV with Turkish UTF-8 BOM
 app.get('/api/admin/reports/export-csv', requireAdminAuth, (req, res) => {
-  const orders = db.orderHistory || [];
+  let orders = db.orderHistory || [];
+  const range = (req.query && req.query.range) ? String(req.query.range).toLowerCase() : 'all';
+  const now = Date.now();
+  const startOfToday = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
+
+  if (range === 'today') {
+    orders = orders.filter(o => (o.closedAt || o.openedAt || 0) >= startOfToday);
+  } else if (range === 'yesterday') {
+    const startOfYesterday = startOfToday - 86400000;
+    orders = orders.filter(o => {
+      const t = o.closedAt || o.openedAt || 0;
+      return t >= startOfYesterday && t < startOfToday;
+    });
+  } else if (range === 'weekly') {
+    const startOfWeek = now - (7 * 86400000);
+    orders = orders.filter(o => (o.closedAt || o.openedAt || 0) >= startOfWeek);
+  } else if (range === 'monthly') {
+    const startOfMonth = now - (30 * 86400000);
+    orders = orders.filter(o => (o.closedAt || o.openedAt || 0) >= startOfMonth);
+  } else if (range === 'yearly') {
+    const startOfYear = now - (365 * 86400000);
+    orders = orders.filter(o => (o.closedAt || o.openedAt || 0) >= startOfYear);
+  }
+
   const dateStr = new Date().toISOString().slice(0, 10);
-  const filename = `alibaba_satis_raporu_${dateStr}.csv`;
+  const filename = `alibaba_satis_raporu_${range}_${dateStr}.csv`;
 
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -1859,7 +2377,9 @@ app.get('/api/kds/state', requireWaiterOrAdminAuth, (req, res) => {
         completedTodayCount: completedToday.length,
         avgPrepMinutes: avgPrepMinutes
       },
-      tableCount: db.settings.tableCount || 20
+      tableCount: db.settings.tableCount || 20,
+      logoImage: db.settings.logoImage || '',
+      logoInitials: db.settings.logoInitials || 'AB'
     }
   });
 });

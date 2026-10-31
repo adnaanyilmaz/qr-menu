@@ -179,7 +179,13 @@ function renderBrandAndHero() {
   const s = menuState.settings;
   if (!s) return;
 
-  if (dom.brandLogo && s.logoInitials) dom.brandLogo.textContent = s.logoInitials;
+  if (dom.brandLogo) {
+    if (s.logoImage) {
+      dom.brandLogo.innerHTML = `<img src="${s.logoImage}" style="width:100%; height:100%; object-fit:contain; border-radius:8px;" alt="Logo" />`;
+    } else if (s.logoInitials) {
+      dom.brandLogo.textContent = s.logoInitials;
+    }
+  }
   if (dom.brandTitle && s.restaurantName) dom.brandTitle.textContent = s.restaurantName;
   if (dom.brandSlogan && s.slogan) dom.brandSlogan.textContent = s.slogan;
   if (dom.footerBrand && s.restaurantName) dom.footerBrand.textContent = s.restaurantName;
@@ -214,11 +220,28 @@ function renderCategoryPills() {
       pills.forEach(p => p.classList.remove('active'));
       pill.classList.add('active');
       
-      menuState.currentCategory = pill.getAttribute('data-cat');
+      const catId = pill.getAttribute('data-cat');
+      menuState.currentCategory = catId;
       applyFilter();
       
       // Auto-scroll pill into view center
       pill.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+
+      // Requirement 6: Smooth-scroll starting from category title with mobile header offset
+      if (catId && catId !== 'all') {
+        const targetSec = document.getElementById(`sec-${catId}`);
+        if (targetSec) {
+          setTimeout(() => {
+            const headerOffset = 135; // combined height of fixed header + search + sticky pill nav
+            const elementPosition = targetSec.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+            window.scrollTo({
+              top: Math.max(0, offsetPosition),
+              behavior: 'smooth'
+            });
+          }, 60);
+        }
+      }
     });
   });
 }
@@ -417,24 +440,58 @@ function openProductModalById(prodId) {
     dom.modalFallbackIcon.textContent = product.type === 'drink' ? 'local_cafe' : (product.icon || 'restaurant');
   }
   
-  // Adapt Portion Labels
-  if (product.type === 'drink') {
-    dom.modalPortionLabel.textContent = 'Boyut Seçenekleri';
-    dom.portionButtons[0].textContent = 'Küçük';
-    dom.portionButtons[1].textContent = 'Orta';
-    dom.portionButtons[2].textContent = 'Büyük';
-  } else {
-    dom.modalPortionLabel.textContent = 'Porsiyon Seçenekleri';
-    dom.portionButtons[0].textContent = 'Standart';
-    dom.portionButtons[1].textContent = '1.5 Porsiyon';
-    dom.portionButtons[2].textContent = 'Duble';
+  // Adapt Portion Labels & Dynamic Portions
+  const portionGrid = document.querySelector('.portion-grid');
+  if (portionGrid) {
+    if (product.portions && Array.isArray(product.portions) && product.portions.length > 0) {
+      dom.modalPortionLabel.textContent = product.type === 'drink' ? 'Boyut Seçenekleri' : 'Porsiyon Seçenekleri';
+      portionGrid.innerHTML = product.portions.map((pt, idx) => `
+        <button class="portion-btn ${idx === 0 ? 'active' : ''}" type="button" data-portion-name="${escapeHtml(pt.name)}" data-portion-price="${pt.price}">
+          ${escapeHtml(pt.name)} (${pt.price} ${product.currency || menuState.settings.currency || '₺'})
+        </button>
+      `).join('');
+      // Set active default price and portion text
+      dom.modalProductPrice.textContent = `${product.portions[0].price} ${product.currency || menuState.settings.currency || '₺'}`;
+      dom.modalProductPortion.textContent = product.portions[0].name;
+    } else {
+      if (product.type === 'drink') {
+        dom.modalPortionLabel.textContent = 'Boyut Seçenekleri';
+        const drinkLabels = ['Küçük', 'Orta', 'Büyük'];
+        portionGrid.innerHTML = drinkLabels.map((lbl, idx) => `
+          <button class="portion-btn ${idx === 0 ? 'active' : ''}" type="button" data-portion-name="${lbl}" data-portion-price="${product.price}">
+            ${lbl}
+          </button>
+        `).join('');
+      } else {
+        dom.modalPortionLabel.textContent = 'Porsiyon Seçenekleri';
+        const foodLabels = ['Standart', '1.5 Porsiyon', 'Duble'];
+        portionGrid.innerHTML = foodLabels.map((lbl, idx) => `
+          <button class="portion-btn ${idx === 0 ? 'active' : ''}" type="button" data-portion-name="${lbl}" data-portion-price="${product.price}">
+            ${lbl}
+          </button>
+        `).join('');
+      }
+      dom.modalProductPrice.textContent = `${product.price} ${product.currency || menuState.settings.currency || '₺'}`;
+      dom.modalProductPortion.textContent = product.portion || 'Standart Servis';
+    }
+
+    // Attach click listeners to portion buttons
+    const btns = portionGrid.querySelectorAll('.portion-btn');
+    btns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        btns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const price = btn.getAttribute('data-portion-price');
+        const name = btn.getAttribute('data-portion-name');
+        if (price) {
+          dom.modalProductPrice.textContent = `${price} ${product.currency || menuState.settings.currency || '₺'}`;
+        }
+        if (name) {
+          dom.modalProductPortion.textContent = name;
+        }
+      });
+    });
   }
-  
-  // Reset portion selection
-  dom.portionButtons.forEach((btn, idx) => {
-    if (idx === 0) btn.classList.add('active');
-    else btn.classList.remove('active');
-  });
   
   // Allergens
   dom.modalAllergensList.innerHTML = '';
@@ -486,12 +543,17 @@ function openOrderConfirmModal() {
 
   const table = menuState.currentTable || '04';
   const currency = menuState.settings.currency || '₺';
-  const selectedPortion = document.querySelector('.portion-btn.active');
-  const portionText = selectedPortion ? selectedPortion.textContent.trim() : 'Standart Porsiyon';
+  const selectedPortion = document.querySelector('.portion-grid .portion-btn.active');
+  const portionText = selectedPortion ? (selectedPortion.getAttribute('data-portion-name') || selectedPortion.textContent.trim()) : 'Standart Porsiyon';
+  const portionPriceAttr = selectedPortion ? selectedPortion.getAttribute('data-portion-price') : null;
+  const effectivePrice = portionPriceAttr ? parseFloat(portionPriceAttr) : (parseFloat(currentSelectedProduct.price) || 0);
+
+  currentSelectedProduct._effectivePrice = effectivePrice;
+  currentSelectedProduct._effectivePortion = portionText;
 
   if (dom.orderConfirmTable) dom.orderConfirmTable.textContent = `Masa ${table}`;
   if (dom.orderConfirmProductName) dom.orderConfirmProductName.textContent = currentSelectedProduct.name;
-  if (dom.orderConfirmProductPrice) dom.orderConfirmProductPrice.textContent = `${currentSelectedProduct.price} ${currency}`;
+  if (dom.orderConfirmProductPrice) dom.orderConfirmProductPrice.textContent = `${effectivePrice} ${currency}`;
   if (dom.orderConfirmPortion) dom.orderConfirmPortion.textContent = portionText;
 
   // Check if current item is a meal/food or already a drink
@@ -502,24 +564,30 @@ function openOrderConfirmModal() {
   if (isFood && dom.orderConfirmDrinkSection && dom.orderConfirmDrinkList) {
     dom.orderConfirmDrinkSection.style.display = 'block';
 
-    // Find in-stock drinks from menu products
-    const availableDrinks = (menuState.products || []).filter(p => {
-      return (p.type === 'drink' || drinkCategories.includes(p.category)) && p.inStock !== false;
-    });
+    // Requirement 4: Prioritize drinks marked as recommendation in Admin panel
+    let recommendedDrinks = (menuState.products || []).filter(p => p.isRecommendation && p.inStock !== false);
 
-    // Prioritize natural food pairings: Ayran, Kola, Limonata, Çay, Şeftalili, Su, Soda
-    const priorityKeywords = ['ayran', 'kola', 'limonata', 'çay', 'şeftalili', 'ice', 'su', 'soda'];
-    availableDrinks.sort((a, b) => {
-      const aName = (a.name || '').toLowerCase();
-      const bName = (b.name || '').toLowerCase();
-      const aIdx = priorityKeywords.findIndex(k => aName.includes(k));
-      const bIdx = priorityKeywords.findIndex(k => bName.includes(k));
-      const aRank = aIdx === -1 ? 999 : aIdx;
-      const bRank = bIdx === -1 ? 999 : bIdx;
-      return aRank - bRank;
-    });
+    // If fewer than 5, supplement with other available drinks
+    if (recommendedDrinks.length < 5) {
+      const otherDrinks = (menuState.products || []).filter(p => {
+        return (p.type === 'drink' || drinkCategories.includes(p.category)) && p.inStock !== false && !p.isRecommendation;
+      });
 
-    const topDrinks = availableDrinks.slice(0, 5);
+      // Prioritize natural food pairings: Ayran, Kola, Limonata, Çay, Şeftalili, Su, Soda
+      const priorityKeywords = ['ayran', 'kola', 'limonata', 'çay', 'şeftalili', 'ice', 'su', 'soda'];
+      otherDrinks.sort((a, b) => {
+        const aName = (a.name || '').toLowerCase();
+        const bName = (b.name || '').toLowerCase();
+        const aIdx = priorityKeywords.findIndex(k => aName.includes(k));
+        const bIdx = priorityKeywords.findIndex(k => bName.includes(k));
+        const aRank = aIdx === -1 ? 999 : aIdx;
+        const bRank = bIdx === -1 ? 999 : bIdx;
+        return aRank - bRank;
+      });
+      recommendedDrinks = [...recommendedDrinks, ...otherDrinks];
+    }
+
+    const topDrinks = recommendedDrinks.slice(0, 5);
 
     let html = '';
     topDrinks.forEach(drink => {
@@ -591,7 +659,9 @@ function updateOrderConfirmSummary() {
   if (!currentSelectedProduct) return;
 
   const currency = menuState.settings.currency || '₺';
-  const basePrice = parseFloat(currentSelectedProduct.price) || 0;
+  const basePrice = (currentSelectedProduct._effectivePrice !== undefined)
+    ? currentSelectedProduct._effectivePrice
+    : (parseFloat(currentSelectedProduct.price) || 0);
   let drinksTotal = 0;
   let drinksHtml = '';
 
@@ -653,8 +723,10 @@ async function confirmAndSendOrder() {
 
   const table = menuState.currentTable || '04';
   const currency = menuState.settings.currency || '₺';
-  const selectedPortion = document.querySelector('.portion-btn.active');
-  const portionText = selectedPortion ? selectedPortion.textContent.trim() : '';
+  const portionText = currentSelectedProduct._effectivePortion || (document.querySelector('.portion-grid .portion-btn.active')?.textContent.trim() || 'Standart');
+  const effectiveBasePrice = (currentSelectedProduct._effectivePrice !== undefined)
+    ? currentSelectedProduct._effectivePrice
+    : (parseFloat(currentSelectedProduct.price) || 0);
   const submitBtn = dom.btnSubmitOrderConfirm;
   const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
 
@@ -672,14 +744,14 @@ async function confirmAndSendOrder() {
       {
         productId: currentSelectedProduct.id,
         name: currentSelectedProduct.name,
-        price: parseFloat(currentSelectedProduct.price) || 0,
+        price: effectiveBasePrice,
         portion: portionText || 'Standart',
         quantity: 1,
         note: ''
       }
     ];
 
-    let totalOrderPrice = parseFloat(currentSelectedProduct.price) || 0;
+    let totalOrderPrice = effectiveBasePrice;
     selectedAddonDrinks.forEach(id => {
       const d = menuState.products.find(p => p.id === id);
       if (d) {

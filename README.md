@@ -324,3 +324,4 @@ alibabadonercafe/
 ## 📄 Lisans
 
 Bu proje [ISC Lisansı](https://opensource.org/licenses/ISC) altında sunulmaktadır. Ticari ve kişisel işletmelerde serbestçe özelleştirilebilir ve kullanılabilir.
+

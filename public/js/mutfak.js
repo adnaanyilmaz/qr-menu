@@ -154,11 +154,16 @@
       avgPrepMinutes: 0
     },
     tableCount: 20,
+    restaurantName: 'Ali Baba Döner Kafe',
+    logoImage: '',
+    logoInitials: 'AB',
+    autoPrintEnabled: localStorage.getItem('kds_auto_print') === 'true',
     currentFilter: 'active', // 'active' | 'pending' | 'preparing' | 'completed'
     selectedTable: 'all',
     enteredPin: '',
     sseSource: null,
-    alertedOrders: new Set() // Prevent repeating urgent bell on every second
+    alertedOrders: new Set(), // Prevent repeating urgent bell on every second
+    activeChangeRequest: null
   };
 
   const QUICK_MENU_ITEMS = [
@@ -180,6 +185,10 @@
     initSoundToggle();
     initQuickChips();
 
+    // Init auto-print toggle checkbox
+    const autoToggle = document.getElementById('kds-auto-print-toggle');
+    if (autoToggle) autoToggle.checked = kdsState.autoPrintEnabled;
+
     // Check saved PIN or token
     if (kdsState.pin || kdsState.token) {
       verifyAndLoadState();
@@ -192,6 +201,12 @@
       audioSynth.init();
     }, { once: true });
   });
+
+  window.toggleAutoPrint = function (enabled) {
+    kdsState.autoPrintEnabled = enabled;
+    localStorage.setItem('kds_auto_print', String(enabled));
+    showToast(enabled ? '🖨️ Otomatik fiş yazdırma AKTİF' : '🖨️ Otomatik fiş yazdırma KAPATILDI', 'info');
+  };
 
   function getAuthHeaders() {
     const headers = { 'Content-Type': 'application/json' };
@@ -297,8 +312,20 @@
         kdsState.tableCount = json.data.tableCount || 20;
 
         if (json.data.restaurantName) {
+          kdsState.restaurantName = json.data.restaurantName;
           const el = document.getElementById('kds-restaurant-name');
           if (el) el.textContent = json.data.restaurantName;
+        }
+
+        kdsState.logoImage = json.data.logoImage || '';
+        kdsState.logoInitials = json.data.logoInitials || 'AB';
+        const brandBadge = document.getElementById('kds-brand-badge');
+        if (brandBadge) {
+          if (kdsState.logoImage) {
+            brandBadge.innerHTML = `<img src="${kdsState.logoImage}" style="width:100%; height:100%; object-fit:contain; border-radius:8px;" alt="Logo"/>`;
+          } else {
+            brandBadge.innerHTML = `<span class="material-symbols-outlined brand-icon">restaurant</span>`;
+          }
         }
 
         populateTableFilter(kdsState.tableCount);
@@ -306,6 +333,7 @@
         renderTicketsGrid();
         startTimerLoop();
         initSSE();
+        checkPendingChangeRequests();
         hideAuthOverlay();
         return true;
       }
@@ -362,7 +390,27 @@
       showToast('Tamamlanan siparişler temizlendi.', 'info');
     });
 
-    // 4. Fallback: Standard order notification created from QR menu
+    // 4. Order Cancelled (Requirement 9: flashes red, alarm, 10s countdown)
+    source.addEventListener('kds_order_cancelled', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        handleCancelledKitchenTicket(data);
+      } catch (err) {
+        console.error('SSE cancel parse error:', err);
+      }
+    });
+
+    // 5. Change Request Created (Requirement 10: Cook approval popup)
+    source.addEventListener('kds_change_request_created', (e) => {
+      try {
+        const changeReq = JSON.parse(e.data);
+        showChangeRequestModal(changeReq);
+      } catch (err) {
+        console.error('SSE change request error:', err);
+      }
+    });
+
+    // 6. Fallback: Standard order notification created from QR menu
     source.addEventListener('notification_created', (e) => {
       try {
         const notif = JSON.parse(e.data);
@@ -409,7 +457,175 @@
     showToast(`🔔 ${ticket.tableName} (${ticket.ticketNumber}) yeni sipariş geldi!`, 'bell');
     renderMetrics();
     renderTicketsGrid();
+
+    // Requirement 8: If Auto-Print is enabled, automatically print ticket!
+    if (kdsState.autoPrintEnabled) {
+      setTimeout(() => {
+        window.printKitchenTicket(ticket.id);
+      }, 500);
+    }
   }
+
+  // Requirement 9: Cancelled Kitchen Ticket Handler (Flashes red, alarm sound, 10s countdown to drop)
+  function handleCancelledKitchenTicket(data) {
+    const order = kdsState.orders.find(o => o.id === data.id || o.ticketNumber === data.ticketNumber);
+    if (!order) return;
+
+    order._cancelled = true;
+    order._cancelReason = data.reason || 'Müşteri Vazgeçti';
+    order._cancelCountdown = 10;
+
+    // Play urgent sound alert
+    audioSynth.playUrgentAlert();
+    showToast(`❌ ${order.tableName} (${order.ticketNumber}) İptal Edildi: ${order._cancelReason}`, 'error');
+
+    renderTicketsGrid();
+
+    // 10 second countdown timer to drop card
+    if (order._cancelTimer) clearInterval(order._cancelTimer);
+    order._cancelTimer = setInterval(() => {
+      order._cancelCountdown--;
+      const card = document.querySelector(`.kds-ticket-card[data-order-id="${order.id}"]`);
+      if (card) {
+        const badge = card.querySelector('.cancelled-countdown-badge');
+        if (badge) {
+          badge.textContent = `❌ İPTAL EDİLDİ (${order._cancelCountdown}s)`;
+        }
+      }
+      if (order._cancelCountdown <= 0) {
+        clearInterval(order._cancelTimer);
+        kdsState.orders = kdsState.orders.filter(o => o.id !== order.id);
+        renderMetrics();
+        renderTicketsGrid();
+      }
+    }, 1000);
+  }
+
+  // Requirement 10: Kitchen Change Request Workflow (Cook Approve/Reject)
+  async function checkPendingChangeRequests() {
+    try {
+      const res = await fetch('/api/kds/change-requests', { headers: getAuthHeaders() });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data && json.data.length > 0) {
+          showChangeRequestModal(json.data[0]);
+        }
+      }
+    } catch (e) {}
+  }
+
+  function showChangeRequestModal(req) {
+    kdsState.activeChangeRequest = req;
+    audioSynth.playUrgentAlert();
+
+    const body = document.getElementById('change-request-body');
+    if (body) {
+      body.innerHTML = `
+        <div style="background:rgba(245,158,11,0.1); border:1px solid #f59e0b; border-radius:8px; padding:12px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <strong style="font-size:15px; color:#fff;">${escapeHtml(req.tableName || 'Masa')}</strong>
+            <span style="font-size:12px; font-weight:800; color:#f59e0b;">${escapeHtml(req.ticketNumber || '')}</span>
+          </div>
+          <div style="font-size:11px; color:#cbd5e1;">Talep Zamanı: ${new Date(req.createdAt).toLocaleTimeString('tr-TR')}</div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <span style="font-size:11px; font-weight:700; color:#ef4444; text-transform:uppercase;">Eski Ürün:</span>
+          <div style="font-size:14px; font-weight:700; color:#cbd5e1; text-decoration:line-through;">
+            ${escapeHtml(req.oldItem ? req.oldItem.name : '')} (${escapeHtml(req.oldItem ? (req.oldItem.portion || 'Standart') : '')})
+          </div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <span style="font-size:11px; font-weight:700; color:#10b981; text-transform:uppercase;">Yeni İstenen Ürün:</span>
+          <div style="font-size:16px; font-weight:800; color:#10b981;">
+            ${escapeHtml(req.newItem ? req.newItem.name : '')} (${escapeHtml(req.newItem ? (req.newItem.portion || 'Standart') : '')})
+          </div>
+          ${req.newItem && req.newItem.note ? `<div style="font-size:12px; color:#f59e0b; margin-top:4px;">Not: ${escapeHtml(req.newItem.note)}</div>` : ''}
+        </div>
+        <p style="font-size:12px; color:#94a3b8; margin:0;">Aşçı onay verirse KDS fişi otomatik güncellenecektir. Reddedilirse garson uyarılacaktır.</p>
+      `;
+    }
+
+    const modal = document.getElementById('modal-change-request');
+    if (modal) modal.classList.add('active');
+  }
+
+  window.respondChangeRequest = async function (approved) {
+    const req = kdsState.activeChangeRequest;
+    if (!req) return;
+
+    try {
+      const res = await fetch(`/api/kds/change-requests/${req.id}/respond`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ approved })
+      });
+      const json = await res.json();
+      if (json.success) {
+        const modal = document.getElementById('modal-change-request');
+        if (modal) modal.classList.remove('active');
+        showToast(approved ? 'Değişiklik onaylandı ve fiş güncellendi!' : 'Değişiklik reddedildi.', approved ? 'success' : 'info');
+        kdsState.activeChangeRequest = null;
+        verifyAndLoadState();
+      } else {
+        showToast(json.message || 'İşlem başarısız.', 'error');
+      }
+    } catch (err) {
+      showToast('Sunucu hatası.', 'error');
+    }
+  };
+
+  // Requirement 8: Kitchen Ticket 80mm Printable Slip Generator
+  window.printKitchenTicket = function (orderId, event) {
+    if (event) event.stopPropagation();
+    const order = kdsState.orders.find(o => o.id === orderId);
+    if (!order) return;
+
+    const printArea = document.getElementById('kitchen-print-area');
+    if (!printArea) return;
+
+    const timeStr = order.createdAt ? new Date(order.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
+    const dateStr = new Date().toLocaleDateString('tr-TR');
+
+    let itemsHtml = (order.items || []).map(it => `
+      <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:13px; font-weight:700;">
+        <span>${it.quantity}x ${escapeHtml(it.name)}${it.portion && it.portion !== 'Standart' ? ` (${escapeHtml(it.portion)})` : ''}</span>
+      </div>
+      ${it.note ? `<div style="font-size:11px; margin-bottom:4px; padding-left:8px; font-style:italic;">Not: ${escapeHtml(it.note)}</div>` : ''}
+    `).join('');
+
+    printArea.innerHTML = `
+      <div style="text-align:center; border-bottom:2px dashed #000; padding-bottom:8px; margin-bottom:8px;">
+        <h2 style="margin:0; font-size:18px; font-weight:900;">${escapeHtml(kdsState.restaurantName || 'ALİ BABA DÖNER KAFE')}</h2>
+        <h3 style="margin:4px 0 0 0; font-size:14px;">MUTFAK SİPARİŞ FİŞİ</h3>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:800; border-bottom:1px solid #000; padding-bottom:6px; margin-bottom:8px;">
+        <span>${escapeHtml(order.tableName || 'Masa')}</span>
+        <span>${escapeHtml(order.ticketNumber || '#--')}</span>
+      </div>
+      <div style="font-size:11px; margin-bottom:8px; color:#333;">
+        <span>Tarih: ${dateStr} ${timeStr}</span>
+        ${order.isRevised ? `<span style="font-weight:900; float:right;">[REVİZE]</span>` : ''}
+      </div>
+      <div style="border-bottom:2px dashed #000; padding-bottom:8px; margin-bottom:8px;">
+        ${itemsHtml}
+      </div>
+      ${order.note ? `
+        <div style="font-size:12px; font-weight:700; margin-bottom:8px; padding:4px; border:1px solid #000;">
+          GENEL NOT: ${escapeHtml(order.note)}
+        </div>
+      ` : ''}
+      <div style="text-align:center; font-size:11px; margin-top:8px;">
+        *** ŞEFE AFİYETLER ***
+      </div>
+    `;
+
+    printArea.style.display = 'block';
+    window.print();
+    setTimeout(() => {
+      printArea.style.display = 'none';
+      printArea.innerHTML = '';
+    }, 1000);
+  };
 
   function handleUpdatedKitchenTicket(ticket) {
     const idx = kdsState.orders.findIndex(o => o.id === ticket.id);
@@ -838,13 +1054,15 @@
       }
 
       return `
-        <article class="kds-ticket-card ${cat.className}" data-order-id="${order.id}">
+        <article class="kds-ticket-card ${cat.className} ${order._cancelled ? 'card-cancelled-pulse' : ''}" data-order-id="${order.id}">
           <div class="card-top-bar"></div>
           
           <header class="card-header">
-            <div class="card-table-title">
+            <div class="card-table-title" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
               <span class="table-big-text">${escapeHtml(order.tableName || 'Masa')}</span>
               <span class="ticket-number-badge">${escapeHtml(order.ticketNumber || '#--')}</span>
+              ${order.isRevised ? `<span class="badge-revised"><span class="material-symbols-outlined" style="font-size:12px;">update</span> REVİZE</span>` : ''}
+              ${order._cancelled ? `<span class="cancelled-countdown-badge">❌ İPTAL (${order._cancelCountdown || 10}s)</span>` : ''}
             </div>
             <div class="card-meta-right">
               <span class="source-badge ${sourceClass}">${sourceLabel}</span>
@@ -876,6 +1094,10 @@
 
           <footer class="card-footer">
             ${footerHtml}
+            <button type="button" class="btn-kds-print" onclick="printKitchenTicket('${order.id}', event)" title="Mutfak Fişini Yazdır">
+              <span class="material-symbols-outlined" style="font-size:15px;">print</span>
+              <span>Yazdır</span>
+            </button>
           </footer>
         </article>
       `;

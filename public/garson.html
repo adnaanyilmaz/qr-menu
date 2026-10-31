@@ -460,6 +460,108 @@
       </div>
     </div>
 
+    <!-- ==================== 8. CANCEL ORDER MODAL (Zorunlu İptal Nedeni & Müdür PIN) ==================== -->
+    <div class="modal-backdrop" id="cancel-order-modal">
+      <div class="payment-card" style="max-width:400px;">
+        <div class="payment-card-header">
+          <div>
+            <h3 style="color:#ef4444; display:flex; align-items:center; gap:6px;">
+              <span class="material-symbols-outlined">cancel</span>
+              <span>Siparişi İptal Et</span>
+            </h3>
+            <span id="cancel-modal-table-sub">Masa Adisyonunu İptal Et</span>
+          </div>
+          <button type="button" class="btn-icon" onclick="closeCancelOrderModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div style="padding:16px 20px;">
+          <div style="margin-bottom:12px;">
+            <label style="font-size:12px; font-weight:700; color:#cbd5e1; display:block; margin-bottom:6px;">Zorunlu İptal Nedeni *</label>
+            <select id="cancel-reason-select" class="form-control" style="width:100%; padding:10px 12px; border-radius:8px; background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-color); font-size:14px; font-weight:600;">
+              <option value="Müşteri Vazgeçti">Müşteri Vazgeçti</option>
+              <option value="Hatalı Masa Seçimi">Hatalı Masa Seçimi</option>
+              <option value="Yanlış Ürün Girildi">Yanlış Ürün Girildi</option>
+              <option value="Müşteri Masadan Ayrıldı">Müşteri Masadan Ayrıldı</option>
+              <option value="Diğer Personel Hatası">Diğer Personel Hatası</option>
+            </select>
+          </div>
+
+          <div id="cancel-manager-pin-group" style="display:none; background:rgba(239,68,68,0.1); border:1px solid #ef4444; border-radius:8px; padding:12px; margin-top:12px;">
+            <label style="font-size:12px; font-weight:700; color:#fca5a5; display:block; margin-bottom:4px;">
+              ⚠️ Aşçı hazırlamaya başladı! İptal için Yönetici PIN Kodu zorunludur:
+            </label>
+            <input type="password" id="cancel-manager-pin" class="form-control" placeholder="Müdür PIN (1234)" style="width:100%; padding:8px 12px; border-radius:6px; background:var(--bg-main); color:#fff; border:1px solid #ef4444; font-size:14px; font-weight:700;"/>
+          </div>
+
+          <div id="cancel-error-msg" style="color:#ef4444; font-size:12px; margin-top:8px; min-height:16px;"></div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid var(--border-color);">
+          <button type="button" class="btn-secondary" onclick="closeCancelOrderModal()">Vazgeç</button>
+          <button type="button" class="btn-primary-action" style="background:#dc2626;" onclick="submitCancelOrder()">
+            <span class="material-symbols-outlined">delete_forever</span>
+            <span>İptali Onayla</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 9. REVISE ITEM MODAL (Hızlı Değişiklik / Zayi Yönetimi) ==================== -->
+    <div class="modal-backdrop" id="revise-item-modal">
+      <div class="payment-card" style="max-width:420px;">
+        <div class="payment-card-header">
+          <div>
+            <h3 style="color:#f59e0b; display:flex; align-items:center; gap:6px;">
+              <span class="material-symbols-outlined">edit_note</span>
+              <span>Ürünü Değiştir / Revize Et</span>
+            </h3>
+            <span id="revise-modal-item-name">Ürün Seçilmedi</span>
+          </div>
+          <button type="button" class="btn-icon" onclick="closeReviseModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div style="padding:16px 20px;">
+          <input type="hidden" id="revise-item-id" value=""/>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:12px; font-weight:700; color:#cbd5e1; display:block; margin-bottom:6px;">Yeni Ürün Seçin (veya mevcut ürün kalsın)</label>
+            <select id="revise-product-select" class="form-control" style="width:100%; padding:10px 12px; border-radius:8px; background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-color); font-size:14px; font-weight:600;" onchange="handleReviseProductChange(this.value)">
+              <!-- Dynamically populated products -->
+            </select>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+            <div>
+              <label style="font-size:12px; font-weight:700; color:#cbd5e1; display:block; margin-bottom:6px;">Porsiyon / Boyut</label>
+              <input type="text" id="revise-portion-input" class="form-control" style="width:100%; padding:8px 12px; border-radius:8px; background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-color);" placeholder="Standart"/>
+            </div>
+            <div>
+              <label style="font-size:12px; font-weight:700; color:#cbd5e1; display:block; margin-bottom:6px;">Adet</label>
+              <input type="number" id="revise-qty-input" min="1" max="50" class="form-control" style="width:100%; padding:8px 12px; border-radius:8px; background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-color);" value="1"/>
+            </div>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="font-size:12px; font-weight:700; color:#cbd5e1; display:block; margin-bottom:6px;">Aşçı / Mutfak Notu</label>
+            <input type="text" id="revise-note-input" class="form-control" style="width:100%; padding:8px 12px; border-radius:8px; background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-color);" placeholder="Örn: Soğansız, bol soslu vb."/>
+          </div>
+
+          <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.3); border-radius:8px; padding:10px; font-size:11.5px; color:#fbbf24;">
+            ℹ️ İlk 60 saniyede doğrudan revize edilir. Süre geçtiyse veya aşçı hazırlamaya başladıysa onay talebi mutfağa iletilir.
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid var(--border-color);">
+          <button type="button" class="btn-secondary" onclick="closeReviseModal()">Vazgeç</button>
+          <button type="button" class="btn-primary-action" style="background:#f59e0b; color:#000;" onclick="submitReviseItem()">
+            <span class="material-symbols-outlined">published_with_changes</span>
+            <span>Revizeyi Gönder</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="toast-container" class="toast-container"></div>
 

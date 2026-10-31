@@ -784,6 +784,9 @@ app.patch('/api/products/:id/quick-price', requireAdminAuth, (req, res) => {
   }
 
   product.price = cleanPrice;
+  if (product.portions && Array.isArray(product.portions) && product.portions.length > 0) {
+    product.portions[0].price = parseFloat(cleanPrice);
+  }
   saveData(db);
   res.json({ success: true, message: 'Fiyat güncellendi.', price: product.price });
 });

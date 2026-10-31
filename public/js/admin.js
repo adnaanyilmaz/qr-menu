@@ -833,11 +833,18 @@ function renderProductsTable() {
           <span style="background:#f1f5f9; padding:3px 8px; border-radius:6px; font-weight:600; font-size:12px;">${escapeHtml(catName)}</span>
         </td>
         <td>
-          <div style="display:flex; align-items:center; gap:4px;">
-            <input type="text" class="quick-price-input" value="${escapeHtml(p.price)}" 
-                   onchange="quickUpdatePrice('${escapeHtml(p.id)}', this.value)"
-                   style="width:70px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-weight:700; text-align:right;">
-            <span style="font-weight:700; color:#b91c1c;">${escapeHtml(p.currency || adminData.settings.currency || '₺')}</span>
+          <div style="display:flex; flex-direction:column; align-items:flex-start;">
+            <div style="display:flex; align-items:center; gap:4px;">
+              <input type="text" class="quick-price-input" value="${escapeHtml(p.price)}" 
+                     onchange="quickUpdatePrice('${escapeHtml(p.id)}', this.value)"
+                     style="width:70px; padding:4px 6px; border:1px solid #cbd5e1; border-radius:6px; font-weight:700; text-align:right;">
+              <span style="font-weight:700; color:#b91c1c;">${escapeHtml(p.currency || adminData.settings.currency || '₺')}</span>
+            </div>
+            ${p.portions && Array.isArray(p.portions) && p.portions.length > 0
+              ? `<span style="font-size:10px; font-weight:700; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; padding:1px 5px; border-radius:4px; margin-top:3px; display:inline-block; cursor:default;" title="Porsiyonlar: ${p.portions.map(pt => `${pt.name} (${pt.price}₺)`).join(', ')}">
+                   ⚖️ ${p.portions.length} Porsiyonlu
+                 </span>`
+              : ''}
           </div>
         </td>
         <td>
@@ -925,6 +932,81 @@ async function toggleFeatured(id) {
   }
 }
 
+// ==================== ADMIN PORTION MANAGER ====================
+function addAdminPortionRow(name = '', price = '') {
+  const container = document.getElementById('admin-portions-container');
+  const emptyHint = document.getElementById('admin-portions-empty-hint');
+  if (!container) return;
+  if (emptyHint) emptyHint.style.display = 'none';
+
+  const row = document.createElement('div');
+  row.className = 'admin-portion-row';
+  row.style.cssText = 'display:grid; grid-template-columns: 1.6fr 1.1fr 34px; gap:8px; align-items:center; background:#ffffff; padding:6px 10px; border-radius:8px; border:1px solid #e2e8f0; box-shadow:0 1px 2px rgba(0,0,0,0.03);';
+  
+  row.innerHTML = `
+    <input type="text" class="form-control portion-row-name" placeholder="Porsiyon Adı (Örn: Standart, 1.5, Duble)" value="${escapeHtml(String(name || ''))}" style="padding:6px 10px; font-size:12.5px; height:34px;" required />
+    <div style="display:flex; align-items:center; gap:4px;">
+      <input type="number" step="0.5" min="0" class="form-control portion-row-price" placeholder="Fiyat" value="${price !== '' ? price : ''}" style="padding:6px 8px; font-size:12.5px; font-weight:700; text-align:right; height:34px;" required />
+      <span style="font-size:12.5px; font-weight:700; color:#b91c1c;">₺</span>
+    </div>
+    <button type="button" class="icon-action-btn btn-delete" onclick="removeAdminPortionRow(this)" title="Porsiyonu Sil" style="width:32px; height:32px; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#ef4444; border:1px solid #fee2e2; background:#fff1f2; cursor:pointer;">
+      <span class="material-symbols-outlined" style="font-size:16px;">delete</span>
+    </button>
+  `;
+
+  container.appendChild(row);
+}
+
+function removeAdminPortionRow(btn) {
+  const row = btn.closest('.admin-portion-row');
+  if (row) row.remove();
+  
+  const container = document.getElementById('admin-portions-container');
+  const emptyHint = document.getElementById('admin-portions-empty-hint');
+  if (container && container.children.length === 0 && emptyHint) {
+    emptyHint.style.display = 'block';
+  }
+}
+
+function clearAdminPortions() {
+  const container = document.getElementById('admin-portions-container');
+  const emptyHint = document.getElementById('admin-portions-empty-hint');
+  if (container) container.innerHTML = '';
+  if (emptyHint) emptyHint.style.display = 'block';
+  const hiddenInput = document.getElementById('form-prod-portions');
+  if (hiddenInput) hiddenInput.value = '';
+}
+
+function applyPortionPreset(type) {
+  const baseInput = document.getElementById('form-prod-price');
+  let basePrice = baseInput ? parseFloat(baseInput.value.replace(/,/g, '.').trim()) : NaN;
+  if (isNaN(basePrice) || basePrice <= 0) {
+    basePrice = type === 'drink' ? 40 : 150;
+    if (baseInput) baseInput.value = basePrice;
+  }
+
+  const container = document.getElementById('admin-portions-container');
+  if (container) container.innerHTML = '';
+
+  if (type === 'drink') {
+    const smallPrice = Math.max(10, Math.round(basePrice * 0.85 / 5) * 5);
+    const midPrice = basePrice;
+    const largePrice = Math.round(basePrice * 1.35 / 5) * 5;
+
+    addAdminPortionRow('Küçük Boy', smallPrice);
+    addAdminPortionRow('Orta Boy', midPrice);
+    addAdminPortionRow('Büyük Boy', largePrice);
+  } else {
+    const stdPrice = basePrice;
+    const oneHalfPrice = Math.round(basePrice * 1.45 / 5) * 5;
+    const doublePrice = Math.round(basePrice * 1.9 / 5) * 5;
+
+    addAdminPortionRow('Standart', stdPrice);
+    addAdminPortionRow('1.5 Porsiyon', oneHalfPrice);
+    addAdminPortionRow('Duble', doublePrice);
+  }
+}
+
 // Product Add / Edit Modal
 function openAddProductModal() {
   adminData.editingProductId = null;
@@ -939,6 +1021,7 @@ function openAddProductModal() {
   const preview = document.getElementById('img-upload-preview');
   if (preview) preview.style.display = 'none';
 
+  clearAdminPortions();
   populateCategoryDropdowns();
   openAdminModal('product-modal');
 }
@@ -967,13 +1050,21 @@ function openEditProductModal(id) {
   const recEl = document.getElementById('form-prod-recommendation');
   if (recEl) recEl.checked = Boolean(p.isRecommendation);
 
+  clearAdminPortions();
+  const emptyHint = document.getElementById('admin-portions-empty-hint');
   const portionsEl = document.getElementById('form-prod-portions');
-  if (portionsEl) {
-    if (p.portions && Array.isArray(p.portions) && p.portions.length > 0) {
+
+  if (p.portions && Array.isArray(p.portions) && p.portions.length > 0) {
+    if (emptyHint) emptyHint.style.display = 'none';
+    p.portions.forEach(pt => {
+      addAdminPortionRow(pt.name, pt.price);
+    });
+    if (portionsEl) {
       portionsEl.value = p.portions.map(pt => `${pt.name}: ${pt.price}`).join(', ');
-    } else {
-      portionsEl.value = '';
     }
+  } else {
+    if (emptyHint) emptyHint.style.display = 'block';
+    if (portionsEl) portionsEl.value = '';
   }
 
   const preview = document.getElementById('img-upload-preview');
@@ -1054,20 +1145,40 @@ async function saveProductForm(e) {
     return;
   }
 
-  // Parse multi-portions if provided (e.g. "Standart: 150, 1.5 Porsiyon: 210, Duble: 270")
-  const portionsInput = document.getElementById('form-prod-portions')?.value.trim() || '';
+  // Collect portions from visual manager
+  const portionRows = document.querySelectorAll('#admin-portions-container .admin-portion-row');
   let portions = [];
-  if (portionsInput) {
-    portionsInput.split(',').forEach(part => {
-      const seg = part.split(':');
-      if (seg.length === 2) {
-        const pName = seg[0].trim();
-        const pPrice = parseFloat(seg[1].replace('₺', '').replace(/,/g, '.').trim());
-        if (pName && !isNaN(pPrice)) {
-          portions.push({ name: pName, price: pPrice });
+  portionRows.forEach(row => {
+    const nameInput = row.querySelector('.portion-row-name');
+    const priceInput = row.querySelector('.portion-row-price');
+    const pName = nameInput ? nameInput.value.trim() : '';
+    const pPrice = priceInput ? parseFloat(priceInput.value.replace('₺', '').replace(/,/g, '.').trim()) : NaN;
+    if (pName && !isNaN(pPrice) && pPrice >= 0) {
+      portions.push({ name: pName, price: pPrice });
+    }
+  });
+
+  // Fallback to text input if visual rows empty
+  if (portions.length === 0) {
+    const portionsInput = document.getElementById('form-prod-portions')?.value.trim() || '';
+    if (portionsInput) {
+      portionsInput.split(',').forEach(part => {
+        const seg = part.split(':');
+        if (seg.length === 2) {
+          const pName = seg[0].trim();
+          const pPrice = parseFloat(seg[1].replace('₺', '').replace(/,/g, '.').trim());
+          if (pName && !isNaN(pPrice)) {
+            portions.push({ name: pName, price: pPrice });
+          }
         }
-      }
-    });
+      });
+    }
+  }
+
+  // Sync hidden input
+  const hiddenPortionsEl = document.getElementById('form-prod-portions');
+  if (hiddenPortionsEl) {
+    hiddenPortionsEl.value = portions.map(pt => `${pt.name}: ${pt.price}`).join(', ');
   }
 
   const isRecommendation = Boolean(document.getElementById('form-prod-recommendation')?.checked);
@@ -1883,3 +1994,7 @@ window.handleLogoUpload = handleLogoUpload;
 window.moveCategoryUp = moveCategoryUp;
 window.moveCategoryDown = moveCategoryDown;
 window.toggleCategoryActive = toggleCategoryActive;
+window.addAdminPortionRow = addAdminPortionRow;
+window.removeAdminPortionRow = removeAdminPortionRow;
+window.clearAdminPortions = clearAdminPortions;
+window.applyPortionPreset = applyPortionPreset;

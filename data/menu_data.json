@@ -112,6 +112,20 @@
       "currency": "₺",
       "desc": "Özel sos, domates, turşu ve patates ile taze fırın lavaşında sarılı lezzet.",
       "portion": "100g Tavuk Döner / Lavaş",
+      "portions": [
+        {
+          "name": "Standart",
+          "price": 150
+        },
+        {
+          "name": "1.5 Porsiyon",
+          "price": 215
+        },
+        {
+          "name": "Duble",
+          "price": 275
+        }
+      ],
       "allergens": "Gluten, Süt Ürünü / Laktoz, Susam, Tavuk Eti",
       "type": "food",
       "category": "donerler",
@@ -119,7 +133,8 @@
       "featured": true,
       "inStock": true,
       "img": "/uploads/tavuk_durum.jpg",
-      "icon": ""
+      "icon": "",
+      "isRecommendation": false
     },
     {
       "id": "prod_2",
@@ -128,6 +143,20 @@
       "currency": "₺",
       "desc": "İnce dilimlenmiş yaprak et döner, taze yeşillikler, sumaklı soğan ve domates ile.",
       "portion": "110g Yaprak Et Döner",
+      "portions": [
+        {
+          "name": "Standart",
+          "price": 240
+        },
+        {
+          "name": "1.5 Porsiyon",
+          "price": 340
+        },
+        {
+          "name": "Duble",
+          "price": 440
+        }
+      ],
       "allergens": "Gluten, Dana Eti, Doğal Baharatlar",
       "type": "food",
       "category": "donerler",
@@ -144,6 +173,20 @@
       "currency": "₺",
       "desc": "Taze fırından çıtır somun ekmek içerisinde marine tavuk döner, patates ve sos.",
       "portion": "Yarım Somun Ekmek",
+      "portions": [
+        {
+          "name": "Yarım Ekmek",
+          "price": 130
+        },
+        {
+          "name": "3/4 Ekmek",
+          "price": 180
+        },
+        {
+          "name": "Tam Ekmek",
+          "price": 230
+        }
+      ],
       "allergens": "Gluten, Tavuk Eti, Baharat",
       "type": "food",
       "category": "donerler",
@@ -160,6 +203,20 @@
       "currency": "₺",
       "desc": "Geleneksel tereyağlı şehriyeli pirinç pilavı üzerinde enfes yaprak et döner ve köz domates.",
       "portion": "130g Döner + Şehriyeli Pilav",
+      "portions": [
+        {
+          "name": "1 Porsiyon",
+          "price": 260
+        },
+        {
+          "name": "1.5 Porsiyon",
+          "price": 365
+        },
+        {
+          "name": "Duble",
+          "price": 470
+        }
+      ],
       "allergens": "Gluten, Laktoz (Tereyağı), Dana Eti",
       "type": "food",
       "category": "donerler",
@@ -176,6 +233,16 @@
       "currency": "₺",
       "desc": "Taze fırın tost ekmeğinde bol erimiş yağlı kaşar peyniri ve enfes doğal tereyağı.",
       "portion": "Standart Tost Ekmek",
+      "portions": [
+        {
+          "name": "Standart",
+          "price": 100
+        },
+        {
+          "name": "Duble Kaşarlı",
+          "price": 140
+        }
+      ],
       "allergens": "Gluten, Süt Ürünü / Laktoz",
       "type": "food",
       "category": "tostlar",
@@ -730,88 +797,7 @@
       "icon": "pie_chart"
     }
   ],
-  "notifications": [
-    {
-      "id": "call_1793475152444_7",
-      "table": "TestMasa99",
-      "type": "Garson Çağır",
-      "note": "Peçete lütfen",
-      "items": [],
-      "time": "22:32",
-      "createdAt": 1793475152444
-    },
-    {
-      "id": "ready_1793475092015_826",
-      "table": "Masa 11",
-      "type": "Sipariş Hazır 🔔",
-      "source": "kitchen_kds",
-      "isReadyAlert": true,
-      "ticketNumber": "#119",
-      "note": "Masa 11 (#119) siparişi mutfakta hazırlandı, servise çıkarılabilir!",
-      "items": [
-        {
-          "id": "k_item_1793475091999_982",
-          "productId": "",
-          "name": "Tavuk Döner Dürüm",
-          "portion": "Lavaş",
-          "quantity": 2,
-          "note": "Soğansız, bol soslu",
-          "completed": true
-        },
-        {
-          "id": "k_item_1793475091999_6578",
-          "productId": "",
-          "name": "Ayran",
-          "portion": "300ml",
-          "quantity": 2,
-          "note": "",
-          "completed": true
-        }
-      ],
-      "time": "22:31",
-      "createdAt": 1793475092015
-    },
-    {
-      "id": "ready_1793475092010_550",
-      "table": "Masa 11",
-      "type": "Sipariş Hazır 🔔",
-      "source": "kitchen_kds",
-      "isReadyAlert": true,
-      "ticketNumber": "#119",
-      "note": "Masa 11 (#119) siparişi mutfakta hazırlandı, servise çıkarılabilir!",
-      "items": [
-        {
-          "id": "k_item_1793475091999_982",
-          "productId": "",
-          "name": "Tavuk Döner Dürüm",
-          "portion": "Lavaş",
-          "quantity": 2,
-          "note": "Soğansız, bol soslu",
-          "completed": true
-        },
-        {
-          "id": "k_item_1793475091999_6578",
-          "productId": "",
-          "name": "Ayran",
-          "portion": "300ml",
-          "quantity": 2,
-          "note": "",
-          "completed": true
-        }
-      ],
-      "time": "22:31",
-      "createdAt": 1793475092010
-    },
-    {
-      "id": "call_1793306374587_41",
-      "table": "15",
-      "type": "Hesap İste",
-      "note": "",
-      "items": [],
-      "time": "23:39",
-      "createdAt": 1793306374587
-    }
-  ],
+  "notifications": [],
   "adisyons": {
     "11": {
       "tableId": "11",
@@ -910,27 +896,6 @@
       "totalAmount": 150,
       "totalItems": 1
     },
-    "15": {
-      "tableId": "15",
-      "tableName": "Masa 15",
-      "openedAt": 1793475152863,
-      "updatedAt": 1793475152863,
-      "items": [
-        {
-          "id": "item_1793475152863_9544",
-          "productId": "custom_1793475152863",
-          "name": "Sıcak gelsin",
-          "portion": "Standart",
-          "note": "Sıcak gelsin",
-          "price": 0,
-          "quantity": 1,
-          "total": 0,
-          "addedAt": 1793475152863
-        }
-      ],
-      "totalAmount": 0,
-      "totalItems": 1
-    },
     "18": {
       "tableId": "18",
       "tableName": "Masa 18",
@@ -978,7 +943,7 @@
       "tableId": "99",
       "tableName": "Masa 99",
       "openedAt": 1793475152468,
-      "updatedAt": 1793475152472,
+      "updatedAt": 1793477662943,
       "items": [
         {
           "id": "item_1793475152468_7488",
@@ -990,24 +955,89 @@
           "quantity": 1,
           "total": 0,
           "addedAt": 1793475152468
-        },
-        {
-          "id": "item_1793475152472_8723",
-          "productId": "prod_26",
-          "name": "Ayran",
-          "portion": "300ml Cam Şişe",
-          "note": "",
-          "price": 35,
-          "quantity": 1,
-          "total": 35,
-          "addedAt": 1793475152472
         }
       ],
-      "totalAmount": 35,
-      "totalItems": 2
+      "totalAmount": 0,
+      "totalItems": 1
+    },
+    "01": {
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "openedAt": 1793477472669,
+      "updatedAt": 1793477502477,
+      "items": [
+        {
+          "id": "item_1793477472669_7989",
+          "productId": "prod_1793296504216",
+          "name": "Martini",
+          "portion": "200ml",
+          "note": "",
+          "price": 500,
+          "quantity": 1,
+          "total": 500,
+          "addedAt": 1793477472669
+        },
+        {
+          "id": "item_1793477501059_8920",
+          "productId": "prod_2",
+          "name": "Et Döner Dürüm",
+          "portion": "110g Yaprak Et Döner",
+          "note": "",
+          "price": 240,
+          "quantity": 1,
+          "total": 240,
+          "addedAt": 1793477501059
+        },
+        {
+          "id": "item_1793477502477_2447",
+          "productId": "prod_3",
+          "name": "Ekmek Arası Tavuk Döner",
+          "portion": "Yarım Somun Ekmek",
+          "note": "",
+          "price": 130,
+          "quantity": 1,
+          "total": 130,
+          "addedAt": 1793477502477
+        }
+      ],
+      "totalAmount": 870,
+      "totalItems": 3
     }
   },
   "orderHistory": [
+    {
+      "tableId": "15",
+      "tableName": "Masa 15",
+      "openedAt": 1793475152863,
+      "updatedAt": 1793475152863,
+      "items": [
+        {
+          "id": "item_1793475152863_9544",
+          "productId": "custom_1793475152863",
+          "name": "Sıcak gelsin",
+          "portion": "Standart",
+          "note": "Sıcak gelsin",
+          "price": 0,
+          "quantity": 1,
+          "total": 0,
+          "addedAt": 1793475152863
+        }
+      ],
+      "totalAmount": 0,
+      "totalItems": 1,
+      "receiptNumber": "AB-20261031-6284",
+      "subtotal": 0,
+      "discount": 0,
+      "receivedAmount": 0,
+      "changeAmount": 0,
+      "paymentMethod": "Nakit",
+      "splitDetails": null,
+      "closeNote": "Kasa Tahsilat (Nakit)",
+      "cashier": "Kasa Görevlisi",
+      "closedAt": 1793477450804,
+      "taxRate": 10,
+      "taxAmount": 0
+    },
     {
       "tableId": "17",
       "tableName": "Masa 17",
@@ -2936,6 +2966,215 @@
   ],
   "kitchenOrders": [
     {
+      "id": "kds_1793478057318_6596",
+      "ticketNumber": "#149",
+      "tableId": "20",
+      "tableName": "Masa 20",
+      "source": "qr_menu",
+      "items": [
+        {
+          "id": "k_item_1793478057318_5608",
+          "productId": "prod_1",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "1.5 Lavaş",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "Tavuk Döner Dürüm (1.5 Lavaş) - 230 ₺",
+      "status": "pending",
+      "createdAt": 1793478057318,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793478016992_5830",
+      "ticketNumber": "#148",
+      "tableId": "20",
+      "tableName": "Masa 20",
+      "source": "qr_menu",
+      "items": [
+        {
+          "id": "k_item_1793478016992_8051",
+          "productId": "prod_1",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "1.5 Lavaş",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "Tavuk Döner Dürüm (1.5 Lavaş) - 230 ₺",
+      "status": "pending",
+      "createdAt": 1793478016992,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793477978365_3349",
+      "ticketNumber": "#147",
+      "tableId": "20",
+      "tableName": "Masa 20",
+      "source": "qr_menu",
+      "items": [
+        {
+          "id": "k_item_1793477978365_4161",
+          "productId": "prod_1",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "1.5 Lavaş",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "Tavuk Döner Dürüm (1.5 Lavaş) - 230 ₺",
+      "status": "pending",
+      "createdAt": 1793477978365,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793477777690_412",
+      "ticketNumber": "#146",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "source": "manual",
+      "items": [
+        {
+          "id": "k_item_1793477777690_3598",
+          "productId": "",
+          "name": "Tavuk Döner Dürüm",
+          "portion": "1 posiyon",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793477777690,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793477655800_9571",
+      "ticketNumber": "#145",
+      "tableId": "99",
+      "tableName": "Masa 99",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793477655800_7783",
+          "productId": "",
+          "name": "Türk Kahvesi",
+          "portion": "Fincan • Lokum ve Su ile",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "cancelled",
+      "createdAt": 1793477655800,
+      "startedAt": null,
+      "completedAt": null,
+      "cancelledAt": 1793477673688,
+      "cancelReason": "Mutfaktan iptal edildi"
+    },
+    {
+      "id": "kds_1793477616482_3252",
+      "ticketNumber": "#144",
+      "tableId": "99",
+      "tableName": "Masa 99",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793477616482_2116",
+          "productId": "",
+          "name": "Cappuccino",
+          "portion": "Standart Fincan",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793477616482,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793477502478_1575",
+      "ticketNumber": "#143",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793477502478_8349",
+          "productId": "",
+          "name": "Ekmek Arası Tavuk Döner",
+          "portion": "Yarım Somun Ekmek",
+          "quantity": 1,
+          "note": "",
+          "completed": true
+        }
+      ],
+      "note": "",
+      "status": "completed",
+      "createdAt": 1793477502478,
+      "startedAt": 1793477548896,
+      "completedAt": 1793477549906
+    },
+    {
+      "id": "kds_1793477501061_51",
+      "ticketNumber": "#142",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793477501061_8395",
+          "productId": "",
+          "name": "Et Döner Dürüm",
+          "portion": "110g Yaprak Et Döner",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793477501061,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
+      "id": "kds_1793477472671_5912",
+      "ticketNumber": "#141",
+      "tableId": "01",
+      "tableName": "Masa 1",
+      "source": "garson",
+      "items": [
+        {
+          "id": "k_item_1793477472671_7024",
+          "productId": "",
+          "name": "Martini",
+          "portion": "200ml",
+          "quantity": 1,
+          "note": "",
+          "completed": false
+        }
+      ],
+      "note": "",
+      "status": "pending",
+      "createdAt": 1793477472671,
+      "startedAt": null,
+      "completedAt": null
+    },
+    {
       "id": "kds_1793475400619_5192",
       "ticketNumber": "#140",
       "tableId": "16",
@@ -3447,14 +3686,14 @@
           "portion": "Standart",
           "quantity": 1,
           "note": "Turşusuz",
-          "completed": false
+          "completed": true
         }
       ],
       "note": "Turşusuz",
-      "status": "pending",
+      "status": "completed",
       "createdAt": 1793475092018,
-      "startedAt": null,
-      "completedAt": null
+      "startedAt": 1793477542372,
+      "completedAt": 1793477544956
     },
     {
       "id": "kds_1793475091999_6999",
@@ -3502,14 +3741,14 @@
           "portion": "200ml",
           "quantity": 1,
           "note": "",
-          "completed": false
+          "completed": true
         }
       ],
       "note": "",
-      "status": "pending",
+      "status": "completed",
       "createdAt": 1793305281113,
-      "startedAt": null,
-      "completedAt": null
+      "startedAt": 1793477531426,
+      "completedAt": 1793477536608
     },
     {
       "id": "kds_1793304604636_7200",
